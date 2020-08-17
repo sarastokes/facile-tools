@@ -1,4 +1,4 @@
-function imMidAdj = topbotFilter(im, r)
+function imMidAdj = topbotFilter(im, r, verbose)
     % TOPBOTFILTER
     %
     % Syntax:
@@ -7,39 +7,38 @@ function imMidAdj = topbotFilter(im, r)
     % Inputs:
     %   im          Image
     %   r           Radius for STREL
+    %   verbose     logical     (default = false)
+    %               Output pictures of each processing step
     %
     % See also:
     %   STREL, IMTOPHAT, IMBOTHAT, IMADJUST
     % 
     % History:
-    %   8Aug2020 - SSP
+    %    8Aug2020  - SSP
+    %   17Aug2020 - SSP - Added verbose option to reduce default output
     % --------------------------------------------------------------------
+
+    if nargin < 3
+        verbose = false;
+    end
 
     SE = strel('disk', r);
     imTop = imtophat(im, SE);
     imBot = imbothat(im, SE);
 
-    figure();
-    imshowpair(imTop, imBot, 'montage');
-    title(sprintf('strel = %u', r));
-    figPos(gcf, 1.5, 1.5);
-    tightfig(gcf);
+    if verbose
+        figure();
+        imshowpair(imTop, imBot, 'montage');
+        figPos(gcf, 1.5, 1.5);
+        tightfig(gcf);
+    end
 
     % Take the difference and potentially contrast adjust
     imMid = imTop - imBot;
     imMidAdj = imadjust(imTop - imBot);
 
-    figure(); 
-    imshowpair(imMid, imMidAdj, 'montage');
-    title(sprintf('strel = %u', r));
-    figPos(gcf, 1.5, 1.5);
-    tightfig(gcf);
-
-    ax = axes('Parent', figure()); 
-    imagesc(imMid); 
-    colormap('pink');
-    title(sprintf('strel = %u', r));
-    figPos(gcf, 1, 1.5);
-    axis equal tight off
-    tightfig(gcf);
-    ax.Position(4) = ax.Position(4) - (0.05 * ax.Position(4));
+    if verbose
+        figure(); imshow(imMidAdj);
+        figPos(gcf, 1.5, 2);
+        tightfig(gcf);
+    end

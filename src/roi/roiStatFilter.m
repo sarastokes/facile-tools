@@ -10,11 +10,12 @@ function [regions, rois] = roiStatFilter(regions, rois, statName, fcn)
     %
     % Example:
     %   [regions, rois] = roiStatFilter(regions, rois, 'Area', @(x) x < 80)
+    %
     % See also:
     %   RUNPLOTMSER, REGIONPROPS
     %
     % History:
-    %   8Aug2020 - SSP - Replaces roiSubset.m
+    %    8Aug2020 - SSP - Replaces roiSubset.m
     % --------------------------------------------------------------------
 
     numObjects = rois.NumObjects;
