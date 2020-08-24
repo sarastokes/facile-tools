@@ -1,14 +1,19 @@
-function h = roiOverlay(im, labelMatrix)
+function h = roiOverlay(im, rois, varargin)
     % ROIOVERLAY
     %
     % Syntax:
-    %    h = roiOverlay(im, labelMatrix)
+    %    h = roiOverlay(im, rois, varargin)
     %
     % Inputs:
     %   im              double (will be converted if not)
     %       Image to overlay rois
-    %   labelMatrix     2D matrix
-    %       Matrix of roi locations from labelmatrix function
+    %   rois            struct or 2D matrix
+    %       Roi structure or output of labelmatrix
+    % Optional key/value inputs:
+    %   Parent          axes handle
+    %       Axis target for image, otherwise new figure is created
+    %   Colormap        char or Nx3 matrix (default = 'gray')
+    %       Colormap to use for base image
     %
     % Outputs:
     %   h               matlab.graphics.primitive.Image
@@ -19,18 +24,40 @@ function h = roiOverlay(im, labelMatrix)
     %
     % History:
     %   10Aug2020 - SSP
+    %   23Aug2020 - SSP - Options to specify axis and base colormap
     % --------------------------------------------------------------------
+    
+    if isstruct(rois)  % roi structure
+        roiMasks = labelmatrix(rois);
+    else
+        roiMasks = rois;
+    end
+    
+    ip = inputParser();
+    ip.CaseSensitive = false;
+    addParameter(ip, 'Parent', [], @ishandle);
+    addParameter(ip, 'Colormap', 'gray', @(x) isnumeric(x) || ischar(x));
+    parse(ip, varargin{:});
+
+    ax = ip.Results.Parent;
+    if isempty(ax)
+        ax = axes('Parent', figure());
+    end
+
+    cmap = ip.Results.Colormap;
+    if ischar(cmap)
+        cmap = colormap(cmap);
+    end
 
     im = im2double(im);
 
     % Binarize roi image
-    labelMatrix(labelMatrix > 0) = 1;
+    roiMasks(roiMasks > 0) = 1;
 
-    figure(); imshow(im); hold on;
-    map = colormap('gray');
-    map = [map; 0 1 0];
-    colormap(map);
+    imshow(im); hold(ax, 'on');
+    cmap = [cmap; 0 1 1];
+    colormap(ax, cmap);
 
-    h = imagesc(labelMatrix);
-    h.AlphaData = 0.5 * (labelMatrix > 0);
+    h = imagesc(ax, roiMasks);
+    h.AlphaData = 0.3 * (roiMasks > 0);
     

@@ -1,4 +1,4 @@
-function L2 = roiColorByStat(rois, statName, varargin)
+function [stats, L2] = roiColorByStat(rois, statName, varargin)
     % ROICOLORBYSTAT
     %
     % Description:
@@ -9,19 +9,23 @@ function L2 = roiColorByStat(rois, statName, varargin)
     %
     % Inputs:
     %   rois        struct
-    %               Connected components from a detection function such as
-    %               bwconncomp, detectMSERFeatures etc
+    %               Connected components from a detection function
     %   statName    char
     %               statistic to use (see regionprops for list)
     %
     % Optional key/value inputs:
     %   rankOrder   logical [false]
-    %               Show rank among all ROIs rather than raw value.
+    %       Show rank among all ROIs rather than raw value.
     %   scaleCData  logical [true]
-    %               Scale CData by setting 0s to just below min value
+    %       Scale CData by setting 0s to just below min value
+    %   Image       2D matrix
+    %       Image needed for some regionprops stats like MeanIntensity
     %
     % Output:
-    %   L           Image with stat value at locations of each ROIs
+    %   stats       vector
+    %       Statistic for each ROI
+    %   L           2D matrix (X, Y)        
+    %       Image with stat value at locations of each ROIs
     %
     % Example:
     %   im = imread('my_image.png');
@@ -32,19 +36,26 @@ function L2 = roiColorByStat(rois, statName, varargin)
     %   REGIONPROPS, LABELMATRIX
     % 
     % History:
-    %   7Aug2020 - SSP
-    % --------------------------------------------------------------------
+    %   07Aug2020 - SSP
+    %   23Aug2020 - SSP - Added stat output and image stat option
+    % ---------------------------------------------------------------------
 
     ip = inputParser();
     ip.CaseSensitive = false;
     addParameter(ip, 'RankOrder', false, @islogical);
     addParameter(ip, 'ScaleCData', true, @islogical);
+    addParameter(ip, 'Image', []);
     parse(ip, varargin{:});
     rankOrder = ip.Results.RankOrder;
     scaleCData = ip.Results.ScaleCData;
+    im = ip.Results.Image;
 
-
-    stats = regionprops('table', rois, statName);
+    
+    if isempty(im)
+        stats = regionprops('table', rois, statName);
+    else
+        stats = regionprops('table', rois, im, statName);
+    end
     stats = stats{:, 1};
     L = labelmatrix(rois);
 
@@ -71,14 +82,11 @@ function L2 = roiColorByStat(rois, statName, varargin)
     axis equal tight off;
     colorbar(); colormap([0 0 0; jet]);
     title(['ROIs by ', statName]);
-    tightfig(gcf);
 
     [f, xi] = ksdensity(stats);
     figure(); hold on;
-    h = plotg(xi, f, [], 'jet'); % othercolor('Spectral10', numel(xi)));
+    h = plotg(xi, f, [], 'jet'); 
     h.LineWidth = 2;
     title(sprintf('ROI %s density function', statName));
     xlabel(statName);
     figPos(gcf, 0.5, 0.5);
-
-    % tightfig, figPos
