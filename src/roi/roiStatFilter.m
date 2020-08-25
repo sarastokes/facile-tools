@@ -16,7 +16,7 @@ function [regions, rois] = roiStatFilter(regions, rois, statName, fcn)
     %
     % History:
     %    8Aug2020 - SSP - Replaces roiSubset.m
-    % --------------------------------------------------------------------
+    % ---------------------------------------------------------------------
 
     numObjects = rois.NumObjects;
     stats = regionprops('table', rois, statName);

@@ -25,5 +25,5 @@ function [regions, rois] = runPlotMSER(im, varargin)
 
     figure(); imshow(im); hold on;
     plot(regions, 'showPixelList', true, 'showEllipses', false);
-    tightfig(gcf);
+    title(sprintf('MSER Features (%u)', rois.NumObjects));
     

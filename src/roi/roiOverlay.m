@@ -25,7 +25,9 @@ function h = roiOverlay(im, rois, varargin)
     % History:
     %   10Aug2020 - SSP
     %   23Aug2020 - SSP - Options to specify axis and base colormap
-    % --------------------------------------------------------------------
+    % ---------------------------------------------------------------------
+
+    im = im2double(im);
     
     if isstruct(rois)  % roi structure
         roiMasks = labelmatrix(rois);
@@ -48,11 +50,12 @@ function h = roiOverlay(im, rois, varargin)
     if ischar(cmap)
         cmap = colormap(cmap);
     end
-
-    im = im2double(im);
+   
+    % Ensure mask will be highest value in colormap
+    im = im * 0.98;
 
     % Binarize roi image
-    roiMasks(roiMasks > 0) = 1;
+    roiMasks(roiMasks ~= 0) = 1;
 
     imshow(im); hold(ax, 'on');
     cmap = [cmap; 0 1 1];

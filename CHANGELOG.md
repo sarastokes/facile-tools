@@ -1,5 +1,9 @@
 # CHANGELOG
 
+### 2020-08-24
+- `roiFilter.m` - removes user-defined ROIs 
+- `RoiSignalView.m` - viewer for parsing through ROIs and their signals
+
 ### 2020-08-23
 - Added dependencies: my code in `util` folder, external code in `lib`
 - `roiSignal.m` - average response over time for ROI pixels
