@@ -1,4 +1,4 @@
-function [imReg, scale, theta] = runPlotSURF(im1, im2)
+function [imReg, scale, theta] = runPlotSURF(im1, im2, method)
     % RUNPLOTSURF
     %
     % Description:
@@ -14,6 +14,10 @@ function [imReg, scale, theta] = runPlotSURF(im1, im2)
     %   14Aug2020 - SSP
     % --------------------------------------------------------------------
 
+    if nargin < 3
+        method = 'similarity';
+    end
+    
     ptsOne = detectSURFFeatures(im1);
     ptsTwo = detectSURFFeatures(im2);
 
@@ -29,7 +33,7 @@ function [imReg, scale, theta] = runPlotSURF(im1, im2)
 
     % Remove outliers
     [tform, inlierTwo, inlierOne] = estimateGeometricTransform(...
-        matchedTwo, matchedOne, 'similarity');
+        matchedTwo, matchedOne, method);
 
     % Plot
     figure();

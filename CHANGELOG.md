@@ -1,5 +1,14 @@
 # CHANGELOG
 
+# 2020-10-04
+- Modified `roiLabels.m` to work with label matrix from lab's calcium imaging datasets
+
+### 2020-08-28
+- `roiLabels.m` - label each roi
+
+### 2020-08-26
+- Included option to suppress plot in `runPlotMSER.m`
+
 ### 2020-08-24
 - `roiFilter.m` - removes user-defined ROIs 
 - `RoiSignalView.m` - viewer for parsing through ROIs and their signals
