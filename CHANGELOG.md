@@ -1,6 +1,10 @@
 # CHANGELOG
 
+# 2020-10-05
+- `sfPlot.m` - options for plotting spatial frequency curves tailored to calcium imaging
+
 # 2020-10-04
+- Implementing new rule for backwards compatibility: all optional parameters go thru inputParser
 - Modified `roiLabels.m` to work with label matrix from lab's calcium imaging datasets
 
 ### 2020-08-28
