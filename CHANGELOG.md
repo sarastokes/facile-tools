@@ -1,5 +1,9 @@
 # CHANGELOG
 
+# 2020-10-11
+- `rf2sf.m` - get spatial frequency tuning curve from a receptive field 
+- `twoConeRF.m`, `runPlotTwoConeRF.m` - simulate DoG-like models with two center cones
+
 # 2020-10-05
 - `sfPlot.m` - options for plotting spatial frequency curves tailored to calcium imaging
 
