@@ -1,4 +1,4 @@
-function h = roiOverlay(im, rois, varargin)
+function [h, h2] = roiOverlay(im, rois, varargin)
     % ROIOVERLAY
     %
     % Syntax:
@@ -18,6 +18,8 @@ function h = roiOverlay(im, rois, varargin)
     % Outputs:
     %   h               matlab.graphics.primitive.Image
     %       Handle to imagesc image containing rois
+    %   h2              matlab.graphics.primitive.Image
+    %       Handle to image underlying the rois
     %
     % See also:
     %   LABELMATRIX
@@ -57,7 +59,7 @@ function h = roiOverlay(im, rois, varargin)
     % Binarize roi image
     roiMasks(roiMasks ~= 0) = 1;
 
-    imshow(im); hold(ax, 'on');
+    h2 = imshow(im); hold(ax, 'on');
     cmap = [cmap; 0 1 1];
     colormap(ax, cmap);
 

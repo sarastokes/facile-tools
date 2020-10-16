@@ -1,5 +1,11 @@
 # CHANGELOG
 
+# 2020-10-16
+- Shifted simulation code and made repo public
+
+# 2020-10-15
+- `roiRemove.m` - removes a single ROI from segmentation results
+
 # 2020-10-11
 - `rf2sf.m` - get spatial frequency tuning curve from a receptive field 
 - `twoConeRF.m`, `runPlotTwoConeRF.m` - simulate DoG-like models with two center cones
