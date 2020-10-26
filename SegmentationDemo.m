@@ -8,10 +8,31 @@
 % Make sure to add facile-tools folder and subfolders to matlab path
 addpath(genpath('...\facile-tools'));  % Edit to your file location
 
-% Load in the demo image
-im = imread(imgetfile());
+% Either load the video and get the avg image, or just load image below
+% Segmentation requires just the image but to see the responses associated
+% with each ROI, you'll want to load in the video.
+
+% OPTION 1: Load in the demo image (faster than the whole video)
+im = imread(imgetfile());  % Choose wherever you saved the image
 im = im2double(im);
 
+% OPTION 2: Start with video 
+[fName, fPath] = uigetfile();  % Choose wherever you saved the video
+vid = VideoReader([fPath, fName]);
+
+frame = im2double(readFrame(vid));
+numFrames = vid.Duration / vid.CurrentTime;
+imStack = zeros(vid.Height, vid.Width, numFrames, 'double');
+imStack(:, :, 1) = frame;
+
+for i = 2:numFrames
+    imStack(:, :, i) = im2double(readFrame(vid));
+end
+
+% Get the mean image for segmentation
+im = mean(imStack, 3);
+
+%% View image for segmentation
 figure(); imshow(im, []);
 title('Original Image');
 
@@ -86,7 +107,7 @@ doc('regionprops')
 % Removed 6016 of 6615 objects. 599 remain
 
 %% See ROI signals
-load('imStack');  % Load in the video (as .mat)
+% Here's the part where you'll need the full video
 RoiSignalView(imStack, rois, 25);
 % Use the arrow keys to navigate through ROIs
 
@@ -108,5 +129,4 @@ S = roiColorByStat(rois, 'MeanIntensity', 'Image', imBot);
 [regions, rois] = roiCleanup(regions, rois);  
 toc
 
-% For my desktop computer: Elapsed time is 2.812788 seconds
-% My laptop was around 8 seconds
+% For my desktop computer: 2.81 seconds. My laptop was ~8 seconds
