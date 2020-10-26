@@ -8,10 +8,11 @@ function [stats, L2] = roiColorByStat(rois, statName, varargin)
     %   L = roiColorByStat(rois, statName);
     %
     % Inputs:
-    %   rois        struct
-    %               Connected components from a detection function
-    %   statName    char
-    %               statistic to use (see regionprops for list)
+    %   rois        struct or 2D matrix
+    %               Connected components from detection fcn OR label matrix
+    %   statName    char or 1D array
+    %               statistic to use (see regionprops for list) OR
+    %               user-defined data to display
     %
     % Optional key/value inputs:
     %   rankOrder   logical [false]
@@ -20,6 +21,8 @@ function [stats, L2] = roiColorByStat(rois, statName, varargin)
     %       Scale CData by setting 0s to just below min value
     %   Image       2D matrix
     %       Image needed for some regionprops stats like MeanIntensity
+    %   Bkgd        RGB value [0 0 0]
+    %       Background color
     %
     % Output:
     %   stats       vector
@@ -38,26 +41,39 @@ function [stats, L2] = roiColorByStat(rois, statName, varargin)
     % History:
     %   07Aug2020 - SSP
     %   23Aug2020 - SSP - Added stat output and image stat option
+    %   21Oct2020 - SSP - Added user-defined stat and labelmatrix input
     % ---------------------------------------------------------------------
 
     ip = inputParser();
     ip.CaseSensitive = false;
     addParameter(ip, 'RankOrder', false, @islogical);
     addParameter(ip, 'ScaleCData', true, @islogical);
+    addParameter(ip, 'Bkgd', [0 0 0], @isnumeric);
+    addParameter(ip, 'CMap', jet(), @isnumeric);
     addParameter(ip, 'Image', []);
     parse(ip, varargin{:});
     rankOrder = ip.Results.RankOrder;
     scaleCData = ip.Results.ScaleCData;
     im = ip.Results.Image;
+    cMap = ip.Results.CMap;
 
-    
-    if isempty(im)
-        stats = regionprops('table', rois, statName);
+    if ischar(statName)
+        if isempty(im)
+            stats = regionprops('table', rois, statName);
+        else
+            stats = regionprops('table', rois, im, statName);
+        end
+        stats = stats{:, 1};
     else
-        stats = regionprops('table', rois, im, statName);
+        stats = statName;
+        statName = 'User-Defined';
     end
-    stats = stats{:, 1};
-    L = labelmatrix(rois);
+
+    if isstruct(rois)
+        L = labelmatrix(rois);
+    else
+        L = rois;
+    end
 
     numROIs = max(max(L));
     [m, n] = size(L);
@@ -80,7 +96,7 @@ function [stats, L2] = roiColorByStat(rois, statName, varargin)
 
     figure(); imagesc(L2);
     axis equal tight off;
-    colorbar(); colormap([0 0 0; jet]);
+    colorbar(); colormap([ip.Results.Bkgd; cMap]);
     title(['ROIs by ', statName]);
 
     [f, xi] = ksdensity(stats);

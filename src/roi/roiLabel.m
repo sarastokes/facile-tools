@@ -47,10 +47,10 @@ function roiLabel(rois, varargin)
         L2 = reshape(L2, [x, y]);
         
         imagesc(ax, L2);
-        colormap([0.5 0.5 0.5; 0.6 1 0.7; 1 1 1]);
+        colormap([0.75 0.75 0.75; 0.6 1 0.7; 1 1 1]);
     else
         imagesc(ax, L > 0);
-        colormap([0.5 0.5 0.5; 1 1 1]);
+        colormap([0.75 0.75 0.75; 1 1 1]);
     end
 
     stats = regionprops('table', L, 'Extrema');
