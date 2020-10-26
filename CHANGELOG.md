@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ### 2020-10-26
+- `SegmentationDemo.m` - walks through segmentation code
+- Added wait message to plot from `runPlotMSER.m`
 - Fixed warnings related to GUI Layout Toolbox, added to `lib`
 
 ### 2020-10-21

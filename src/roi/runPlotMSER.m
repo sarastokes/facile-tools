@@ -20,8 +20,9 @@ function [regions, rois] = runPlotMSER(im, varargin)
     %   DETECTMSERFEATURES
     % 
     % History:
-    %   7Aug2020 - SSP
-    %  26Agu2020 - SSP - Added no plot option (basically original fcn)
+    %    7Aug2020 - SSP
+    %   26Aug2020 - SSP - Added no plot option (basically original fcn)
+    %   26Oct2020 - SSP - figure shows "plotting..." during wait
     % ---------------------------------------------------------------------
     
     ip = inputParser();
@@ -36,6 +37,7 @@ function [regions, rois] = runPlotMSER(im, varargin)
 
     if ip.Results.Plot
         figure(); imshow(im); hold on;
+        title('Plotting...'); drawnow;
         plot(regions, 'showPixelList', true, 'showEllipses', false);
         title(sprintf('MSER Features (%u)', rois.NumObjects));
     end

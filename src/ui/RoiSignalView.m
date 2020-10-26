@@ -111,14 +111,14 @@ classdef RoiSignalView < handle
                 'Style', 'text',...
                 'String', sprintf('Total = %u', obj.totalRois));
 
-            obj.roiAxis = axes('Parent', roiLayout, 'Tag', 'RoiAxis');
+            obj.roiAxis = axes(uipanel(roiLayout, 'BackgroundColor', 'w'));
             obj.roiHandle = roiOverlay(obj.avgImage, obj.roiMask == obj.currentRoi,... 
                 'Parent', obj.roiAxis);
             
             [signal, xpts] = roiSignal(obj.imStack,... 
                 obj.roiMask == obj.currentRoi, obj.sampleRate);
 
-            ax2 = axes('Parent', mainLayout);
+            ax2 = axes(uipanel(mainLayout, 'BackgroundColor', 'w'));
             obj.signalHandle = line(ax2, xpts, signal, 'Color', rgb('navy'));
             grid(ax2, 'on');
             xlabel(ax2, 'Time (sec)');
