@@ -15,13 +15,15 @@ function [stats, L2] = roiColorByStat(rois, statName, varargin)
     %               user-defined data to display
     %
     % Optional key/value inputs:
-    %   rankOrder   logical [false]
+    %   showDensity     logical [false]
+    %       Show additional figure with PDF
+    %   rankOrder       logical [false]
     %       Show rank among all ROIs rather than raw value.
-    %   scaleCData  logical [true]
+    %   scaleCData      logical [true]
     %       Scale CData by setting 0s to just below min value
-    %   Image       2D matrix
+    %   Image           2D matrix
     %       Image needed for some regionprops stats like MeanIntensity
-    %   Bkgd        RGB value [0 0 0]
+    %   Bkgd            RGB value [0 0 0]
     %       Background color
     %
     % Output:
@@ -46,6 +48,7 @@ function [stats, L2] = roiColorByStat(rois, statName, varargin)
 
     ip = inputParser();
     ip.CaseSensitive = false;
+    addParameter(ip, 'ShowDensity', false, @islogical);
     addParameter(ip, 'RankOrder', false, @islogical);
     addParameter(ip, 'ScaleCData', true, @islogical);
     addParameter(ip, 'Bkgd', [0 0 0], @isnumeric);
@@ -99,10 +102,12 @@ function [stats, L2] = roiColorByStat(rois, statName, varargin)
     colorbar(); colormap([ip.Results.Bkgd; cMap]);
     title(['ROIs by ', statName]);
 
-    [f, xi] = ksdensity(stats);
-    figure(); hold on;
-    h = plotg(xi, f, [], 'jet'); 
-    h.LineWidth = 2;
-    title(sprintf('ROI %s density function', statName));
-    xlabel(statName);
-    figPos(gcf, 0.5, 0.5);
+    if ip.Results.ShowDensity
+        [f, xi] = ksdensity(stats);
+            figure(); hold on;
+        h = plotg(xi, f, [], 'jet'); 
+        h.LineWidth = 2;
+        title(sprintf('ROI %s density function', statName));
+        xlabel(statName);
+        figPos(gcf, 0.5, 0.5);
+    end

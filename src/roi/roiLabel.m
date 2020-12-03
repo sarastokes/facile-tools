@@ -1,8 +1,8 @@
-function roiLabel(rois, varargin)
+function ax = roiLabel(rois, varargin)
     % ROILABEL
     %
     % Syntax:
-    %   roiLabel(rois)
+    %   ax = roiLabel(rois)
     %
     % Inputs:
     %   rois            structure or 2D matrix
@@ -23,7 +23,8 @@ function roiLabel(rois, varargin)
 
     ip = inputParser();
     ip.CaseSensitive = false;
-    addParameter(ip, 'Parent', axes('Parent', figure()), @ishandle)
+    addParameter(ip, 'Parent', axes('Parent', figure()), @ishandle);
+    addParameter(ip, 'Color', [0.6, 1, 0.7], @isnumeric);
     addParameter(ip, 'Index', [], @isnumeric);
     parse(ip, varargin{:});
 
@@ -47,7 +48,7 @@ function roiLabel(rois, varargin)
         L2 = reshape(L2, [x, y]);
         
         imagesc(ax, L2);
-        colormap([0.75 0.75 0.75; 0.6 1 0.7; 1 1 1]);
+        colormap([0.75 0.75 0.75; ip.Results.Color; 1 1 1]);
     else
         imagesc(ax, L > 0);
         colormap([0.75 0.75 0.75; 1 1 1]);

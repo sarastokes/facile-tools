@@ -1,5 +1,27 @@
 # CHANGELOG
 
+### 2020-12-02
+- Added dF/F from mean and median to `roiSignal.m`, `roiSignals.m`
+
+### 2020-11-14
+- Added option to specify color for shaded ROIs in `roiLabel.m`
+
+### 2020-11-11
+- `mysmooth.m` - pads vector, then removes after running MATLAB's `smooth.m` to avoid edge effects
+- `signalOnsetOffset.m`, `onsetOffsetMap.m` - analyse and display stim onset/offset responses
+
+### 2020-11-08
+- `responseQuality.m` - metric for response quality from Baden (2016)
+- New utilities: `highPassFilter.m`, `lowPassFilter.m`
+
+### 2020-11-06
+- `roiSignals.m` - wrapper batch running `roiSignal.m` for many ROIs
+- `roiImportImageJ.m` - wrapper for 3rd party ImageJ ROI functions in `lib`
+- Added 3rd party functions for using `.tif`
+
+### 2020-11-03
+- `video2stack.m` - convert `.avi` video to `.mat` stack
+
 ### 2020-10-26
 - `SegmentationDemo.m` - walks through segmentation code
 - Added wait message to plot from `runPlotMSER.m`
