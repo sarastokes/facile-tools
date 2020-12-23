@@ -18,7 +18,7 @@ function y = mysmooth(y, smoothFac, varargin)
         error('Input a vector');
     end
 
-    y = padarray(y, padVal, 0, 'both');
+    y = padarray(y, padVal, mean(y), 'both');
     y = smooth(y, smoothFac, varargin);
     y(1:smoothFac) = [];
     y(end-smoothFac+1:end) = [];

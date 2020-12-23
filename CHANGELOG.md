@@ -1,5 +1,20 @@
 # CHANGELOG
 
+### 2020-12-23
+- Moving essentials to ao-tools repository
+
+## 2020-12-20
+- Removed blank first frame from `roiSignal.m` 
+
+### 2020-12-15
+- `roiQuality`, `roiQualityBatch` - exploring ways of determining good and bad pixels within a ROI
+- `qualityIndex` - replaces `responseQuality`
+- `gaussfilt` - time series Gaussian filter from File Exchange
+- `rmse` - root mean squared error utility function
+
+### 2020-12-03
+- `fillToZero` - plot signal and color area under the curve
+
 ### 2020-12-02
 - Added dF/F from mean and median to `roiSignal.m`, `roiSignals.m`
 

@@ -1,0 +1,29 @@
+function QI = qualityIndex(data)
+    % RESPONSEQUALITY
+    %
+    % Description:
+    %   Response quality based on signal-to-noise
+    %
+    % Syntax:
+    %   QI = responseQuality(data)
+    %
+    % Inputs:
+    %   data           matrix
+    %       N x T x R (rois by time samples by stimulus repetitions
+    %
+    % References:
+    %   Baden et al (2016) The functional diversity of retinal ganglion
+    %   cells in mouse retina. Nature, 529, 345-350
+    %
+    % History:
+    %   05Nov2020 - SSP
+    %   15Dec2020 - SSP - Suppot for multiple ROIs
+    % ---------------------------------------------------------------------
+
+    QI = zeros(size(data, 1), 1);
+    for i = 1:size(data, 1)
+        y = squeeze(data(i, :, :));
+        a = var(mean(y, 2), [], 1);
+        b = mean(var(y, [], 1), 2);
+        QI(i) = a / b;
+    end

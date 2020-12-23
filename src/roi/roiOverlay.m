@@ -2,7 +2,7 @@ function [h, h2] = roiOverlay(im, rois, varargin)
     % ROIOVERLAY
     %
     % Syntax:
-    %    h = roiOverlay(im, rois, varargin)
+    %    [h, h2] = roiOverlay(im, rois, varargin)
     %
     % Inputs:
     %   im              double (will be converted if not)
@@ -54,6 +54,7 @@ function [h, h2] = roiOverlay(im, rois, varargin)
     end
    
     % Ensure mask will be highest value in colormap
+    im = im / max(max(im));
     im = im * 0.98;
 
     % Binarize roi image
