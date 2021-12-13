@@ -1,5 +1,11 @@
 # CHANGELOG
 
+### 2021-02-28
+- `runPhaseCorrelation` - register images with phase correlation
+
+### 2020-01-07
+- `readTransformSIFT` - parse X and Y translations from output of ImageJ's SIFT registration
+
 ### 2020-12-23
 - Moving essentials to ao-tools repository
 

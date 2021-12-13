@@ -23,8 +23,6 @@ function [stats, L2] = roiColorByStat(rois, statName, varargin)
     %       Scale CData by setting 0s to just below min value
     %   Image           2D matrix
     %       Image needed for some regionprops stats like MeanIntensity
-    %   Bkgd            RGB value [0 0 0]
-    %       Background color
     %
     % Output:
     %   stats       vector
@@ -44,6 +42,7 @@ function [stats, L2] = roiColorByStat(rois, statName, varargin)
     %   07Aug2020 - SSP
     %   23Aug2020 - SSP - Added stat output and image stat option
     %   21Oct2020 - SSP - Added user-defined stat and labelmatrix input
+    %   27Apr2021 - SSP - Changed imagesc to pcolor to avoid plotting bkgd
     % ---------------------------------------------------------------------
 
     ip = inputParser();
@@ -51,7 +50,6 @@ function [stats, L2] = roiColorByStat(rois, statName, varargin)
     addParameter(ip, 'ShowDensity', false, @islogical);
     addParameter(ip, 'RankOrder', false, @islogical);
     addParameter(ip, 'ScaleCData', true, @islogical);
-    addParameter(ip, 'Bkgd', [0 0 0], @isnumeric);
     addParameter(ip, 'CMap', jet(), @isnumeric);
     addParameter(ip, 'Image', []);
     parse(ip, varargin{:});
@@ -92,14 +90,14 @@ function [stats, L2] = roiColorByStat(rois, statName, varargin)
         end
     end
     if ~rankOrder && scaleCData
-        L2(L2 == 0) = min(stats) - 0.001;
+        L2(L2 == 0) = NaN;
     end
     L2 = reshape(L2, [m, n]);
 
-
-    figure(); imagesc(L2);
+    figure(); pcolor(L2);
+    shading interp;
     axis equal tight off;
-    colorbar(); colormap([ip.Results.Bkgd; cMap]);
+    colorbar(); colormap(cMap);
     title(['ROIs by ', statName]);
 
     if ip.Results.ShowDensity

@@ -1,17 +1,18 @@
-function [imReg, scale, theta] = runPlotSURF(im1, im2, method)
+function [imReg, tform, scale, theta] = runPlotSURF(im1, im2, method)
     % RUNPLOTSURF
     %
     % Description:
     %   Register im2 to im1 with SURF
     %
     % Syntax:
-    %   [imReg, scale, theta] = runPlotSURF(im1, im2)
+    %   [imReg, tform, scale, theta] = runPlotSURF(im1, im2)
     %
     % See also: 
     %   DETECTSURFFEATURES
     % 
     % History:
     %   14Aug2020 - SSP
+    %   28Feb2021 - SSP - Added tform to outputs
     % --------------------------------------------------------------------
 
     if nargin < 3

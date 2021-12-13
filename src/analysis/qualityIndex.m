@@ -1,11 +1,11 @@
 function QI = qualityIndex(data)
-    % RESPONSEQUALITY
+    % QUALITYINDEX
     %
     % Description:
     %   Response quality based on signal-to-noise
     %
     % Syntax:
-    %   QI = responseQuality(data)
+    %   QI = qualityIndex(data)
     %
     % Inputs:
     %   data           matrix

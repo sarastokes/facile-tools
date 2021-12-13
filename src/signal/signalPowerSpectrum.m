@@ -1,16 +1,16 @@
-function [p, f] = signalPowerSpectrum(signal, sampleRate, verbose)
+function [p, f] = signalPowerSpectrum(signal, sampleRate, varargin)
     % SIGNALPOWERSPECTRUM
     %
     % Syntax:
     %   [p, f] = signalPowerSpectrum(signal, sampleRate, verbose)
     %
     % Inputs:
-    %   signal      vector 
+    %   signal          vector 
     %       Data for calculating power spectrum
     %   sampleRate      numeric
     %       Samples per second (Hz)
     % Optional inputs:
-    %   verbose         logical (default = false)
+    %   plot            logical (default = false)
     %       Plot the output 
     %
     % Outputs:
@@ -20,13 +20,30 @@ function [p, f] = signalPowerSpectrum(signal, sampleRate, verbose)
     %       Frequencies (from 0 to sampleRate/2)
     %
     % History:
-    %    23Aug2020  - SSP
+    %   23Aug2020 - SSP
+    %   29Oct2021 - SSP - added compatibility with existing plots
     % --------------------------------------------------------------------
 
-    if nargin < 3
-        verbose = false;
+    ip = inputParser();
+    ip.CaseSensitive = false;
+    addParameter(ip, 'Plot', false, @islogical);
+    addParameter(ip, 'Parent', [], @ishandle);
+    parse(ip, varargin{:});
+    
+    ax = ip.Results.Parent;
+    plotFlag = ip.Results.Plot;
+    
+    if ~isempty(ax)
+        plotFlag = true;
     end
-
+    
+    if ip.Results.Plot && isempty(ip.Results.Parent)
+        ax = axes('Parent', figure());
+        hold(ax, 'on');
+        title('ROI Power Spectrum');
+        xlabel('Frequency (Hz)');
+    end
+    
     y = fft(signal);
 
     f = (0:(length(y)-1))*(sampleRate/length(y));
@@ -36,12 +53,8 @@ function [p, f] = signalPowerSpectrum(signal, sampleRate, verbose)
     f = f(1:floor(numel(f)/2));
     p = p(1:floor(numel(p)/2));
 
-    if verbose
-        figure(); hold on;
-        plot(f, p, 'Tag', 'PowerSpectrum');
-        set(gca, 'YScale', 'log');
-        title('ROI Power Spectrum');
-        xlabel('Frequency (Hz)');
+    if plotFlag
+        plot(ax, f, p, 'Tag', 'PowerSpectrum');
         xlim([0, sampleRate / 2]);
         grid on;
     end

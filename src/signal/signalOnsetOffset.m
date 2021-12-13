@@ -1,5 +1,8 @@
 function T = signalOnsetOffset(A, onsetWindow, offsetWindow, bkgdWindow)
 
+    if nargin < 4 && onsetWindow(1) > 1
+        bkgdWindow = [1, onsetWindow - 1];
+    end
     numROIs = size(A, 1);
     bkgd = zeros(numROIs, 1);
     onsets = zeros(numROIs, 1);
@@ -13,3 +16,6 @@ function T = signalOnsetOffset(A, onsetWindow, offsetWindow, bkgdWindow)
 
     T = table([1:numROIs]', onsets, offsets, bkgd,...
         'VariableNames', {'ID', 'Onset', 'Offset', 'Bkgd'});
+    
+    T.During = T.Onset - T.Bkgd;
+    T.After = T.Offset - T.Bkgd;

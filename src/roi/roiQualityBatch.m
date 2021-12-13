@@ -1,4 +1,9 @@
 function T = roiQualityBatch(imStack, rois)
+    % ROIQUALITYBATCH
+    %
+    % Input:
+    %   imStack         response [X, Y, T]
+    %
 
     rois = double(rois);
     S = regionprops('table', rois, 'BoundingBox');

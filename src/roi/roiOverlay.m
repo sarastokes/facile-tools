@@ -60,7 +60,7 @@ function [h, h2] = roiOverlay(im, rois, varargin)
     % Binarize roi image
     roiMasks(roiMasks ~= 0) = 1;
 
-    h2 = imshow(im); hold(ax, 'on');
+    h2 = imshow(im, 'Parent', ax); hold(ax, 'on');
     cmap = [cmap; 0 1 1];
     colormap(ax, cmap);
 

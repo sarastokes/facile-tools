@@ -1,9 +1,8 @@
 function offsets = roiQuality(imStack, L, roiID)
+    % ROIQUALITY
+    % ---------------------------------------------------------------------
 
-    % Inputs:
-    %   data        matrix [T x R]
-    
-
+    imStack = double(imStack);
     L = double(L);
     S = regionprops('table', L, 'BoundingBox');
     [x, y, t] = size(imStack);

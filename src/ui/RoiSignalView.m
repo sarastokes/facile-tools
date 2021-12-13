@@ -84,9 +84,6 @@ classdef RoiSignalView < handle
                 end
                 
                 if strcmp(obj.responseType, 'dff_median_hp')
-                    % newXpts = linspace(xpts(1), xpts(end), 4*numel(xpts));
-                    % newXpts = xpts(1):(0.25 * (xpts(2)-xpts(1))):xpts(end);
-                    % response = interp(xpts, response, newXpts);
                     response = lowPassFilter(response, 1.25, xpts(2) - xpts(1))';
                 end
             end
