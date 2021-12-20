@@ -167,20 +167,9 @@ classdef RoiAverageView < handle
                 allSignals = bsxfun(@minus, allSignals,...
                     median(allSignals(smoothFac+1 : (obj.stimWindow(1)/(1/obj.Dataset.frameRate)), :), 1));
             end
-            
-            % ZScore if needed
-            % if get(findobj(obj.figureHandle, 'Tag', 'ZScore'), 'Value')
-            %     tmp = zeros(size(allSignals));
-            %     for i = 1:size(tmp, 2)
-            %         bkgd = allSignals(obj.bkgdWindow(1)+10:obj.bkgdWindow(2), i);
-            %         assignin('base', 'bkgd', bkgd);
-            %         tmp(:, i) = (allSignals(:, i) - mean(bkgd)) ./ std(bkgd, [], 1);
-            %     end
-            %     allSignals = tmp;
-            % end
 
             % Bin data
-            if ~isempty(obj.numBins)
+            if obj.numBins > 0
                 for i = 1:size(allSignals, 2)
                     allSignals(:, i) = gaussfilt(obj.xpts, allSignals(:, i), obj.numBins);
                 end

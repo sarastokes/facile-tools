@@ -1,11 +1,11 @@
-function rgbPlot(stim, t)
-    % RGBPLOT
+function ledPlot(stim, t)
+    % ledPlot
     %
     % Description:
     %   Quick plot of 3 primary timecourses
     % 
     % Syntax:
-    %   rgbPlot(stim, t)
+    %   ledPlot(stim, t)
     %
     % History:
     %   12Dec2021 - SSP
