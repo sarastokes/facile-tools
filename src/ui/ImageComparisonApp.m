@@ -35,12 +35,6 @@ classdef ImageComparisonApp < handle
     end
 
     methods (Access = private)
-        function onZoomButtonDown(obj, src, evt)
-            % obj.zoomHandle.Enable = 'off';
-            assignin('base', 'src', src);
-            assignin('base', 'evt', evt);
-        end
-
         function onKeyPress(obj, ~, evt)
             if ismember(evt.Modifier, 'shift')
                 inc = 0.1;
@@ -128,7 +122,7 @@ classdef ImageComparisonApp < handle
                 
             obj.zoomHandle = zoom(obj.axHandle);
             zoomContextMenu = uicontextmenu();
-            zoomMenu = uimenu(zoomContextMenu,... 
+            uimenu(zoomContextMenu,... 
                 'Label', 'Zoom off',...
                 'Callback', @obj.onZoomOff);
             obj.zoomHandle.UIContextMenu = zoomContextMenu;

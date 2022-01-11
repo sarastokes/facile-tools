@@ -31,7 +31,7 @@ function y = roiZScores(x, bkgd)
 
     y = zeros(size(x));
 
-    if ndims(x) == 2  %#ok
+    if ndims(x) == 2  %#ok 
         y = getZScore(x, bkgd);
     elseif ndims(x) == 3
         for i = 1:size(x, 3)

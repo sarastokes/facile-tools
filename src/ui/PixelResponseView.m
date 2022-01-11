@@ -23,7 +23,8 @@ classdef PixelResponseView < handle
     end
 
     methods 
-        function obj = PixelResponseView()
+        function obj = PixelResponseView(imStack)
+            obj.imStack = imStack;
             obj.createUi();
         end
         
@@ -131,7 +132,7 @@ classdef PixelResponseView < handle
         end
 
         function onExportImage(obj, ~, ~)
-            newAxes = exportFigure(obj.axHandle);
+            exportFigure(obj.axHandle);
         end
     end
 

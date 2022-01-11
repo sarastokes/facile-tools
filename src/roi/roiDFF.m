@@ -11,7 +11,7 @@ function [A, xpts] = roiDFF(imStack, roiMask, bkgdWindow, varargin)
     %   imStack         3D matrix - [X, Y, T]
     %       Raw imaging data stack
     %   roiMask         binary 2D matrix [X, Y]
-    %       Mask of designating ROI 
+    %       Label mask designating ROI 
     %   bkgdWindow      vector [1 x 2]
     %       Start and stop frames for background estimate, returns dF/F
     %
@@ -27,8 +27,11 @@ function [A, xpts] = roiDFF(imStack, roiMask, bkgdWindow, varargin)
     %   xpts        vector - [1, T]
     %       Time points associated with signal
     %
+    % Note:
+    %   If bkgdWindow is empty, raw response is returned
+    %
     % See also:
-    %   ROISIGNALS
+    %   ROISIGNALS, ROIRESPONSES, ROIRESPONSE
     % 
     % History:
     %   06Nov2020 - SSP

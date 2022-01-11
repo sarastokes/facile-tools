@@ -4,6 +4,9 @@ function [onsetMap, offsetMap] = pixelOnsetOffsetMap(imStack, onsetWindow, offse
     % Syntax:
     %   [onsetMap, offsetMap] = pixelOnsetOffsetMap(imStack, onsetWindow, 
     %       offsetWindow, bkgdWindow, varargin)
+    %
+    % History:
+    %   02Jan2021 - Added averaging for multiple trials
     % ---------------------------------------------------------------------
     ip = inputParser();
     addParameter(ip, 'Smooth', [], @isnumeric);
@@ -12,12 +15,12 @@ function [onsetMap, offsetMap] = pixelOnsetOffsetMap(imStack, onsetWindow, offse
     
     imStack = double(imStack);
     
+    if ndims(imStack) == 4
+        imStack = mean(imStack,4);
+    end
+    
     if ~isempty(ip.Results.Smooth)
-        for i = 1:size(imStack, 1)
-            for j = 1:size(imStack, 2)
-                imStack(i, j, :) = smooth(squeeze(imStack(i, j, :)), smoothFac);
-            end
-        end
+        imStack = mysmooth32(imStack, smoothFac);
         bkgdWindow(1) = bkgdWindow(1) + smoothFac;
     end
     
