@@ -7,12 +7,19 @@ function h = addZeroBarIfNeeded(ax)
      % Syntax:
      %  h = addZeroBarIfNeeded(ax)
      %
+     % Note:
+     %  Run after adding plot components if you want axis auto
+     %
      % See also:
      %  SETXLIMITSANDTICKS
      %
      % History:
      %  30Mar2022 - SSP
      % --------------------------------------------------------------------
+     
+     if nargin == 0
+         ax = gca;
+     end
      
      if ax.YLim(1) < 0
          delete(findall(ax, 'Tag', 'ZeroBar')); 

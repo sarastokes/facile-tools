@@ -1,4 +1,4 @@
-function y = roiZScores(x, bkgd)
+function y = roiZScore(x, bkgd)
 % ROIZSCORE
 %
 % Syntax:
@@ -19,20 +19,15 @@ function y = roiZScores(x, bkgd)
 % 
 % History:
 %   15Nov2021 - SSP
-%   15Feb2022 - SSP - Default background is now full signal
 % -------------------------------------------------------------------------
 
     if nargin < 2
-        bkgd = [1 size(x, 2)];
-    end
-    
-    if ~isa(x, 'double')
-        x = im2double(x);
+        bkgd = [];
     end
 
     y = zeros(size(x));
 
-    if ndims(x) == 2  %#ok 
+    if ndims(x)
         y = getZScore(x, bkgd);
     elseif ndims(x) == 3
         for i = 1:size(x, 3)
@@ -45,11 +40,11 @@ function y = getZScore(x, bkgd)
     y = zeros(size(x));
     if isempty(bkgd)
         for i = 1:size(x, 1)
-            y = (x(i,:) - mean(x(i,:))) ./ std(x(i,:));
+            y = x(i,:) - mean(x(i,:)) ./ std(x(i,:));
         end
     else
         for i = 1:size(x, 1)
-            y(i, :) = (x(i, :) - mean(x(i, bkgd(1):bkgd(2)))) ./ std(x(i, bkgd(1):bkgd(2)));
+            y(i, :) = x(i, :) - mean(x(i, bkgd(1):bkgd(2))) ./ std(x(i, bkgd(1):bkgd(2)));
         end
     end
 end

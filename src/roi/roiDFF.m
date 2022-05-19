@@ -58,6 +58,11 @@ function [A, xpts] = roiDFF(imStack, roiMask, bkgdWindow, varargin)
 
     for i = 1:numROIs
         [a, b] = find(roiMask == roiList(i));
+        % Look for ROIs exceeding image size
+        a(b > size(imStack,2)) = [];
+        b(b > size(imStack,2)) = [];
+        b(a > size(imStack,1)) = [];
+        a(a > size(imStack,1)) = [];
         % Time course for each pixel in the ROI
         signal = zeros(numel(a), size(imStack, 3));
         for j = 1:numel(a)
@@ -68,10 +73,14 @@ function [A, xpts] = roiDFF(imStack, roiMask, bkgdWindow, varargin)
 
         % Calculate DFF, if necessary
         if ~isempty(bkgdWindow)
-            if useMedian
-                bkgd = median(signal(bkgdWindow(1):bkgdWindow(2)));
-            else
-                bkgd = mean(signal(bkgdWindow(1):bkgdWindow(2)));
+            if numel(bkgdWindow) == 2
+                if useMedian
+                    bkgd = median(signal(bkgdWindow(1):bkgdWindow(2)));
+                else
+                    bkgd = mean(signal(bkgdWindow(1):bkgdWindow(2)));
+                end
+            elseif numel(bkgdWindow) == 1
+                bkgd = bkgdWindow;
             end
             signal = (signal - bkgd) / bkgd;
         end

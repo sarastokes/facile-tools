@@ -31,14 +31,25 @@ function ax = roiLabel(rois, varargin)
     ip.CaseSensitive = false;
     addParameter(ip, 'Parent', axes('Parent', figure()), @ishandle);
     addParameter(ip, 'Color', [0.6, 1, 0.7], @isnumeric);
-    addParameter(ip, 'Index', [], @isnumeric);
-    addParameter(ip, 'Index2', [], @isnumeric);
+    addParameter(ip, 'Index', []);
+    addParameter(ip, 'Index2', []);
+    addParameter(ip, 'Index3', []);
     parse(ip, varargin{:});
 
     ax = ip.Results.Parent;
     hold(ax, 'on');
     idx = ip.Results.Index;
     idx2 = ip.Results.Index2;
+    idx3 = ip.Results.Index3;
+    if ~isempty(idx) && islogical(idx)
+        idx = find(idx);
+    end
+    if ~isempty(idx2) && islogical(idx2)
+        idx2 = find(idx);
+    end
+    if ~isempty(idx3) && islogical(idx3)
+        idx3 = find(idx3);
+    end
     
     if isstruct(rois)
         L = labelmatrix(rois);
@@ -56,12 +67,18 @@ function ax = roiLabel(rois, varargin)
         if ~isempty(idx2)
             L2(ismember(L, idx2)) = 1.5;
         end
+        if ~isempty(idx3) 
+            L2(ismember(L, idx3)) = 2;
+        end
         % Not flagged and not background
         L2(~ismember(L2, [0, 0.5, 1.5])) = 1;
         L2 = reshape(L2, [x, y]);
         
         imagesc(ax, L2);
-        if ~isempty(idx2)
+        if ~isempty(idx3)
+            colormap([0.75 0.75 0.75; ip.Results.Color; 1 1 1; 1, 0.6, 0.7; rgb('sky blue')]);
+            caxis(gca, [0 2]);
+        elseif ~isempty(idx2)
             colormap([0.75 0.75 0.75; ip.Results.Color; 1 1 1; 1, 0.6, 0.7]);
         else
             colormap([0.75 0.75 0.75; ip.Results.Color; 1 1 1]);

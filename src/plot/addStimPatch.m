@@ -11,7 +11,9 @@ function h = addStimPatch(ax, stimWindow, varargin)
     %   ax          axis handle
     %       Where to add the stim patches
     %   stimWindow  array [N x 2]
-    %       Stimulus start and stop time(s). Each row is a distinct patch
+    %       Stimulus start and stop time(s). Each N row is a distinct patch
+    % Additional key/value inputs are passed to "patch" like 'FaceColor'
+    % and 'FaceAlpha'
     %
     % Outputs:
     %   h           patch handle(s)
@@ -19,12 +21,18 @@ function h = addStimPatch(ax, stimWindow, varargin)
     %
     % History:
     %   29Dec2021 - SSP
+    %   03Apr2022 - SSP - Added hideFromLegend option
     % ---------------------------------------------------------------------
     
     ip = inputParser();
     addParameter(ip, 'FaceColor', [0.3 0.3 1], @isnumeric);
     addParameter(ip, 'FaceAlpha', 0.2, @isnumeric);
+    addParameter(ip, 'HideFromLegend', true, @islogical);
     parse(ip, varargin{:});
+
+    hideFromLegend = ip.Results.HideFromLegend;
+    S = ip.Results;
+    S = rmfield(S, 'HideFromLegend');
     
     hold(ax, 'on');
     yLimits = ylim(ax);
@@ -32,12 +40,15 @@ function h = addStimPatch(ax, stimWindow, varargin)
     
     h = [];
     for i = 1:size(stimWindow, 1)
-        patch(...
+        h = patch(...
             'XData', [stimWindow(i,:), fliplr(stimWindow(i,:))],... 
             'YData', maxVal * [1 1 -1 -1],...
             'Parent', ax,...
             'EdgeColor', 'none',...
-            'Tag', 'StimPatch', ip.Results);
+            'Tag', 'StimPatch', S);
+        if hideFromLegend
+            h.Annotation.LegendInformation.IconDisplayStyle = 'off';
+        end
     end
     
     ylim(ax, yLimits);

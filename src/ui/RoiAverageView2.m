@@ -160,6 +160,7 @@ classdef RoiAverageView2 < handle
                     allSignals(:, i) = highPassFilter(...
                         allSignals(:, i), obj.hpCut, obj.xpts(2)-obj.xpts(1));
                 end
+                allSignals = signalBaselineCorrect(allSignals', obj.bkgdWindow)'; 
             end
             
             % Low pass filter if needed
@@ -630,9 +631,12 @@ classdef RoiAverageView2 < handle
                         'Color', [0.05 0.05 0.4], 'LineWidth', 1.5);
                 elseif istable(obj.stim)
                     hold(ax, 'on');
-                    plot(ax, obj.xpts, obj.stim.R, 'Color', hex2rgb('ff4040'), 'LineWidth', 1.5);
-                    plot(ax, obj.xpts, obj.stim.G, 'Color', hex2rgb('00cc4d'), 'LineWidth', 1.5);
-                    plot(ax, obj.xpts, obj.stim.B, 'Color', hex2rgb('334de6'), 'LineWidth', 1.5);
+                    plot(ax, obj.xpts, obj.stim.R(1:numel(obj.xpts)), ...
+                        'Color', hex2rgb('ff4040'), 'LineWidth', 1.5);
+                    plot(ax, obj.xpts, obj.stim.G(1:numel(obj.xpts)), ...
+                        'Color', hex2rgb('00cc4d'), 'LineWidth', 1.5);
+                    plot(ax, obj.xpts, obj.stim.B(1:numel(obj.xpts)), ...
+                        'Color', hex2rgb('334de6'), 'LineWidth', 1.5);
                 else  % multiple traces, one per epoch
                     if numel(obj.epochIDs) > 1
                         co = pmkmp(size(obj.stim, 2), 'CubicL');
