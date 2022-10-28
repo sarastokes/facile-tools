@@ -79,6 +79,7 @@ classdef RoiCoregisterApp < handle
                 end
                 plot([xM(i) xF(i)], [yM(i) yF(i)], 'LineWidth', 0.8, 'Color', iColor);
             end
+            set(ax, 'YDir', 'reverse');
             tightfig(ax.Parent);
             figPos(ax.Parent, 0.6, 1);
             drawnow;
@@ -88,27 +89,50 @@ classdef RoiCoregisterApp < handle
             if isempty(obj.tform)
                 return 
             end
-            figure();
-            ax = subplot(1,2,1); hold(ax, 'on');
-            sameAsInput = affineOutputView(size(obj.movingDataset.avgImage), obj.tform,... 
-                'BoundsStyle','SameAsInput');
-            imshowpair(obj.movingDataset.avgImage,...
-                imwarp(obj.fixedDataset.avgImage, obj.tform, 'OutputView', sameAsInput),... 
-                'Scaling', 'independent', 'Parent', ax);
 
             [x1, y1, x2, y2] = obj.getMatchedPoints();
             [x2a, y2a] = transformPointsForward(obj.tform, x2, y2);
 
-            ax = subplot(1,2,2); hold(ax, 'on');
+            fh = figure();
+            mainLayout = uix.HBox('Parent', fh);
+            leftLayout = uix.VBox('Parent', mainLayout);
+
+            % Show point offsets
+            ax = axes(uipanel('Parent', leftLayout)); hold(ax, 'on');
             plot(ax, x1, y1, 'ob', 'LineStyle', 'none', 'DisplayName', 'Moving');
             plot(ax, x2a, y2a, 'xr', 'LineStyle', 'none', 'Display', 'FixedT');
-            title(ax, 'o = Moving, x = FixedT', 'FontSize', 10);
+            title(ax, 'o = Moving, x = FixedT', ...
+                'FontSize', 10, 'FontWeight', 'normal');
             grid(ax, 'on');
             axis(ax, 'equal');
             axis(ax, 'tight');
             set(ax, 'YDir', 'reverse');
             ax.YLim(1) = 0; ax.XLim(1) = 0;
             hideAxisLabels(ax);
+
+            % Show transform
+            tformLayout = uix.HBox('Parent', leftLayout);
+            uix.Empty('Parent', tformLayout);
+            uitable(tformLayout, ...
+                'Data', round(obj.tform.T, 4),...
+                'ColumnName', [], 'RowName', [],...
+                'ColumnEditable', false,...
+                'ColumnWidth', {80 80 80},... 
+                'FontSize', 10, 'RowStriping', 'off');
+            uix.Empty('Parent', tformLayout);
+
+            % Compare images
+            ax = axes('Parent', uipanel('Parent', mainLayout));
+            sameAsInput = affineOutputView(size(obj.movingDataset.avgImage), obj.tform,... 
+                'BoundsStyle','SameAsInput');
+            imshowpair(obj.movingDataset.avgImage,...
+                imwarp(obj.fixedDataset.avgImage, obj.tform, 'OutputView', sameAsInput),... 
+                'Scaling', 'independent', 'Parent', ax);
+
+            set(tformLayout, 'Widths', [-1 242 -1]);
+            set(leftLayout, 'Heights', [-1 67]);
+            set(mainLayout, 'Widths', [-1 -0.75]);
+
         end
     
         function autoReg(obj)
@@ -212,7 +236,7 @@ classdef RoiCoregisterApp < handle
                 alignedRoi = obj.findMovingPoints(y, x);
                 if alignedRoi == 0
                     obj.StatusBox.Text = sprintf('No ROI found at location %.2f %.2f!\n', x, y);
-                    obj.MovingMarker.Color = rgb('electric purple');
+                    obj.MovingMarker.Color = rgb('magenta');
                 else
                     obj.StatusBox.Text = sprintf('ROI estimate = %u, %s\n',...
                         alignedRoi, obj.movingDataset.roi2uid(alignedRoi));
@@ -228,7 +252,7 @@ classdef RoiCoregisterApp < handle
                 alignedRoi = obj.findFixedPoints(y, x);
                 if alignedRoi == 0
                     obj.StatusBox.Text = sprintf('No ROI found at location %.2f %.2f!\n', x, y);
-                    obj.FixedMarker.Color = rgb('electric purple');
+                    obj.FixedMarker.Color = rgb('magenta');
                 else
                     obj.StatusBox.Text = sprintf('ROI estimate = %u, %s\n',...
                         alignedRoi, obj.fixedDataset.roi2uid(alignedRoi));
@@ -271,8 +295,20 @@ classdef RoiCoregisterApp < handle
             end
             obj.autoReg();
         end
-    
+
+        function onMenu_ListCoregistered(obj, ~, ~)
+            idx = ismember(obj.fixedUI.Table.DisplayData{:,2},...
+                obj.movingUI.Table.DisplayData{:,2});
+            uids = obj.fixedUI.Table.DisplayData{idx,2};
+            uids = sort(uids);
+            fprintf('Fixed UIDs present in Moving dataset:\n');
+            for i = 1:numel(uids)
+                fprintf('%s\n', uids(i));
+            end
+        end
+
         function onMenu_ColorCoregistered(obj, ~, ~)
+            obj.StatusBox.Text = 'Coloring coregistered rois...'; drawnow;
             [movingIDs, fixedIDs] = obj.matchUIDs();
 
             for i = 1:numel(movingIDs)
@@ -287,9 +323,11 @@ classdef RoiCoregisterApp < handle
                 h.Color = rgb('lavender');
                 drawnow;
             end
+            obj.StatusBox.Text = ''; drawnow;
         end
     end
 
+    % Initialization methods
     methods (Access = private)
         function getRoiCentroids(obj)
             S = regionprops(obj.fixedDataset.rois, 'Centroid');
@@ -304,7 +342,7 @@ classdef RoiCoregisterApp < handle
                 'DefaultUicontrolFontSize', 12,...
                 'KeyPressFcn', @obj.onKeyPress);
                        
-            obj.Figure.Position(3) = obj.Figure.Position(3) * 2.2;
+            obj.Figure.Position(3) = obj.Figure.Position(3) * 1.65;
             obj.Figure.Position(4) = obj.Figure.Position(4) + 100;
             movegui(obj.Figure, 'center');
 
@@ -327,6 +365,7 @@ classdef RoiCoregisterApp < handle
 
             hMenu = uimenu(obj.Figure, 'Text', 'Registration');
             mItem = uimenu(hMenu, 'Text', 'Check Offsets');
+            mItem.Accelerator = 'O';
             mItem.MenuSelectedFcn = @obj.onMenu_CheckOffsets;
 
             mItem = uimenu(hMenu,'Text','&Register ROIs');
@@ -344,6 +383,10 @@ classdef RoiCoregisterApp < handle
             mItem = uimenu(hMenu, 'Text', 'Color Coregistered');
             mItem.Accelerator = 'X';
             mItem.MenuSelectedFcn = @obj.onMenu_ColorCoregistered;
+
+            mItem = uimenu(hMenu, 'Text', 'List Coregistered');
+            mItem.Accelerator = 'L';
+            mItem.MenuSelectedFcn = @obj.onMenu_ListCoregistered;
 
             % Create target marker
             obj.MovingMarker = line(obj.movingUI.Axes, NaN, NaN,...

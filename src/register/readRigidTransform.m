@@ -11,6 +11,7 @@ function [tforms, TT] = readRigidTransform(fName)
     %   28Oct2021 - SSP
     % ---------------------------------------------------------------------
 
+    assert(isfile(fName), 'Input is not a valid file!');
     header = 'Transformation Matrix: AffineTransform[[';
 
     TT = [];
@@ -35,10 +36,6 @@ function [tforms, TT] = readRigidTransform(fName)
 
     % Account for serial transforms
     tforms = TT;
-    % tforms(1, 1, :) = cumprod(tforms(1, 1, :));
-    % tforms(2, 2, :) = cumprod(tforms(2, 2, :));
-    % tforms(1, 2, :) = cumprod(tforms(1, 2, :));
-    % tforms(2, 1, :) = cumprod(tforms(2, 1, :));
     tforms(1, 2, :) = cumsum(tforms(1, 2, :));
     tforms(2, 1, :) = cumsum(tforms(2, 1, :));
     tforms(3, 1, :) = cumsum(tforms(3, 1, :));

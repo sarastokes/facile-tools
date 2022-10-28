@@ -2,8 +2,7 @@ function ts = readTiffStack(fileName)
     % READTIFFSTACK
     %
     % Description:
-    %   A slower alternative to TIFFStack which new users sometimes have
-    %   trouble getting to work
+    %   A slightly slower alternative to TIFFStack
     %
     % Syntax:
     %   ts = readTiffStack(fileName)

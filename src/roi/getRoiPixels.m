@@ -7,6 +7,11 @@ function [pixelResponses, a, b] = getRoiPixels(imStack, L, roiID)
     % Syntax:
     %   [pixelResponses, a, b] = getRoiPixels(imStack, L, roiID);
     %
+    % Inputs:
+    %   imStack             video [X Y T]
+    %   L                   labeled matrix of ROIs [X Y]
+    %   ID                  which ROI to return pixel responses
+    %
     % History:
     %   10Nov2021 - SSP - From roiQuality
     % ---------------------------------------]-----------------------------

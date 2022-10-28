@@ -29,6 +29,7 @@ function offsets = roiQuality(imStack, L, roiID)
     L(L == roiID2) = offsets;
     L = reshape(L, [x, y]);
 
+    % We only want to plot the ROI and surrounding area, not full map
     bBox = S{roiID2, :};
     xBound = [bBox(1) - 1.5, bBox(1) + bBox(3) + 2.5];
     yBound = [bBox(2) - 1.5, bBox(2) + bBox(4) + 2.5];

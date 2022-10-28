@@ -7,6 +7,10 @@ function signals = signalBaselineCorrect(signals, bkgdWindow)
     % Syntax:
     %   signals = signalBaselineCorrect(signals, bkgdWindow)
     %
+    % Inputs:
+    %   signals         [N x T]
+    %   bkgdWindow      [1 x 2] frame start/stop
+    %
     % See also:
     %   SIGNALHIGHPASSFILTER
     %
@@ -19,5 +23,5 @@ function signals = signalBaselineCorrect(signals, bkgdWindow)
     if ndims(signals) == 3
         signals = signals - median(signals(:,bkgd,:),2);
     elseif ndims(signals) == 2
-        signals = signals - median(signals(:, bkgd ), 2);
+        signals = signals - median(signals(:, bkgd), 2);
     end

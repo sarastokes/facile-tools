@@ -57,18 +57,31 @@ function [ups, downs] = getSquareModulationTiming(T, whichLED, outputFrames)
 
     if ~isempty(ups)
         if outputFrames
-            ups = T.Frame(ups);
+            if ~istimetable(T)
+                ups = T.Frame(ups);
+            end
         else
-            ups = T.Timing(ups);
+            if istimetable(T)
+                ups = seconds(T.Time(ups));
+            else
+                ups = T.Timing(ups);
+            end
         end
 
         ups = reshape(ups, [numel(ups)/2, 2]);
     end
+    
     if ~isempty(downs)
         if outputFrames
-            downs = T.Frame(downs);
+            if ~istimetable(T)
+                downs = T.Frame(downs);
+            end
         else
-            downs = T.Timing(downs);
+            if istimetable(T)
+                downs = seconds(T.Time(ups));
+            else
+                downs = T.Timing(downs);
+            end
         end
         downs = reshape(downs, [numel(downs)/2, 2]);
     end

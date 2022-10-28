@@ -50,6 +50,7 @@ classdef RoiAverageView2 < handle
             if nargin > 5
                 obj.stim = stim;
             end
+            disp(bkgdWindow)
             [obj.signals, obj.xpts] = data.getEpochResponses(epochIDs, bkgdWindow);
             try
                 obj.signalsZ = roiZScores(data.getEpochResponses(epochIDs, []), bkgdWindow);
@@ -80,7 +81,6 @@ classdef RoiAverageView2 < handle
             obj.autoX = true;
             
             obj.createUi();
-            assignin('base', 'app', obj);
         end
         
         function setTitle(obj, str)
@@ -101,7 +101,6 @@ classdef RoiAverageView2 < handle
     end
 
     methods (Access = private)
-
         function changeRoi(obj, varargin)
             obj.updateSignalPlot();
 
@@ -110,7 +109,7 @@ classdef RoiAverageView2 < handle
             end
 
             set(findByTag(obj.figureHandle, 'CurrentRoi'), ...
-                'String', sprintf('ROI = %u / %u', obj.currentRoi, obj.Dataset.numROIs));
+                'String', sprintf('%u / %u', obj.currentRoi, obj.Dataset.numROIs));
             if ~isempty(obj.Dataset.roiUIDs)
                 set(findByTag(obj.figureHandle, 'CurrentUid'),...
                     'String', char(obj.Dataset.roiUIDs{obj.currentRoi, 'UID'}));
@@ -126,8 +125,7 @@ classdef RoiAverageView2 < handle
             
         end
 
-        function updateSignalPlot(obj)
-            
+        function updateSignalPlot(obj)        
             if nnz(obj.includedEpochs) == 0
                 return
             end
@@ -153,23 +151,6 @@ classdef RoiAverageView2 < handle
             if nnz(obj.includedEpochs) == 1
                 allSignals = allSignals';
             end
-            
-            % High pass filter if needed
-            if ~isempty(obj.hpCut) && obj.hpCut ~= 0
-                for i = 1:size(allSignals, 2)
-                    allSignals(:, i) = highPassFilter(...
-                        allSignals(:, i), obj.hpCut, obj.xpts(2)-obj.xpts(1));
-                end
-                allSignals = signalBaselineCorrect(allSignals', obj.bkgdWindow)'; 
-            end
-            
-            % Low pass filter if needed
-            if ~isempty(obj.lpCut) && obj.lpCut ~= 0
-                for i = 1:size(allSignals, 2)
-                    allSignals(:, i) = lowPassFilter(...
-                        allSignals(:, i), obj.lpCut, obj.xpts(2)-obj.xpts(1));
-                end
-            end
 
             % Smooth each signal if needed
             h = findobj(obj.figureHandle, 'Tag', 'Smooth');
@@ -182,6 +163,25 @@ classdef RoiAverageView2 < handle
                 smoothFac = 1;
             end
             
+            
+            % High pass filter if needed
+            if ~isempty(obj.hpCut) && obj.hpCut ~= 0
+                allSignals = signalHighPassFilter(allSignals', obj.hpCut, 25);
+                if ~isempty(obj.bkgdWindow)
+                    allSignals = signalBaselineCorrect(allSignals, obj.bkgdWindow)'; 
+                else
+                    allSignals = allSignals';
+                    allSignals = allSignals - mean(allSignals,1);
+                end
+            end
+            
+            % Low pass filter if needed
+            if ~isempty(obj.lpCut) && obj.lpCut ~= 0
+                for i = 1:size(allSignals, 2)
+                    allSignals(:, i) = lowPassFilter(...
+                        allSignals(:, i), obj.lpCut, obj.xpts(2)-obj.xpts(1));
+                end
+            end
             % Derivative if needed
             if get(findByTag(obj.figureHandle, 'dfdt'), 'Value')
                 for i = 1:size(allSignals, 2)
@@ -196,23 +196,10 @@ classdef RoiAverageView2 < handle
             end
 
             % Bin data
-            if ~isempty(obj.numBins) && obj.numBins ~= 0
-                
+            if ~isempty(obj.numBins) && obj.numBins ~= 0                
                 for i = 1:size(allSignals, 2)
                     allSignals(:,i) = movmean(allSignals(:,i), obj.numBins);
                 end
-                
-                %X = nanmean(reshape([obj.xpts(:); nan(mod(-numel(obj.xpts), obj.numBins), 1)], obj.numBins, []));
-                %oldSignals = allSignals;
-                %allSignals = zeros(numel(X), size(oldSignals, 2));
-                %for i = 1:size(allSignals, 2)
-                %    iSignal = oldSignals(:,i);
-                %    allSignals(:,i) = nanmean(reshape([iSignal(:); nan(mod(-numel(iSignal), obj.numBins), 1)], obj.numBins, []));
-                %end
-                
-                % for i = 1:size(allSignals, 2)
-                %     allSignals(:, i) = gaussfilt(obj.xpts, allSignals(:, i), obj.numBins);
-                % end
             end
             
             % Plot the individual signals, if necessary
@@ -240,7 +227,7 @@ classdef RoiAverageView2 < handle
                 if obj.useMedian
                     avgSignal = median(allSignals, 2);
                 else
-                    avgSignal = nanmean(allSignals, 2);
+                    avgSignal = mean(allSignals, 2, 'omitnan');
                 end
                 if obj.shadeError
                     axes(obj.signalAxis);
@@ -278,7 +265,6 @@ classdef RoiAverageView2 < handle
             for i = 1:numel(h)
                 h(i).YData = [1 1 -1 -1];
             end
-            % obj.stimPatch.YData = [1 1 -1 -1];
             
             
             if get(findobj(obj.figureHandle, 'Tag', 'ZScore'), 'Value')
@@ -290,7 +276,6 @@ classdef RoiAverageView2 < handle
                     for i = 1:numel(h)
                         h(i).YData = [y(1) y(1) y(2) y(2)];
                     end
-                    % obj.stimPatch.YData = [y(1) y(1) y(2) y(2)];
                 end
             else
                 ylim(obj.signalAxis, [-maxVal, maxVal]);
@@ -298,7 +283,6 @@ classdef RoiAverageView2 < handle
                 for i = 1:numel(h)
                     h(i).YData = maxVal * [1 1 -1 -1];
                 end
-                % obj.stimPatch.YData = maxVal * [1 1 -1 -1];
             end
 
         end
@@ -547,12 +531,8 @@ classdef RoiAverageView2 < handle
                 'BackgroundColor', 'w');
 
             h = [];  % Tracks heights of ui components
-            if ~isempty(obj.titleStr)
-                uicontrol(leftPanel, 'Style', 'text', 'String', obj.titleStr);
-                h = [h, 40];
-            end
             uicontrol(leftPanel, 'Style', 'text',... 
-                'String', sprintf('ROI = 1 / %u', obj.Dataset.numROIs),...
+                'String', sprintf('1 / %u', obj.Dataset.numROIs),...
                 'FontWeight', 'bold', 'Tag', 'CurrentRoi');
             h = [h, 20];
             if ~isempty(obj.Dataset.roiUIDs)
@@ -718,7 +698,6 @@ classdef RoiAverageView2 < handle
             obj.roiAxis = axes(uipanel(roiLayout, 'BackgroundColor', 'w'));
             obj.roiHandle = roiOverlay(obj.Dataset.avgImage, obj.Dataset.rois == obj.currentRoi,... 
                 'Colormap', 'bone', 'Parent', obj.roiAxis);
-            %    'Colormap', 'bone', 'OverlayColor', [0 1 0], 'Parent', obj.roiAxis);
             uicontrol(roiLayout, 'Style', 'push',...
                 'String', 'Expand ->',...
                 'Callback', @obj.onPushDividerArrow);

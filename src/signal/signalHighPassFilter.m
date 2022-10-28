@@ -4,6 +4,14 @@ function signals = signalHighPassFilter(signals, cutoffFreq, sampleRate)
     % Syntax:
     %   signals = signalHighPassFilter(signals, cutoffFreq, sampleRate)
     %
+    % Inputs:
+    %   signals     double
+    %       Signals to high pass filter, [N x T x R] or [N x T]
+    %   cutoffFreq  double
+    %       Cutoff frequency (hz)
+    %   sampleRate  double
+    %       Sampling frequency (hz)
+    %
     % History:
     %   05May2022 - SSP
     % ---------------------------------------------------------------------

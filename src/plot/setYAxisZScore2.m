@@ -1,4 +1,4 @@
-function setYAxisZScore2(axHandle, roundToNearest, hideTicks)
+function setYAxisZScore2(axHandle, roundToNearest, hideTicks, tickInc)
     % SETYAXISZSCORE
     %
     % Description:
@@ -27,13 +27,16 @@ function setYAxisZScore2(axHandle, roundToNearest, hideTicks)
         hideTicks = false;
     end
     
+    if nargin < 4
+        tickInc = 1;
+    end
     yLimits = roundYAxisLimits(axHandle, roundToNearest);
     if abs(yLimits(1)) > yLimits(2)
         yLimits(2) = abs(yLimits(1));
         ylim(axHandle, yLimits);
     end
     %setYTicksZScore(axHandle);
-    set(gca, 'YTick', [floor(axHandle.YLim(1)):1:ceil(axHandle.YLim(2))]);
+    set(gca, 'YTick', [floor(axHandle.YLim(1)):tickInc:ceil(axHandle.YLim(2))]);
     if hideTicks
         set(axHandle, 'YTickLabel', {}, 'TickDir', 'in');
     end

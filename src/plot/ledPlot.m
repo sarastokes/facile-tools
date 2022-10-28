@@ -1,11 +1,11 @@
-function ledPlot(stim, t, ax, varargin)
+function ax = ledPlot(stim, t, ax, varargin)
     % ledPlot
     %
     % Description:
     %   Quick plot of 3 primary timecourses
     % 
     % Syntax:
-    %   ledPlot(stim, t, ax, varargin)
+    %   ax = ledPlot(stim, t, ax, varargin)
     %
     % History:
     %   12Dec2021 - SSP

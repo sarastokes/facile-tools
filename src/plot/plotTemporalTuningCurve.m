@@ -16,8 +16,12 @@ function ax = plotTemporalTuningCurve(dataset, uid, varargin)
     dotFlag = ip.Results.Dots;
     fasebFlag = ip.Results.Faseb;
 
-    temporalStat = dataset.analyses('TemporalStat');
-    data = temporalStat(dataset.uid2roi(uid), :);
+    if ~isnumeric(dataset)
+        temporalStat = dataset.analyses('TemporalStat');
+        data = temporalStat(dataset.uid2roi(uid), :);
+    else
+        data = dataset;
+    end
     data = data/max(abs(data));
 
     ax = axes('Parent', figure()); hold on;
