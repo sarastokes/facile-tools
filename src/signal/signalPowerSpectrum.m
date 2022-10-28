@@ -22,10 +22,12 @@ function [p, f] = signalPowerSpectrum(signal, sampleRate, varargin)
     % History:
     %   23Aug2020 - SSP
     %   29Oct2021 - SSP - added compatibility with existing plots
-    % --------------------------------------------------------------------
+    %   27Oct2022 - SSP - added varargin pass to plot
+    % ---------------------------------------------------------------------
 
     ip = inputParser();
     ip.CaseSensitive = false;
+    ip.KeepUnmatched = true;
     addParameter(ip, 'Plot', false, @islogical);
     addParameter(ip, 'Parent', [], @ishandle);
     parse(ip, varargin{:});
@@ -54,7 +56,7 @@ function [p, f] = signalPowerSpectrum(signal, sampleRate, varargin)
     p = p(1:floor(numel(p)/2));
 
     if plotFlag
-        plot(ax, f, p, 'Tag', 'PowerSpectrum');
+        plot(ax, f, p, 'Tag', 'PowerSpectrum', ip.Unmatched);
         xlim([0, sampleRate / 2]);
         grid on;
     end

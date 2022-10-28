@@ -1,23 +1,24 @@
-function [A, xpts] = roiSignals(imStack, L, sampleRate, bkgdWindow, medianFlag)
+function [A, xpts] = roiSignals(imStack, roiMask, varargin)
     % ROISIGNALS
     %
     % Description:
     %   Calculates dF/F for multiple ROIs
     %
     % Syntax:
-    %   [A, xpts] = roiSignals(imStack, L, sampleRate, bkgdWindow, medianFlag)
+    %   [A, xpts] = roiSignals(imStack, roiMask, varargin)
     %
     % Inputs:
     %   imStack         3D matrix - [X, Y, T]
     %       Raw imaging data stack
-    %   roiMask         binary 2D matrix [x, Y]
+    %   roiMask         binary 2D matrix [X, Y]
     %       Mask of designating ROI 
-    %   sampleRate      numeric (default = 25)
+    % Optional key/value inputs (passed to roiSignal):
+    %   FrameRate       numeric (default = 25)
     %       Samples/frames per second (Hz)
-    %   bkgdWindow      vector [1 x 2]
+    %   BkgdWindow      vector [1 x 2]
     %       Start and stop frames for background estimate, returns dF/F
-    %   medianFlag      logical (default = false)
-    %       Use median flag for background estimation instead of mean
+    %   Median          logical (default = false)
+    %       Use median for background estimation instead of mean
     %
     % Outputs:
     %   signal      vector - [N, T]
@@ -31,18 +32,12 @@ function [A, xpts] = roiSignals(imStack, L, sampleRate, bkgdWindow, medianFlag)
     % History:
     %   06Nov2020 - SSP
     %   02Dec2020 - SSP - Added bkgd estimation options
+    %   10Nov2021 - SSP - Converted optional arguments to key/value
     % ---------------------------------------------------------------------
-    
-    if nargin < 4
-        bkgdWindow = [];
-    end
-    if nargin < 5
-        medianFlag = false;
-    end
 
-    L = double(L);
+    roiMask = double(roiMask);
 
-    roiList = unique(L(:));
+    roiList = unique(roiMask(:));
     roiList(roiList == 0) = [];
     numROIs = numel(roiList);
 
@@ -50,10 +45,10 @@ function [A, xpts] = roiSignals(imStack, L, sampleRate, bkgdWindow, medianFlag)
 
     for i = 1:numROIs
         try
-            [signal, xpts] = roiSignal(imStack, L == roiList(i),... 
-                sampleRate, bkgdWindow, medianFlag);
+            [signal, xpts] = roiSignal(imStack, roiMask == roiList(i), varargin);
         catch
             signal = zeros([1, size(imStack, 3)]);
+            warning('ROISIGNALS: Error extracting signal for ROI %u', i);
         end
         A = cat(1, A, signal);
     end

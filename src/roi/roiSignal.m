@@ -1,23 +1,24 @@
-function [signal, xpts] = roiSignal(imStack, roiMask, sampleRate, bkgdWindow, medianFlag)
+function [signal, xpts] = roiSignal(imStack, roiMask, varargin)
     % ROISIGNAL
     %
     % Description:
-    %   Calculates dF/F for a ROI
+    %   Calculates dF/F for a single ROI
     %
     % Syntax:
-    %   roiSignal(imStack, roiMask, frameRate);
+    %   roiSignal(imStack, roiMask, varargin);
     % 
     % Inputs:
     %   imStack         3D matrix - [X, Y, T]
     %       Raw imaging data stack
-    %   roiMask         binary 2D matrix [x, Y]
+    %   roiMask         binary 2D matrix [X, Y]
     %       Mask of designating ROI 
-    %   sampleRate      numeric (default = 25)
+    % Optional key/value inputs:
+    %   FrameRate       numeric (default = 25)
     %       Samples/frames per second (Hz)
-    %   bkgdWindow      vector [1 x 2]
+    %   BkgdWindow      vector [1 x 2]
     %       Start and stop frames for background estimate, returns dF/F
-    %   medianFlag      logical (default = false)
-    %       Use median flag for background estimation instead of mean
+    %   Median          logical (default = false)
+    %       Use median for background estimation instead of mean
     %
     % Outputs:
     %   signal      vector - [1, T]
@@ -32,9 +33,20 @@ function [signal, xpts] = roiSignal(imStack, roiMask, sampleRate, bkgdWindow, me
     %   22Aug2020 - SSP
     %   02Dec2020 - SSP - Added bkgd estimation options
     %   19Dec2020 - SSP - Removed first frame from analysis
+    %   10Nov2021 - SSP - Converted optional arguments to key/value
     % ---------------------------------------------------------------------
+        
+    ip = inputParser();
+    ip.CaseSensitive = false;
+    addParameter(ip, 'FrameRate', 25, @isnumeric);
+    addParameter(ip, 'BkgdWindow', [], @isnumeric);
+    addParameter(ip, 'Median', false, @islogical);
+    parse(ip, varargin{:});
     
-    % Get xpts while accounting for throwing out first blank frame
+    sampleRate = ip.Results.FrameRate;
+    useMedian = ip.Results.Median;
+    
+    % Get xpts while accounting for first blank frame thrown out
     xpts = 1/sampleRate : 1/sampleRate : (size(imStack, 3)+1)/sampleRate;
     xpts(1) = [];
 
@@ -45,11 +57,8 @@ function [signal, xpts] = roiSignal(imStack, roiMask, sampleRate, bkgdWindow, me
     end
     signal = mean(signal);
     
-    if nargin >= 4 && ~isempty(bkgdWindow)
-        if nargin < 5
-            medianFlag = false;
-        end
-        if medianFlag
+    if ~isempty(bkgdWindow)
+        if useMedian
             bkgd = median(signal(bkgdWindow(1):bkgdWindow(2)));
         else
             bkgd = mean(signal(bkgdWindow(1):bkgdWindow(2)));
