@@ -32,7 +32,7 @@ classdef SpectralData < handle
     end
 
     properties (Constant)
-        frameRate = 25;  % Hz
+        frameRate = 25.3;  % Hz
     end
 
     properties (Dependent)
@@ -274,7 +274,7 @@ classdef SpectralData < handle
             % Syntax:
             %   imStack = getEpochStackAverage(obj, epochIDs)
             % -------------------------------------------------------------
-            if ischar(epochIDs) || isa(epochIDs, 'ao.Stimuli')
+            if ~isnumeric(epochIDs)
                 epochIDs = obj.stim2epochs(epochIDs);
             end
             imStack = [];
@@ -303,10 +303,10 @@ classdef SpectralData < handle
             %   Method          dff, zscore (default = 'dff')
             %                   Only applies if bkgd was supplied
             %   Stim            stimulus (default = [])
-            %   Median          Use median for bkgd (default = false, mean) 
             %   Average         Average responses (default = false)
             %   Smooth          Sigma (default = [], no smoothing)
             %   HighPass        Cutoff frequency in Hz (default = [])
+            %   BandPass        Frequency range in Hz (default = [])
             %
             % Note:
             %   If bkgd is empty or not specified, the raw fluorescence
@@ -323,12 +323,14 @@ classdef SpectralData < handle
             addParameter(ip, 'Average', false, @islogical);
             addParameter(ip, 'Smooth', [], @isnumeric);
             addParameter(ip, 'HighPass', [], @isnumeric);
+            addParameter(ip, 'BandPass', [], @(x) numel(x)==2 & isnumeric(x));
             parse(ip, varargin{:});
 
             bkgdWindow = ip.Results.Bkgd;
             avgFlag = ip.Results.Average;
             smoothFac = ip.Results.Smooth;
             highPassCutoff = ip.Results.HighPass;
+            bandPassCutoff = ip.Results.BandPass;
             
             if cellfind(ip.UsingDefaults, 'Bkgd')
                 iStim = obj.epoch2stim(epochID(1));
@@ -371,6 +373,15 @@ classdef SpectralData < handle
                 end
             end
 
+            if ~isempty(bandPassCutoff)
+                signals = signalBandPassFilter(signals, bandPassCutoff, obj.frameRate);
+                if isempty(bkgdWindow)
+                    signals = signalMeanCorrect(signals);
+                else
+                    signals = signalBaselineCorrect(signals, bkgdWindow);
+                end
+            end
+
             if ~isempty(highPassCutoff)
                 signals = signalHighPassFilter(signals, highPassCutoff, obj.frameRate);
                 if isempty(bkgdWindow)
@@ -385,6 +396,127 @@ classdef SpectralData < handle
             end
         end
 
+
+        function [signals, xLoc, yLoc] = getEpochRoiPixelResponses(obj, epochID, roiID, varargin)
+            % GETEPOCHROIPIXELRESPONSES
+            %
+            % Description:
+            %   Get a matrix of responses from each pixel in an ROI
+            %
+            % Syntax:
+            %   [signals, xLoc, yLoc] = getEpochRoiPixelResponses(obj,
+            %       epochID, roiID, bkgd, varargin)
+            %   [signals, xLoc, yLoc] = getEpochRoiPixelResponses(obj,
+            %       epochID, roiID, varargin)
+            %
+            % Inputs:
+            %   epochID         epochID(s) or stimulus name
+            %   roiID           ID of ROI to analyze
+            % Optional input:
+            %   bkgd            Range of background values (default = [])
+            % Optional key/value inputs:
+            %   Method          dff, zscore (default = 'dff')
+            %                   Only applies if bkgd was supplied
+            %   Stim            stimulus (default = [])
+            %   Average         Average responses (default = false)
+            %   Smooth          Sigma (default = [], no smoothing)
+            %   HighPass        Cutoff frequency in Hz (default = [])
+            %   BandPass        Frequency range in Hz (default = [])
+            %
+            % Note:
+            %   If bkgd is empty or not specified, the raw fluorescence
+            %   traces will be returned
+            % -------------------------------------------------------------
+            if ~isnumeric(epochID)
+                iStim = ao.SpectralStimuli.init(epochID);
+                epochID = obj.stim2epochs(epochID);
+            else
+                iStim = obj.epoch2stim(epochID(1));
+            end
+
+            ip = inputParser();
+            ip.CaseSensitive = false;
+            ip.KeepUnmatched = true;
+            addOptional(ip, 'Bkgd', [], @isnumeric);
+            addParameter(ip, 'Average', false, @islogical);
+            addParameter(ip, 'Smooth', [], @isnumeric);
+            addParameter(ip, 'HighPass', [], @isnumeric);
+            addParameter(ip, 'BandPass', [], @(x) numel(x)==2 & isnumeric(x));
+            parse(ip, varargin{:});
+
+            bkgdWindow = ip.Results.Bkgd;
+            avgFlag = ip.Results.Average;
+            smoothFac = ip.Results.Smooth;
+            highPassCutoff = ip.Results.HighPass;
+            bandPassCutoff = ip.Results.BandPass;
+
+            if cellfind(ip.UsingDefaults, 'Bkgd')
+                bkgdWindow = iStim.bkgd();
+            end
+
+            if numel(epochID) == 1
+                imStack = obj.getEpochStack(epochID);
+                [signals, xLoc, yLoc] = getRoiPixels(imStack, obj.rois, roiID);
+            %elseif numel(epochID) > 1 && avgFlag
+            %    imStack = obj.getEpochStackAverage(epochID);
+            %    [signals, xLoc, yLoc] = getRoiPixels(imStack, obj.rois, roiID);
+            else % Multiple epochs
+                iStim = obj.epoch2stim(epochID(1));
+                for i = 1:numel(epochID)
+                    imStack = obj.getEpochStack(epochID(i));
+                    [A, xLoc, yLoc] = getRoiPixels(imStack, obj.rois, roiID);
+                    if i == 1
+                        signals = zeros(size(A,1), iStim.frames(), numel(epochID));
+                    end
+                    try
+                        signals(:, :, i) = A;
+                    catch
+                        % Epoch ended early or, for some reason, is long
+                        offset = size(signals,2) - size(A,2);
+                        if offset > 0
+                            warning('Epoch %u is %u points too short! Filled with NaN',...
+                                epochID(i), offset);
+                            signals(:, :, i) = [A, NaN(size(A,1), offset)];
+                        else
+                            error('Epoch %u is %u points too long!',...
+                                epochID(i), abs(offset));
+                        end
+                    end
+                end
+
+            end
+            
+            if ~isempty(smoothFac)
+                if ndims(signals) == 3
+                    signals = mysmooth32(signals, smoothFac);
+                elseif ndims(signals) == 2 %#ok<*ISMAT> 
+                    signals = mysmooth2(signals, smoothFac);
+                end
+            end
+
+            if ~isempty(highPassCutoff)
+                signals = signalHighPassFilter(signals, highPassCutoff, obj.frameRate);
+                if isempty(bkgdWindow)
+                    signals = signalMeanCorrect(signals);
+                else
+                    signals = signalBaselineCorrect(signals, bkgdWindow);
+                end
+            end
+
+            if ~isempty(bandPassCutoff)
+                signals = signalBandPassFilter(signals, bandPassCutoff, obj.frameRate);
+                if isempty(bkgdWindow)
+                    signals = signalMeanCorrect(signals);
+                else
+                    signals = signalBaselineCorrect(signals, bkgdWindow);
+                end
+            end
+
+            if avgFlag && ndims(signals) == 3
+                signals = mean(signals, 3);
+            end
+            
+        end
         
         function [signals, xpts] = getStimulusResponses(obj, whichStim, varargin)
             % GETSTIMULUSRESPONSES
@@ -515,7 +647,6 @@ classdef SpectralData < handle
 
     % Stimulus methods
     methods
-        
         function stim = epoch2stim(obj, epochID)
             % EPOCH2STIM
             % -------------------------------------------------------------

@@ -56,7 +56,6 @@ classdef RoiAverageView2 < handle
                 obj.signalsZ = roiZScores(data.getEpochResponses(epochIDs, []), bkgdWindow);
             catch
                 obj.signalsZ = [];
-                warning('No Z-scores!');
             end
             obj.stimWindow = (1/data.frameRate) * stimWindow;
             obj.bkgdWindow = bkgdWindow;
@@ -163,25 +162,30 @@ classdef RoiAverageView2 < handle
                 smoothFac = 1;
             end
             
+            hpFlag = ~isempty(obj.hpCut) && obj.hpCut ~= 0;
+            lpFlag = ~isempty(obj.lpCut) && obj.lpCut ~= 0;
             
-            % High pass filter if needed
-            if ~isempty(obj.hpCut) && obj.hpCut ~= 0
-                allSignals = signalHighPassFilter(allSignals', obj.hpCut, 25);
+            % Filtering
+            if hpFlag && lpFlag     % Bandpass filter
+                for i = 1:size(allSignals,2)
+                    allSignals(:,i) = bandpass(allSignals(:,i), ...
+                        sort([obj.hpCut, obj.lpCut]), 25.3);
+                end
+            elseif hpFlag           % Highpass filter
+                allSignals = signalHighPassFilter(allSignals', obj.hpCut, 25.3);
                 if ~isempty(obj.bkgdWindow)
                     allSignals = signalBaselineCorrect(allSignals, obj.bkgdWindow)'; 
                 else
                     allSignals = allSignals';
                     allSignals = allSignals - mean(allSignals,1);
                 end
-            end
-            
-            % Low pass filter if needed
-            if ~isempty(obj.lpCut) && obj.lpCut ~= 0
+            elseif lpFlag            % Lowpass filter
                 for i = 1:size(allSignals, 2)
                     allSignals(:, i) = lowPassFilter(...
                         allSignals(:, i), obj.lpCut, obj.xpts(2)-obj.xpts(1));
                 end
             end
+            
             % Derivative if needed
             if get(findByTag(obj.figureHandle, 'dfdt'), 'Value')
                 for i = 1:size(allSignals, 2)
