@@ -1,5 +1,17 @@
 function offsets = roiQuality(imStack, L, roiID)
     % ROIQUALITY
+    %
+    % Description:
+    %   Plots plots each pixel's correlation with mean ROI signal
+    %
+    % Syntax:
+    %   offsets = roiQuality(imStack, L, roiID)
+    %
+    % Inputs:
+    %   imStack         [x, y, t] video 
+    %   L               roi map
+    %   roiID           ROI number to analyze
+    %
     % ---------------------------------------------------------------------
 
     imStack = double(imStack);

@@ -20,3 +20,4 @@ function x = enumStr(enum)
     % ---------------------------------------------------------------------
 
     [~, x] = enumeration(enum);
+    x = string(x);

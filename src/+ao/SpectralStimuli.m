@@ -18,10 +18,15 @@ classdef SpectralStimuli
         Background0p60t
         Background2p60t
         Background5p60t
+        Background7p60t
         Background10p60t
         Background20p60t
         Background25p60t
         Background50p60t
+
+        Background0p80t
+        Background7p80t
+        Background35p80t
 
         Background0p110t
         Background10p110t
@@ -29,8 +34,11 @@ classdef SpectralStimuli
 
         Background0p120t
         Background5p120t
+        Background7p120t
         Background10p120t
+        Background35p120t
 
+        % Cone isolating increments and decrements
         LconeIncrement20s80t
         LconeDecrement20s80t
         MconeIncrement20s80t
@@ -71,6 +79,8 @@ classdef SpectralStimuli
         % Different mean levels
         LuminanceSquare5p20s160t
         LuminanceSquare10p20s160t
+        LuminanceSquare35p20s160t
+        
         SconeSquare5p20s160t
         SconeSquare10p20s160t
         SconeSquare5p10s160t
@@ -97,6 +107,10 @@ classdef SpectralStimuli
         LuminanceSine50hz25p120t
         LuminanceSine100hz25p120t
 
+        LuminanceSine1hz35p120t
+        LuminanceSine5hz35p120t
+        LuminanceSine10hz35p120t
+
         LuminanceSquare1hz10p120t
         LuminanceSquare5hz10p120t
         LuminanceSquare10hz10p120t
@@ -116,6 +130,17 @@ classdef SpectralStimuli
         LuminanceSquare30hz25p120t
         LuminanceSquare50hz25p120t
         LuminanceSquare100hz25p120t
+
+        
+        LuminanceSquare1hz35p120t
+        LuminanceSquare5hz35p120t
+        LuminanceSquare10hz35p120t
+        LuminanceSquare15hz35p120t
+        LuminanceSquare20hz35p120t
+        LuminanceSquare25hz35p120t
+        LuminanceSquare30hz35p120t
+        LuminanceSquare50hz35p120t
+        LuminanceSquare100hz35p120t
         
 
         % 160t temporal modulations
@@ -277,6 +302,11 @@ classdef SpectralStimuli
         YellowIntensitySeq2p5s160t
         WhiteIntensitySeq2p5s160t
 
+        RedIntensitySeq7p5s140t
+        GreenIntensitySeq7p5s140t
+        BlueIntensitySeq7p5s140t
+        WhiteIntensitySeq7p5s140t
+
         DecrementContrastSeq2p5s160t
 
         % Contrast response functions
@@ -287,6 +317,8 @@ classdef SpectralStimuli
         ContrastAltSeq5s2p140t
         ContrastAltSeq5s10p140t
         ContrastAltSeq5s10p160t
+
+        ContrastAltSeq5s7p160t
 
         % Spectral response functions
         RgbSeq0p80t
@@ -318,6 +350,9 @@ classdef SpectralStimuli
         GrwSeq5p175m200t
 
         WgrSeq5p175m200t
+
+        RgwSeq100m5s7p160t
+        WgrSeq100m5s7p160t
      
         % Toptica simulations
         TopticaSimBaselineAdapt
@@ -328,27 +363,35 @@ classdef SpectralStimuli
         % Lights on and lights off
         LightsOn2p100t
         LightsOn5p100t
+        LightsOn7p100t
         LightsOn10p100t
         LightsOn20p100t
         LightsOn25p100t
+        LightsOn35p100t
         LightsOn50p100t
 
         LightsOff2p100t
         LightsOff5p100t
+        LightsOff7p100t
         LightsOff10p100t
         LightsOff20p100t
         LightsOff25p100t
+        LightsOff35p100t
         LightsOff50p100t
 
-        % Misc stimuli
+        % Chirps
         LuminanceChirp
         LuminanceChirp50p110t
         LuminanceChirp50p240t
         LuminanceChirp5p160t
         LuminanceChirp10p160t
+        LuminanceChirp35p160t
+
         LuminanceChirp5p190t
         LuminanceChirp10p190t
         LuminanceChirp50p190t
+
+        % Misc stimuli
         LuminanceSquarewave1
         LuminanceSquare5hz50p100t
 
@@ -358,6 +401,12 @@ classdef SpectralStimuli
         SConeSinewave015
         LumSinewave015
         ControlSinewave015
+
+        % My versions of Tyler's stimuli
+        LConeSinewave015hz50p140t
+        MConeSinewave015hz50p140t
+        SConeSinewave015hz50p140t
+        LumSinewave015hz50p140t
         
         % Outdated contrast-varying stimuli
         LmsxDecrement20s80t 

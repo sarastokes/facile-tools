@@ -50,7 +50,7 @@ classdef RoiAverageView2 < handle
             if nargin > 5
                 obj.stim = stim;
             end
-            disp(bkgdWindow)
+
             [obj.signals, obj.xpts] = data.getEpochResponses(epochIDs, bkgdWindow);
             try
                 obj.signalsZ = roiZScores(data.getEpochResponses(epochIDs, []), bkgdWindow);
@@ -137,7 +137,11 @@ classdef RoiAverageView2 < handle
                 ylabel(obj.signalAxis, 'Response (SD)');
             else
                 allSignals = obj.signals;
-                ylabel(obj.signalAxis, 'Response (dF/F)');
+                if isempty(obj.bkgdWindow)
+                    ylabel(obj.signalAxis, 'Response (F)');
+                else
+                    ylabel(obj.signalAxis, 'Response (dF/F)');
+                end
             end 
             
             % Fill NaNs (warning appeared earlier on them)
@@ -153,7 +157,7 @@ classdef RoiAverageView2 < handle
 
             % Smooth each signal if needed
             h = findobj(obj.figureHandle, 'Tag', 'Smooth');
-            if ~isempty(h.String) && ~strcmp(h.String, '1')
+            if ~isempty(h.String) && ~ismember(h.String, {'0', '1'})
                 smoothFac = str2double(h.String);
                 for i = 1:size(allSignals, 2)
                     allSignals(:, i) = mysmooth(allSignals(:, i), smoothFac);
@@ -195,8 +199,14 @@ classdef RoiAverageView2 < handle
 
             % Normalize if needed
             if get(findobj(obj.figureHandle, 'Tag', 'Norm'), 'Value')
-                allSignals = bsxfun(@minus, allSignals,...
-                    median(allSignals(smoothFac+1 : (obj.stimWindow(1)/(1/obj.Dataset.frameRate)), :), 1));
+                if isempty(obj.stimWindow)
+                    for i = 1:size(allSignals,2)
+                        allSignals(:,i) = (allSignals(:,i)-min(allSignals(:,i))) / (max(allSignals(:,i))-min(allSignals(:,i)));
+                    end
+                else
+                    allSignals = bsxfun(@minus, allSignals,...
+                        median(allSignals(smoothFac+1 : (obj.stimWindow(1)/(1/obj.Dataset.frameRate)), :), 1));
+                end
             end
 
             % Bin data
