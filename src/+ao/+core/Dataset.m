@@ -23,6 +23,7 @@ classdef Dataset < handle
 %   getEpochStackAverage
 %   getStimulusAverage
 %   getStimulusResponses
+%   getStimulusQI
 %
 %   epoch2idx
 %   epoch2stim
@@ -678,7 +679,7 @@ classdef Dataset < handle
             %   IDs         array
             %       Epoch IDs corresponding to tforms (default=2:end)
             % -------------------------------------------------------------
-            
+
             obj.clearTransforms();
             
             if nargin < 3 || isempty(IDs)
@@ -690,8 +691,12 @@ classdef Dataset < handle
             end
             
             for i = 1:numel(IDs)
-                obj.transforms(num2str(IDs(i))) = ...
-                    affine2d(squeeze(tforms(:, :, i)));
+                if isnumeric(tforms)
+                    obj.transforms(num2str(IDs(i))) = ...
+                        affine2d(squeeze(tforms(:, :, i)));
+                else
+                    obj.transforms(num2str(IDs(i))) = tforms(i);
+                end
             end
         end
         
@@ -892,19 +897,28 @@ classdef Dataset < handle
             if ~isempty(obj.transforms) && isKey(obj.transforms, num2str(epochID)) ...
                     && ~isempty(obj.transforms(num2str(epochID)))
                 disp('Applying transform');
-                try
-                    tform = affine2d_to_3d(obj.transforms(num2str(epochID)));
-                    sameAsInput = affineOutputView(size(imStack), tform,... 
-                        'BoundsStyle','SameAsInput');
-                    imStack = imwarp(imStack, tform,... 
-                        'OutputView', sameAsInput);
-                catch
-                    [x, y, t] = size(imStack);
-                    refObj = imref2d([x y]);
-                    for i = 1:t
-                        imStack(:,:,i) = imwarp(imStack(:,:,i), refObj,...
-                            obj.transforms(num2str(epochID)),...
-                            'OutputView', refObj);
+                tform = obj.transforms(num2str(epochID));
+                if isa(tform, 'affine2d')
+                    try
+                        tform = affine2d_to_3d(obj.transforms(num2str(epochID)));
+                        sameAsInput = affineOutputView(size(imStack), tform,... 
+                            'BoundsStyle','SameAsInput');
+                        imStack = imwarp(imStack, tform,... 
+                            'OutputView', sameAsInput);
+                    catch
+                        [x, y, t] = size(imStack);
+                        refObj = imref2d([x y]);
+                        for i = 1:t
+                            imStack(:,:,i) = imwarp(imStack(:,:,i), refObj,...
+                                obj.transforms(num2str(epochID)),...
+                                'OutputView', refObj);
+                        end
+                    end
+                elseif isstruct(tform)
+                    for i = 1:size(imStack,3)
+                        imStack(:,:,i) = imwarp(imStack(:,:,i),... 
+                            tform.SpatialRefObj, tform.Transformation,...
+                            'OutputView', tform.SpatialRefObj);
                     end
                 end
             end
@@ -946,10 +960,10 @@ classdef Dataset < handle
             %   Method          dff, zscore (default = 'dff')
             %                   Only applies if bkgd was supplied
             %   Stim            stimulus (default = [])
-            %   Median          Use median for bkgd (default = false, mean) 
             %   Average         Average responses (default = false)
             %   Smooth          Sigma (default = [], no smoothing)
             %   HighPass        Cutoff frequency in Hz (default = [])
+            %   BandPass        Frequency range in Hz (default = [])
             %
             % Note:
             %   If bkgd is empty or not specified, the raw fluorescence
@@ -963,17 +977,21 @@ classdef Dataset < handle
             ip.CaseSensitive = false;
             ip.KeepUnmatched = true;
             addOptional(ip, 'Bkgd', [], @isnumeric);
-            addParameter(ip, 'Stim', []);
             addParameter(ip, 'Average', false, @islogical);
             addParameter(ip, 'Smooth', [], @isnumeric);
             addParameter(ip, 'HighPass', [], @isnumeric);
+            addParameter(ip, 'LowPass', [], @isnumeric);
+            addParameter(ip, 'BandPass', [], @(x) numel(x)==2 & isnumeric(x));
+            addParameter(ip, 'Norm', false, @islogical);
             parse(ip, varargin{:});
 
             bkgdWindow = ip.Results.Bkgd;
-            iStim = ip.Results.Stim;
             avgFlag = ip.Results.Average;
             smoothFac = ip.Results.Smooth;
+            lowPassCutoff = ip.Results.LowPass;
             highPassCutoff = ip.Results.HighPass;
+            bandPassCutoff = ip.Results.BandPass;
+            normFlag = ip.Results.Norm;
             
             if cellfind(ip.UsingDefaults, 'Bkgd')
                 iStim = obj.epoch2stim(epochID(1));
@@ -981,39 +999,16 @@ classdef Dataset < handle
             end
             
             if numel(epochID) == 1
-                iRois = obj.getEpochROIs(epochID);
                 imStack = obj.getEpochStack(epochID);
-                [signals, xpts] = roiResponses(imStack, iRois, bkgdWindow,...
+                [signals, xpts] = roiResponses(imStack, obj.rois, bkgdWindow,...
                     'FrameRate', obj.frameRate, ip.Unmatched);
-                % Check dropped frames
-                if ~isempty(obj.droppedFrames) && ~isempty(obj.droppedFrames{obj.epoch2idx(epochID)})
-                    frames = obj.droppedFrames{obj.epoch2idx(epochID)} - 2;
-                    for i = 1:numel(frames)
-                        if frames(i) > 1
-                            signals(:,frames(i)) = mean(signals(:,[frames(i)-1, frames(i)+1]),2);
-                        end
-                    end
-                    warning('Corrected NaNs');
-                end
             else % Multiple epochs
-                if isempty(iStim)
-                    iStim = obj.epoch2stim(epochID(1));
-                end
+                iStim = obj.epoch2stim(epochID(1));
                 signals = zeros(obj.numROIs, iStim.frames(), numel(epochID));
                 for i = 1:numel(epochID)
-                    iRois = obj.getEpochROIs(epochID(i));
                     imStack = obj.getEpochStack(epochID(i));
-                    [A, xpts] = roiResponses(imStack, iRois, bkgdWindow,...
+                    [A, xpts] = roiResponses(imStack, obj.rois, bkgdWindow,...
                         'FrameRate', obj.frameRate, ip.Unmatched);
-                    if ~isempty(obj.droppedFrames) && ~isempty(obj.droppedFrames{obj.epoch2idx(epochID(i))})
-                        frames = obj.droppedFrames{obj.epoch2idx(epochID(i))} - 2;
-                        for j = 1:numel(frames)
-                            if frames(j) > 1
-                                A(:,frames(j)) = mean(A(:,[frames(j)-1, frames(j)+1]),2);
-                            end
-                        end
-                        warning('Corrected NaNs');
-                    end
                     try
                         signals(:, :, i) = A;
                     catch
@@ -1039,15 +1034,30 @@ classdef Dataset < handle
                 end
             end
 
+            if ~isempty(bandPassCutoff)
+                signals = signalBandPassFilter(signals, bandPassCutoff, obj.frameRate);
+            end
+
             if ~isempty(highPassCutoff)
                 signals = signalHighPassFilter(signals, highPassCutoff, obj.frameRate);
-                signals = signalBaselineCorrect(signals, bkgdWindow); 
+                if isempty(bkgdWindow)
+                    signals = signalMeanCorrect(signals);
+                else
+                    signals = signalBaselineCorrect(signals, bkgdWindow); 
+                end
+            end
+
+            if ~isempty(lowPassCutoff)
+                signals = signalLowPassFilter(signals, lowPassCutoff, obj.frameRate);
+            end
+
+            if normFlag
+                signals = signalNormalize(signals, 2);
             end
 
             if avgFlag && ndims(signals) == 3
                 signals = mean(signals, 3);
             end
-
         end
     end
 
@@ -1347,6 +1357,7 @@ classdef Dataset < handle
             % 
             % Description:
             %   Computes ROI quality indices from multiple repeats of stim
+            %
             % Syntax:
             %   QI = obj.getStimulusQI(stimName, varargin)
             %
@@ -1355,12 +1366,15 @@ classdef Dataset < handle
             % -------------------------------------------------------------
             ip = inputParser();
             ip.CaseSensitive = false;
-            addParameter(ip, 'Smooth', 100, @isnumeric);
-            addParameter(ip, 'HighPass', [], @isnumeric);
+            ip.KeepUnmatched = true;
+            addParameter(ip, 'StartFrame', 1, @isnumeric);
+            addParameter(ip, 'EndFrame', 0, @isnumeric);
+            addParameter(ip, 'EndStop', 0, @isnumeric);
             parse(ip, varargin{:});
             
-            smoothFac = ip.Results.Smooth;
-            hpCutoff = ip.Results.HighPass;
+            startFrame = ip.Results.StartFrame;
+            endFrame = ip.Results.EndFrame;
+            endStop = ip.Results.EndStop;
 
             IDs = obj.stim2epochs(stimName);
             if numel(IDs) == 1
@@ -1368,15 +1382,15 @@ classdef Dataset < handle
                 return
             end
 
-            signals = obj.getEpochResponses(IDs);
+            signals = obj.getEpochResponses(IDs, ip.Unmatched);
+            if endFrame == 0
+                endFrame = size(signals,2);
+            end
+            if endStop ~= 0
+                endFrame = endFrame - endStop;
+            end
 
-            if ~isempty(hpCutoff)
-                signals = signalHighPassFilter(signals, hpCutoff, 1/obj.frameRate);
-            end
-            if ~isempty(smoothFac)
-                signals = mysmooth32(signals, ip.Results.Smooth);
-            end
-            QI = qualityIndex(signals);
+            QI = qualityIndex(signals(:, startFrame:endFrame, :));
         end
     end
     

@@ -13,6 +13,7 @@ classdef RoiRegistry < handle
         roiTable 
         uidTable 
         typeTable
+        uidProps
     end
 
     properties (Dependent)
@@ -25,6 +26,7 @@ classdef RoiRegistry < handle
         function obj = RoiRegistry(label)
             obj.label = label;
             obj.names = [];
+            obj.uidProps = containers.Map();
         end
 
         function value = get.numDatasets(obj)
@@ -105,7 +107,17 @@ classdef RoiRegistry < handle
             ylabel('# of imaging sessions');
             xlabel('# of UIDs');
             set(gca, 'XTick', 1:obj.numDatasets);
+        end
 
+        function populateUidProps(obj)
+            if isempty(obj.uidProps)
+                obj.uidProps = containers.Map();
+            end
+            for i = height(obj.uidTable.UID)
+                if ~obj.uidProps.isKey(obj.uidTable.UID(i))
+                    obj.uidProps(obj.uidTable.UID(i)) = "";
+                end
+            end
         end
        
         function populateTypeTable(obj)
@@ -121,9 +133,9 @@ classdef RoiRegistry < handle
                 repmat("", size(obj.uidTable.UID)),...
                 repmat("", size(obj.uidTable.UID)),...
                 'VariableNames', {'UID', 'N', 'Type', 'Info', 'Polarity', 'Kinetics', 'Color', 'RF', 'S', 'Notes'});
-                for i = 1:size(obj.uidTable,1)
-                    obj.typeTable.N(i) = nnz(obj.uidTable{i, 2:end});
-                end
+            for i = 1:size(obj.uidTable,1)
+                obj.typeTable.N(i) = nnz(obj.uidTable{i, 2:end});
+            end
         end
 
         function setTypeTable(obj, newTypeTable)
@@ -179,21 +191,8 @@ classdef RoiRegistry < handle
             % Update uidTable
             obj.createUidTable();
 
-            % Add new rows to type table
-            % if isempty(obj.typeTable)
-            %     newCol = repmat("", [numel(newUIDs), 1]);
-            %     obj.typeTable  = table(newUIDs, ones(numel(newUIDs), 1),...
-            %         newCol, newCol, newCol, newCol, newCol, newCol,...
-            %         newCol, newCol);
-            % else
-            %     for i = 1:numel(newUIDs)
-            %         obj.typeTable = [obj.typeTable; {newUIDs(i), 1, "","","","","","","",""}];
-            %     end
-            % end
-            % Update counts in type table
-            % for i = 1:size(obj.uidTable,1)
-            %     obj.typeTable.N(i) = nnz(obj.uidTable{i, 2:end});
-            % end
+            % Add new UIDs to uidProps
+            obj.populateUidProps();
         end
 
         function remove(obj, dsetName)

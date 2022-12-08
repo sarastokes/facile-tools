@@ -25,6 +25,7 @@ classdef Stimuli
         IntensityIncrement5s80t
         IntensityIncrement10s80t
         IntensityIncrement20s80t
+        IntensityIncrement80s180t
 
         IntensityIncrement50c10s80t
 
@@ -453,6 +454,8 @@ classdef Stimuli
                         else
                             n = 2000;
                         end
+                    elseif contains(stimName, '180t')
+                        n = 4500;
                     else
                         n = 1500;
                     end
@@ -507,6 +510,9 @@ classdef Stimuli
                 case Stimuli.IntensityIncrement20s80t
                     stim = zeros(1, obj.frames());
                     stim(501:1000) = 1;
+                case Stimuli.IntensityIncrement80s180t
+                    stim = zeros(1, obj.frames());
+                    stim(501:2500) = 1;
                 case Stimuli.ContrastIncrement20
                     stim(251:750) = 1;
                 case Stimuli.ContrastDecrement20
@@ -657,7 +663,7 @@ classdef Stimuli
                     elseif contains(char(obj), 'IntensityBar')
                         bkgd = [150 497];
                     elseif contains(char(obj), 'IntensityIncrement')
-                        bkgd = [250 498];
+                        bkgd = [200 498];
                     else
                         bkgd = [1 250];
                     end
@@ -699,6 +705,8 @@ classdef Stimuli
                     signal = [501 750];
                 case Stimuli.IntensityIncrement20s80t
                     signal = [501 1000];
+                case Stimuli.IntensityIncrement80s180t
+                    signal = [501 2500];
                 case Stimuli.IntensityIncrement50c10s80t
                     signal = [501 750];
                 case {Stimuli.ContrastIncrement20, Stimuli.ContrastDecrement20, Stimuli.ContrastDecrement20Half}
@@ -913,10 +921,13 @@ classdef Stimuli
                     obj = Stimuli.IntensityIncrement3s80t;
                 case 'zero_mean_increment_5s_80t'
                     obj = Stimuli.IntensityIncrement5s80t;
+                    
                 case 'zero_mean_increment_10s'
                     obj = Stimuli.IntensityIncrement10s80t;
                 case 'zero_mean_increment_20s'
                     obj = Stimuli.IntensityIncrement20s80t;
+                case 'intensity_increment_80s_180t'
+                    obj = Stimuli.IntensityIncrement80s180t;
                 case 'zero_mean_increment_50c_10s'
                     obj = Stimuli.IntensityIncrement50c10s80t;
                 case {'20s_contrast_increment', 'temporal_contrast_increment_20s', 'temporal_contrast_inc_20s'}

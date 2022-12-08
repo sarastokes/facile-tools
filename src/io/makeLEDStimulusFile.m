@@ -1,4 +1,4 @@
-function X = makeLEDStimulusFile(fName, X, varargin)
+function X = makeLEDStimulusFile(fName, X, ledObj)
     % MAKELEDSTIMULUSFILE
     %
     % Syntax:
@@ -10,10 +10,18 @@ function X = makeLEDStimulusFile(fName, X, varargin)
     %       specified, the file will save in cd
     %   X                           [N x 3]
     %       LED powers at each time point (default is every 2 ms)
+    %   ledObj                      sara.calibrations.MaxwellianView
+    %       Optional, used to get accurate LUT file names
     %
     % History:
     %   08Dec2021 - SSP
+    %   03Nov2022 - SSP - Added calibration obj for LUT file names
     % ---------------------------------------------------------------------
+    if nargin < 3
+        ledObj = [];
+    else
+        assert(isa(ledObj, 'sara.calibrations.MaxwellianView'));
+    end
 
     if size(X, 2) == 1
         X = [X, X, X];
@@ -35,9 +43,16 @@ function X = makeLEDStimulusFile(fName, X, varargin)
     fprintf(fid, '[header]\r\n');
     fprintf(fid, 'functionality    = 1\r\n');
     
-    fprintf(fid, 'lut1 		= F:\\FunctionalImaging\\ExperimentParameters\\LUTs\\LUT_660nm_20220905_1ndf.txt\r\n');
-    fprintf(fid, 'lut2 		= F:\\FunctionalImaging\\ExperimentParameters\\LUTs\\LUT_530nm_20220905_1ndf.txt\r\n');
-    fprintf(fid, 'lut3 		= F:\\FunctionalImaging\\ExperimentParameters\\LUTs\\LUT_420nm_20220905_1ndf.txt\r\n');
+    if isempty(ledObj)
+        fprintf(fid, 'lut1 		= F:\\FunctionalImaging\\ExperimentParameters\\LUTs\\LUT_660nm_20220905_1ndf.txt\r\n');
+        fprintf(fid, 'lut2 		= F:\\FunctionalImaging\\ExperimentParameters\\LUTs\\LUT_530nm_20220905_1ndf.txt\r\n');
+        fprintf(fid, 'lut3 		= F:\\FunctionalImaging\\ExperimentParameters\\LUTs\\LUT_420nm_20220905_1ndf.txt\r\n');
+    else
+        fprintf(fid, 'lut1 		= F:\\FunctionalImaging\\ExperimentParameters\\LUTs\\%s.txt\r\n', ledObj.files('LUT1'));
+        fprintf(fid, 'lut2 		= F:\\FunctionalImaging\\ExperimentParameters\\LUTs\\%s.txt\r\n', ledObj.files('LUT2'));
+        fprintf(fid, 'lut3 		= F:\\FunctionalImaging\\ExperimentParameters\\LUTs\\%s.txt\r\n', ledObj.files('LUT3'));
+    end
+        
 
     fprintf(fid, 'interval_value	= 2\r\n');
     fprintf(fid, 'interval_unit	= ms\r\n');

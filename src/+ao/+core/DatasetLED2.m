@@ -32,6 +32,24 @@ classdef DatasetLED2 < ao.core.Dataset
             end    
         end
 
+        function getStimuli(obj)
+            % GETSTIMULI
+            %
+            % Description:
+            %   Load stimuli from stimulus file names
+            %
+            % Syntax:
+            %   getStimuli(obj)
+            %
+            % -------------------------------------------------------------
+            stimList = [];
+            for i = 1:numel(obj.stimulusNames)
+                stimList = cat(1, stimList, ao.SpectralStimuli.init(obj.stimulusNames(i)));
+            end
+            obj.ledStimNames = stimList;
+            obj.stim = obj.populateStimulusTable();
+        end
+
         function setStimuli(obj, stimNames)
             % SETSTIMULI
             %
@@ -107,28 +125,39 @@ classdef DatasetLED2 < ao.core.Dataset
             end
         end
     
-        function stim = getEpochTrace(obj, epochID, whichLED)
+        function stim = getEpochTrace(obj, epochID, whichLED, frames)
             % GETEPOCHTRACE
             % 
             % Syntax:
             %   Returns red LED frame trace for specified epoch IDs
             % -------------------------------------------------------------
+            if nargin < 4
+                frames = true;
+            end
             if nargin < 3
                 whichLED = 4;
             end
             
             stim = [];
             for i = 1:numel(epochID)
-                T = obj.frameTables(epochID(i));
-                switch whichLED 
-                    case 1
-                        stim = cat(2, stim, T.R);
-                    case 2
-                        stim = cat(2, stim, T.G);
-                    case 3
-                        stim = cat(2, stim, T.B);
-                    otherwise
-                        stim = cat(2, stim, T.R + T.G + T.B);
+                if frames
+                    T = obj.frameTables(epochID(i));
+                else
+                    T = obj.ledTables(epochID(i));
+                end
+                try
+                    switch whichLED 
+                        case 1
+                            stim = cat(2, stim, T.R);
+                        case 2
+                            stim = cat(2, stim, T.G);
+                        case 3
+                            stim = cat(2, stim, T.B);
+                        otherwise
+                            stim = cat(2, stim, T.R + T.G + T.B);
+                    end
+                catch
+                    warning('Mismatch in stim length for epoch %u\n', epochID(i));
                 end
             end
         end

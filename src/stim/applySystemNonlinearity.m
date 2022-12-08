@@ -30,7 +30,7 @@ function stim = applySystemNonlinearity(stim0, visualize, powerClip)
         powerClip = false;
     end
 
-    dataDir = [fileparts(fileparts(mfilename('fullpath'))), filesep, 'data'];
+    dataDir = [fileparts(fileparts(fileparts(mfilename('fullpath')))), filesep, 'data'];
     load([dataDir, filesep, 'toptica_nonlinearity_2pctPWR.mat'])
 
     if powerClip

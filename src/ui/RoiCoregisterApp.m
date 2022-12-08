@@ -150,6 +150,10 @@ classdef RoiCoregisterApp < handle
                 end
                 numReg = numReg + 1;
                 alignedUid = obj.fixedDataset.roi2uid(alignedRoi);
+                if ismember(alignedUid, obj.movingUI.Table.Data{:,2})
+                    warning('Check on UID %s', alignedUID);
+                    continue
+                end
 
                 obj.StatusBox.Text = sprintf('ROI estimate = %u, %s\n',...
                     alignedRoi, alignedUid);

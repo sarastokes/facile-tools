@@ -6,7 +6,12 @@ function [data, avgSignal] = clusterPreprocess(rawData, smoothFac, bounds)
     %
     % History:
     %   08Oct2021 - SSP - Pulled from ClusterFeatures.m
+    %   07Nov2022 - SSP - Better input parsing, removed nanmean call
     % ---------------------------------------------------------------------
+
+    if isempty(smoothFac)
+        smoothFac = 0;
+    end
 
     [nRois, nFrames, nReps] = size(rawData);
     
@@ -25,7 +30,7 @@ function [data, avgSignal] = clusterPreprocess(rawData, smoothFac, bounds)
                 median(roiData(smoothFac+1 : bounds(1), :), 1));
         end
         data(i, :, :) = roiData;
-        avgSignal(i, :) = nanmean(roiData, 2) / max(abs(nanmean(roiData, 2)));  
+        avgSignal(i, :) = mean(roiData, 2, 'omitnan') / max(abs(mean(roiData, 2, 'omitnan')));  
         % TODO: Search and correct for NaNs ?
     end
     

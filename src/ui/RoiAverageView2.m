@@ -199,14 +199,31 @@ classdef RoiAverageView2 < handle
 
             % Normalize if needed
             if get(findobj(obj.figureHandle, 'Tag', 'Norm'), 'Value')
-                if isempty(obj.stimWindow)
+                %if ~isempty(obj.bkgdWindow)
+                %    allSignals = signalNormalize(allSignals', 2, obj.bkgdWindow)';
+                %if isempty(obj.stimWindow)
                     for i = 1:size(allSignals,2)
-                        allSignals(:,i) = (allSignals(:,i)-min(allSignals(:,i))) / (max(allSignals(:,i))-min(allSignals(:,i)));
+                        allSignals(:,i) = rescale(allSignals(:,i));
+                        allSignals(:,i) = allSignals(:,i) - mean(allSignals(window2idx(obj.bkgdWindow),i));
+                        %[s, l] = bounds(allSignals(:,i));
+                        %disp([s,l])
+                        %allSignals(:,i) = 1/diff([s,l]);
+                        %allSignals(:,i) = 1/max(abs([s, l])) * allSignals(:,i);
+                        %if max(allSignals(:,i), [], 1) < abs(min(allSignals(:,i), [], 1))
+                        %    maxFlag = -1;
+                        %else
+                        %    maxFlag = 1;
+                        %end
+                        %disp(maxFlag)
+                        %allSignals(obj.bkgdWindow(2)+1:end,i) = maxFlag * (allSignals(obj.bkgdWindow(2)+1:end,i)-min(allSignals(obj.bkgdWindow(2)+1:end,i))) ...
+                        %    / (max(allSignals(obj.bkgdWindow(2)+1:end,i))-min(allSignals(obj.bkgdWindow(2)+1:end,i)));
+                        %allSignals(obj.bkgdWindow(2)+1:end,i) = maxFlag * allSignals(obj.bkgdWindow(2)+1:end);
                     end
-                else
-                    allSignals = bsxfun(@minus, allSignals,...
-                        median(allSignals(smoothFac+1 : (obj.stimWindow(1)/(1/obj.Dataset.frameRate)), :), 1));
-                end
+                    %allSignals = allSignals - mean(allSignals(window2idx(obj.bkgdWindow),:), 1);
+                %else
+                    %allSignals = bsxfun(@minus, allSignals,...
+                    %    median(allSignals(smoothFac+1 : (obj.stimWindow(1)/(1/obj.Dataset.frameRate)), :), 1));
+                %end
             end
 
             % Bin data
@@ -340,7 +357,13 @@ classdef RoiAverageView2 < handle
                         obj.currentRoi = obj.Dataset.numROIs;
                         return;
                     end
-
+                case 'n'
+                    h = findobj(obj.figureHandle, 'Tag', 'Norm');
+                    if h.Value
+                        h.Value = 0;
+                    else
+                        h.Value = 1;
+                    end
                 otherwise
                     return;
             end
@@ -406,6 +429,7 @@ classdef RoiAverageView2 < handle
         end
 
         function onEdit_ROI(obj, src, ~)
+
             if obj.isUID(src.String)
                 newRoi = find(obj.Dataset.roiUIDs.UID == upper(src.String));
                 if isempty(newRoi)

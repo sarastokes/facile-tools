@@ -41,6 +41,7 @@ function [A, xpts] = roiDFF(imStack, roiMask, bkgdWindow, varargin)
     
     ip = inputParser();
     ip.CaseSensitive = false;
+    ip.KeepUnmatched = true;
     addParameter(ip, 'FrameRate', 25, @isnumeric);
     addParameter(ip, 'Median', false, @islogical);
     parse(ip, varargin{:});

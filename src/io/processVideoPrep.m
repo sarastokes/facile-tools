@@ -13,6 +13,7 @@ function [videoNames, p] = processVideoPrep(experimentDir, epochIDs, varargin)
     %   01Nov2021 - SSP 
     %   05Aug2022 - SSP - Updated for mac
     %   26Oct2022 - SSP - Extra header
+    %   09Nov2022 - SSP - Added UseFirst option (false = use last)
     % ---------------------------------------------------------------------
 
     if experimentDir(end) ~= filesep 
@@ -28,11 +29,13 @@ function [videoNames, p] = processVideoPrep(experimentDir, epochIDs, varargin)
     addParameter(ip, 'ExtraHeader', [], @ischar);
     addParameter(ip, 'Reflect', false, @islogical);
     addParameter(ip, 'UsingLEDs', false, @islogical);
+    addParameter(ip, 'UseFirst', true, @islogical);
     parse(ip, varargin{:});
     
     regType = ip.Results.RegistrationType;
     usingLEDs = ip.Results.UsingLEDs;
     extraHeader = ip.Results.ExtraHeader;
+    useFirst = ip.Results.UseFirst;
 
     % Keep parameters to pass back to ImageJ-MATLAB script
     p = ip.Results;
@@ -92,9 +95,16 @@ function [videoNames, p] = processVideoPrep(experimentDir, epochIDs, varargin)
                 videoNames(num2str(epochIDs(i))) = iNames;
                 continue
             else
-                warning('PROCESSVIDEOPREP: epoch %u - found %u registered videos, using the first',... 
-                    epochIDs(i), numel(idx));
-                idx = idx(1);
+                if useFirst
+                    warning('PROCESSVIDEOPREP: epoch %u - found %u registered videos, using the first',... 
+                        epochIDs(i), numel(idx));
+                    idx = idx(1);
+                else
+                    warning('PROCESSVIDEOPREP: epoch %u - found %u registered videos, using the last',... 
+                        epochIDs(i), numel(idx));
+                    idx = idx(end);
+                end
+                    
             end
         end
         videoNames(num2str(epochIDs(i))) = string(fullfile(visDir, char(f(idx))));

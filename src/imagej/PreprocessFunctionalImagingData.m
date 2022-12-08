@@ -38,6 +38,10 @@ k = videoNames.keys;
 run('ConnectToImageJ.m');
 import ij.*;
 
+%if p.Reflect
+%    IJ.setBatchMode("hide");
+%end
+
 % FOR LOOP STARTS HERE
 progressbar();
 for i = 1:numel(k)

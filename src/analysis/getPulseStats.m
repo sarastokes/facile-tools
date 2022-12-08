@@ -39,18 +39,22 @@ function T = getPulseStats(dataset, stim, varargin)
     onset = zeros(dataset.numROIs, size(ups,1));
     offset = zeros(size(onset));
     onoff = zeros(size(onset));
+    total = zeros(size(onset));
     maxVals = zeros(size(onset));
     for i = 1:size(ups,1)
         upTime = diff(ups(i,:));
         offsetFrames = ups(i,2) + [1, upTime];
         onset(:, i) = minormax(signals(:, window2idx(ups(i,:))), 2) - mean(signals(:,ups(i,1)-6:ups(i,1)-1),2);
         offset(:, i) = minormax(signals(:, window2idx(offsetFrames)), 2) - signals(:, ups(i,2));
+        total(:, i) = minormax(signals(:, window2idx([ups(i,1) offsetFrames(end)])), 2)...
+            - mean(signals(:,ups(i,1)-6:ups(i,1)-1),2);
         maxVals(:, i) = max(abs(signals(:, ups(i,1):offsetFrames(end))), [], 2);
         onoff(:, i) = (onset(:, i) - offset(:, i))./ (onset(:,i)+offset(:,i)) .* maxVals(:, i);
     end
 
     ID = rangeCol(1, dataset.numROIs);
-    T = table(ID, onset, offset, onoff, maxVals);
+    UID = dataset.roiUIDs.UID;
+    T = table(ID, UID, onset, offset, onoff, total, maxVals);
     % for i = 1:size(ups, 1)
         % upTime = diff(ups(i,:));
         % offsetFrames = ups(i,2) + [1, upTime];

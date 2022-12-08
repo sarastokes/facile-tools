@@ -323,12 +323,14 @@ classdef SpectralData < handle
             addParameter(ip, 'Average', false, @islogical);
             addParameter(ip, 'Smooth', [], @isnumeric);
             addParameter(ip, 'HighPass', [], @isnumeric);
+            addParameter(ip, 'LowPass', [], @isnumeric);
             addParameter(ip, 'BandPass', [], @(x) numel(x)==2 & isnumeric(x));
             parse(ip, varargin{:});
 
             bkgdWindow = ip.Results.Bkgd;
             avgFlag = ip.Results.Average;
             smoothFac = ip.Results.Smooth;
+            lowPassCutoff = ip.Results.LowPass;
             highPassCutoff = ip.Results.HighPass;
             bandPassCutoff = ip.Results.BandPass;
             
@@ -375,11 +377,6 @@ classdef SpectralData < handle
 
             if ~isempty(bandPassCutoff)
                 signals = signalBandPassFilter(signals, bandPassCutoff, obj.frameRate);
-                if isempty(bkgdWindow)
-                    signals = signalMeanCorrect(signals);
-                else
-                    signals = signalBaselineCorrect(signals, bkgdWindow);
-                end
             end
 
             if ~isempty(highPassCutoff)
@@ -391,11 +388,14 @@ classdef SpectralData < handle
                 end
             end
 
+            if ~isempty(lowPassCutoff)
+                signals = signalLowPassFilter(signals, lowPassCutoff, obj.frameRate);
+            end
+
             if avgFlag && ndims(signals) == 3
                 signals = mean(signals, 3);
             end
         end
-
 
         function [signals, xLoc, yLoc] = getEpochRoiPixelResponses(obj, epochID, roiID, varargin)
             % GETEPOCHROIPIXELRESPONSES
@@ -581,7 +581,7 @@ classdef SpectralData < handle
 
 
         
-        function avgStack = getStimulusAverage(obj, stimulusID)
+        function avgStack = getStimulusAverage(obj, stimulus)
             % GETSTIMULUSAVERAGE
             % 
             % Description:
@@ -589,14 +589,21 @@ classdef SpectralData < handle
             %
             % Syntax:
             %   avgStack = getStimulusAverage(obj, stimulusID);
+            %
+            % Inputs:
+            %   stimulus            stimulus name
+            %       Which stimulus to return all videos for
+            % 
+            % Outputs:
+            %   avgStack            [X, Y, T]
+            %       Average video for all presentations of stimulus
+            %
             % -------------------------------------------------------------
-            idx = find(obj.ledStimNames == obj.stimuliUsed(stimulusID));
+            IDs = obj.stim2epochs(stimulus);
 
-            fprintf('Loading %u videos for %s...\n',... 
-                numel(idx), obj.stimuliUsed(stimulusID));
             avgStack = [];
-            for i = 1:numel(idx)
-                avgStack = cat(4, avgStack, obj.getEpochStack(obj.epochIDs(idx(i))));
+            for i = 1:numel(IDs)
+                avgStack = cat(4, avgStack, obj.getEpochStack(IDs(i)));
             end
             avgStack = squeeze(mean(avgStack, 4));
             
@@ -604,6 +611,48 @@ classdef SpectralData < handle
                 obj.imSize = size(avgStack);
             end
         end       
+
+        
+        function QI = getStimulusQI(obj, stimName, varargin)
+            % GETSTIMULUSQI
+            % 
+            % Description:
+            %   Computes ROI quality indices from multiple repeats of stim
+            % Syntax:
+            %   QI = obj.getStimulusQI(stimName, varargin)
+            %
+            % See also:
+            %   QUALITYINDEX
+            % -------------------------------------------------------------
+            ip = inputParser();
+            ip.CaseSensitive = false;
+            addParameter(ip, 'Smooth', 100, @isnumeric);
+            addParameter(ip, 'HighPass', [], @isnumeric);
+            addParameter(ip, 'StartFrame', 1, @isnumeric);
+            parse(ip, varargin{:});
+            
+            smoothFac = ip.Results.Smooth;
+            hpCutoff = ip.Results.HighPass;
+            startFrame = ip.Results.StartFrame;
+
+            IDs = obj.stim2epochs(stimName);
+            if numel(IDs) == 1
+                QI = NaN(obj.numROIs, 1);
+                return
+            end
+
+            signals = obj.getEpochResponses(IDs);
+
+            if ~isempty(hpCutoff)
+                signals = signalHighPassFilter(signals(:,startFrame:end,:),... 
+                    hpCutoff, 1/obj.frameRate);
+            end
+            if ~isempty(smoothFac)
+                signals = mysmooth32(signals(:,startFrame:end,:),... 
+                    ip.Results.Smooth);
+            end
+            QI = qualityIndex(signals);
+        end
 
         function stim = getEpochTrace(obj, epochID, whichLED)
             % GETEPOCHTRACE
