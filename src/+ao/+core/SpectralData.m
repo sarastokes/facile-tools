@@ -17,7 +17,7 @@ classdef SpectralData < handle
         frameRates
     end
 
-    properties (SetAccess = private)
+    properties %(SetAccess = private)
         stim 
         numROIs
         videoNames  
@@ -25,7 +25,7 @@ classdef SpectralData < handle
         baseDirectory
     end
     
-    properties (SetAccess = private)
+    properties %(SetAccess = private)
         workingDirectory
         ledStimNames
         stimulusFiles
@@ -471,16 +471,14 @@ classdef SpectralData < handle
                     try
                         signals(:, :, i) = A;
                     catch
-                        % Epoch ended early or, for some reason, is long
-                        offset = size(signals,2) - size(A,2);
-                        if offset > 0
-                            warning('Epoch %u is %u points too short! Filled with NaN',...
-                                epochID(i), offset);
-                            signals(:, :, i) = [A, NaN(size(A,1), offset)];
-                        else
-                            error('Epoch %u is %u points too long!',...
-                                epochID(i), abs(offset));
+                        if size(signals, 2) > size(A, 2)
+                            warning('Epoch %u is %u points too short! Clipping output', epochID(i), offset);
+                            signals = signals(:, 1:size(A,2), :);
+                        elseif size(signals, 2) < size(A, 2)
+                            warning('Epoch %u is %u points too long! Clipping epoch response', epochID(i), offset);
+                            A = A(:, 1:size(signals, 2));
                         end
+                        signals(:,:,i) = A;
                     end
                 end
 
