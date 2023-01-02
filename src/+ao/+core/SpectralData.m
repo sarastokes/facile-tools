@@ -256,11 +256,18 @@ classdef SpectralData < handle
             %   imStack     uint8 matrix [X Y T R]
             % -------------------------------------------------------------
             imStacks = [];
+
             for i = 1:numel(epochIDs)
+                iStack = obj.getEpochStack(epochIDs(i));
                 try
-                    imStacks = cat(4, imStacks, obj.getEpochStack(epochIDs(i)));
+                    imStacks = cat(4, imStacks, iStack);
                 catch
-                    warning('Epoch %u was the wrong size, skipping', epochIDs(i));
+                    if size(imStacks, 3)  > size(iStack,3)
+                        imStacks = imStacks(:,:,1:size(iStack,3),:);
+                    elseif size(iStack, 3) > size(imStacks,3)
+                        iStack = iStack(:,:,1:size(imStacks,3));
+                    end
+                    imStacks = cat(4, imStacks, iStack);
                 end
             end
         end
@@ -277,10 +284,7 @@ classdef SpectralData < handle
             if ~isnumeric(epochIDs)
                 epochIDs = obj.stim2epochs(epochIDs);
             end
-            imStack = [];
-            for i = 1:numel(epochIDs)
-                imStack = cat(4, obj.getEpochStack(epochIDs(i)));
-            end
+            imStack = obj.getEpochStacks(epochIDs);
             imStack = squeeze(mean(imStack, 4));
         end
         
@@ -354,15 +358,14 @@ classdef SpectralData < handle
                         signals(:, :, i) = A;
                     catch
                         % Epoch ended early or, for some reason, is long
-                        offset = size(signals,2) - size(A,2);
-                        if offset > 0
-                            warning('Epoch %u is %u points too short! Filled with NaN',...
-                                epochID(i), offset);
-                            signals(:, :, i) = [A, NaN(size(A,1), offset)];
-                        else
-                            error('Epoch %u is %u points too long!',...
-                                epochID(i), abs(offset));
+                        if size(signals, 2) > size(A, 2)
+                            signals = signals(:, 1:size(A,2), :);
+                            warning('Epoch %u is too short!', epochID(i));
+                        elseif size(A, 2) > size(signals, 2)
+                            A = A(:, 1:size(signals, 2));
+                            warning('Epoch %u is too long!', epochID(i));
                         end
+                        signals(:, :, i) = A;
                     end
                 end
             end
@@ -468,14 +471,15 @@ classdef SpectralData < handle
                     if i == 1
                         signals = zeros(size(A,1), iStim.frames(), numel(epochID));
                     end
+
                     try
                         signals(:, :, i) = A;
                     catch
                         if size(signals, 2) > size(A, 2)
-                            warning('Epoch %u is %u points too short! Clipping output', epochID(i), offset);
+                            warning('Epoch %u is too short!', epochID(i));
                             signals = signals(:, 1:size(A,2), :);
                         elseif size(signals, 2) < size(A, 2)
-                            warning('Epoch %u is %u points too long! Clipping epoch response', epochID(i), offset);
+                            warning('Epoch %u is too long!', epochID(i));
                             A = A(:, 1:size(signals, 2));
                         end
                         signals(:,:,i) = A;
@@ -601,7 +605,17 @@ classdef SpectralData < handle
 
             avgStack = [];
             for i = 1:numel(IDs)
-                avgStack = cat(4, avgStack, obj.getEpochStack(IDs(i)));
+                iStack = obj.getEpochStack(IDs(i));
+                try
+                    avgStack = cat(4, avgStack, iStack);
+                catch
+                    if size(avgStack, 3)  > size(iStack,3)
+                        avgStack(:,:,1:size(iStack,3),:) = [];
+                    elseif size(iStack, 3) > size(avgStack,3)
+                        iStack = iStack(:,:,1:size(avgStack,3));
+                    end
+                    avgStack = cat(4, avgStack, iStack);
+                end
             end
             avgStack = squeeze(mean(avgStack, 4));
             
