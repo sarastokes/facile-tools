@@ -603,20 +603,7 @@ classdef SpectralData < handle
             % -------------------------------------------------------------
             IDs = obj.stim2epochs(stimulus);
 
-            avgStack = [];
-            for i = 1:numel(IDs)
-                iStack = obj.getEpochStack(IDs(i));
-                try
-                    avgStack = cat(4, avgStack, iStack);
-                catch
-                    if size(avgStack, 3)  > size(iStack,3)
-                        avgStack(:,:,1:size(iStack,3),:) = [];
-                    elseif size(iStack, 3) > size(avgStack,3)
-                        iStack = iStack(:,:,1:size(avgStack,3));
-                    end
-                    avgStack = cat(4, avgStack, iStack);
-                end
-            end
+            avgStack = obj.getEpochStacks(IDs);
             avgStack = squeeze(mean(avgStack, 4));
             
             if isempty(obj.imSize)
