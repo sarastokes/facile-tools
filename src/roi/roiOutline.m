@@ -64,7 +64,7 @@ function h = roiOutline(rois, ID, varargin)
     end
 
     % Determine the zoom region
-    if nPix > 0
+    if nPix > 0 && ~isempty(ID)
         S = regionprops('table', rois, 'BoundingBox');
         bBox = S{ID, :};
 

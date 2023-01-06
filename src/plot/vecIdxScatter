@@ -1,0 +1,13 @@
+function vecIdxScatter(vec1, vec2, idx, varargin)
+
+    if nargin < 4
+        opts = 'ob';
+    else
+        opts = varargin;
+    end
+
+    plot(vec1(idx), vec2(idx), opts{:});
+
+
+
+    
