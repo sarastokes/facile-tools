@@ -56,18 +56,3 @@ The coregistration UI can be useful for guiding segmentation and pointing out RO
 I generally end up with ~300 ROIs when image quality is good. Image quality varies between sessions so it may be that some sessions have far fewer clear ROIs. Also some ROIs that are clear in one experiment might be defocused in another due to slight changes in focus between experiments, so make sure each ROI is worth segmenting in each experiment independently.  
 
 Because the UIDs present vary across experiments, once an experiment is fully segmented, open RoiCoregistrationApp with each previous experiment in chronological order and auto-register with the fully segmented experiment. 
-
-### Experiments
-The earlier experiments are pretty well-segmented (thought I’m sure I’m still missing some) and can serve as reference for co-registration. Feel free to add ROIs if you find something missing. The later datasets I’ve only slighly segmented. 
-
-
-20221020 - 338
-20221101 - 300
-20221108 - 305
-20221201 - 20
-20221208 - 144
-20221213 - 21
-20220314 - 40
-
-UIDs starting with T are from Tyler's experiments in this area. New ROIs from 20221020 start with A, new ROIs from 20221101 not in Tyler's experiments or 20221020 start with B and so on... 
-
