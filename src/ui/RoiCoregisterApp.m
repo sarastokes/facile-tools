@@ -8,8 +8,8 @@ classdef RoiCoregisterApp < handle
         fixedXY(:,2)            double
         movingXY(:,2)           double
 
-        fixedUI                 % RoiManagerApp2
-        movingUI                % RoiManagerApp2
+        fixedUI                 % RoiManagerApp
+        movingUI                % RoiManagerApp
         listeners
 
         autoMode(1,1)           logical                         = false
@@ -123,8 +123,8 @@ classdef RoiCoregisterApp < handle
 
             % Compare images
             ax = axes('Parent', uipanel('Parent', mainLayout));
-            sameAsInput = affineOutputView(size(obj.movingDataset.avgImage), obj.tform,... 
-                'BoundsStyle','SameAsInput');
+            sameAsInput = affineOutputView(size(obj.movingDataset.avgImage),... 
+                 obj.tform, 'BoundsStyle','SameAsInput');
             imshowpair(obj.movingDataset.avgImage,...
                 imwarp(obj.fixedDataset.avgImage, obj.tform, 'OutputView', sameAsInput),... 
                 'Scaling', 'independent', 'Parent', ax);
@@ -357,12 +357,12 @@ classdef RoiCoregisterApp < handle
             obj.StatusBox.Layout.Row = 1;
             obj.StatusBox.Layout.Column = [1 2];
 
-            obj.fixedUI = RoiManagerApp2(obj.fixedDataset, mainLayout);
+            obj.fixedUI = RoiManagerApp(obj.fixedDataset, mainLayout);
             obj.fixedUI.setTag('fixed');
             obj.fixedUI.Layout.Layout.Row = 2;
             obj.fixedUI.Layout.Layout.Column = 1;
 
-            obj.movingUI = RoiManagerApp2(obj.movingDataset, mainLayout);
+            obj.movingUI = RoiManagerApp(obj.movingDataset, mainLayout);
             obj.movingUI.setTag('moving');
             obj.movingUI.Layout.Layout.Row = 2;
             obj.movingUI.Layout.Layout.Column = 2;

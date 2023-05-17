@@ -30,6 +30,8 @@ classdef SpectralStimuli
         Background7p80t
         Background35p80t
 
+        Background20p100t
+
         Background0p110t
         Background10p110t
         Background25p110t
@@ -104,15 +106,19 @@ classdef SpectralStimuli
 
 %% 120t temporal modulations
         % Sinewaves
+        LuminanceSine002hz10p120t
         LuminanceSine1hz10p120t
         LuminanceSine5hz10p120t
         LuminanceSine10hz10p120t
         LuminanceSine15hz10p120t
         LuminanceSine20hz10p120t
+        LuminanceSine21hz10p120t
         LuminanceSine25hz10p120t
         LuminanceSine30hz10p120t
         LuminanceSine50hz10p120t
         LuminanceSine100hz10p120t
+
+        SConeSine10hz10p120t
 
         LuminanceSine1hz25p120t
         LuminanceSine5hz25p120t
@@ -129,15 +135,24 @@ classdef SpectralStimuli
         LuminanceSine10hz35p120t
 
         % Squarewaves
+        LuminanceSquare002hz10p120t
         LuminanceSquare1hz10p120t
         LuminanceSquare5hz10p120t
         LuminanceSquare10hz10p120t
         LuminanceSquare15hz10p120t
         LuminanceSquare20hz10p120t
+        LuminanceSquare21hz10p120t
         LuminanceSquare25hz10p120t
         LuminanceSquare30hz10p120t
         LuminanceSquare50hz10p120t
         LuminanceSquare100hz10p120t
+
+        SConeSquare10hz10p120t
+
+        LuminanceSquare10hz10c10p120t
+        LuminanceSquare10hz20c10p120t
+        LuminanceSquare10hz50c10p120t
+        LuminanceSquare10hz75c10p120t
 
         LuminanceSquare1hz25p120t
         LuminanceSquare5hz25p120t
@@ -388,6 +403,8 @@ classdef SpectralStimuli
         ContrastAltSeq5s7p160t
         ContrastAltSeq5s10p160t
 
+        LuminanceContrastAltSeq4m5s20p120t
+
     %% Spectral response functions
         RgbSeq0p80t
         RgbSeq5p80t
@@ -458,6 +475,16 @@ classdef SpectralStimuli
         LuminanceChirp5p190t
         LuminanceChirp10p190t
         LuminanceChirp50p190t
+    
+    %% Noise
+        LuminanceBinaryNoise100d80s20p140t_16
+        LuminanceBinaryNoise100d80s20p140t_42
+        LuminanceBinaryNoise100d80s20p140t_505
+        LuminanceBinaryNoise100d80s20p140t_614
+        LuminanceBinaryNoise100d80s20p140t_721
+
+        LuminanceBinaryNoise50d80s20p140t_614
+        LuminanceBinaryNoise50d80s20p140t_721
 
     %% Tyler's Stimuli
         LConeSinewave015
@@ -652,6 +679,8 @@ classdef SpectralStimuli
                         bkgd = [250 498];
                     elseif contains(stimName, '180t')
                         bkgd = [100 495];
+                    elseif contains(stimName, '140t')
+                        bkgd = [150 495];
                     elseif contains(stimName, 'Chirp')
                         bkgd = [30 180]; % [1 190];
                     elseif contains(stimName, '100t')
@@ -877,12 +906,12 @@ classdef SpectralStimuli
                 stim = stim(1:stimPts);     % Clip just in case
 
                 if contains(stimName, 'Increment')
-                    modTime = [130 150] * 1000 / ledResolution;
-                    modPts = modTime * 1000 / ledResolution;
+                    modPts = [130 150] * 1000 / ledResolution;
+                    %modPts = modTime * 1000 / ledResolution;
                     stim(modPts(1):modPts(2)) = 2 * stim(modPts(1):modPts(2));
                 elseif contains(stimName, 'Decrement')
-                    modTime = [130 150] * 1000 / ledResolution;
-                    modPts = modTime * 1000 / ledResolution;
+                    modPts = [130 150] * 1000 / ledResolution;
+                    %modPts = modTime * 1000 / ledResolution;
                     stim(modPts(1):modPts(2)) = 0;
                 end
             end 
@@ -1151,9 +1180,26 @@ classdef SpectralStimuli
 
             % Auto identify: temporal tuning curves
             if contains(str, 'hz_')
-                hz = extractFlaggedNumber(str, 'hz_');
+                disp(str)
+                hz = num2str(extractFlaggedNumber(str, 'hz_'));
+                if contains(str, sprintf('0p%shz', hz))
+                    hz = ['00', hz];
+                end
                 totalTime = extractFlaggedNumber(str, 't');
                 baseIntensity = extractFlaggedNumber(str, 'p_');
+                contrast = extractFlaggedNumber(str, 'c_');
+                if isempty(contrast)
+                    contrastTxt = '';
+                else
+                    contrastTxt = sprintf('%uc', contrast);
+                end
+
+                switch str(1:4)
+                    case 'siso'
+                        spectralClass = 'SCone';
+                    case 'lumi'
+                        spectralClass = 'Luminance';
+                end
 
                 if contains(str, '_on_sawtooth')
                     modulationClass = 'OnSawtooth';
@@ -1167,8 +1213,9 @@ classdef SpectralStimuli
                     error('Unrecognized modulation class for %s', txt);
                 end
 
-                objTxt = sprintf('Luminance%s%uhz%up%ut',...
-                    modulationClass, hz, baseIntensity, totalTime);
+                objTxt = sprintf('%s%s%shz%s%up%ut',...
+                    spectralClass, modulationClass, hz,... 
+                    contrastTxt, baseIntensity, totalTime);
                 obj = SpectralStimuli.(objTxt);
                 return
             end
@@ -1178,32 +1225,42 @@ classdef SpectralStimuli
             %% Baseline
                 case 'baseline_0p_60t'
                     obj = SpectralStimuli.Background0p60t;
+                case 'baseline_20p_100t'
+                    obj = SpectralStimuli.Background20p100t;
                 case 'baseline_0p_120t'
                     obj = SpectralStimuli.Background0p120t;
                 case 'baseline_7p_120t'
                     obj = SpectralStimuli.Background7p120t;
                 case 'baseline_10p_120t'
                     obj = SpectralStimuli.Background10p120t;
+                case 'baseline_20p_120t'
+                    obj = SpectralStimuli.Background20p120t;
                 case 'baseline_35p_120t'
                     obj = SpectralStimuli.Background35p120t;
                 case {'lmsx_background', 'baseline'}
                     obj = SpectralStimuli.LmsxBackground;
                 case 'luminance_background_80t'
                     obj = SpectralStimuli.LuminanceBaseline;
+
             %% Lights on
                 case 'luminance_lights_on_7p_100t'
                     obj = SpectralStimuli.LightsOn7p100t;
                 case 'luminance_lights_on_10p_100t'
                     obj = SpectralStimuli.LightsOn10p100t;
+                case 'luminance_lights_on_20p_100t'
+                    obj = SpectralStimuli.LightsOn20p100t;
                 case 'luminance_lights_on_35p_100t'
                     obj = SpectralStimuli.LightsOn35p100t;
                 case 'lightson'
                     obj = SpectralStimuli.LightsOn;
+
             %% Lights off
                 case 'luminance_lights_off_10p_100t'
                     obj = SpectralStimuli.LightsOff10p100t;
                 case 'luminance_lights_off_7p_100t'
                     obj = SpectralStimuli.LightsOff7p100t;
+                case 'luminance_lights_off_20p_100t'
+                    obj = SpectralStimuli.LightsOff20p100t;
                 case 'luminance_lights_off_35p_100t'
                     obj = SpectralStimuli.LightsOff35p100t;
                 case 'lightsoff'
@@ -1236,6 +1293,7 @@ classdef SpectralStimuli
                     obj = SpectralStimuli.LuminanceSquare35p20s160t;
                 case 'siso_square_20s_100c_35p_160t'
                     obj = SpectralStimuli.SconeSquare35p20s160t;
+
             %% Chirp
                 case 'luminance_chirp'
                     obj = SpectralStimuli.LuminanceChirp;
@@ -1243,6 +1301,27 @@ classdef SpectralStimuli
                     obj = SpectralStimuli.LuminanceChirp10p160t;
                 case 'luminance_chirp_100s_35p_160t'
                     obj = SpectralStimuli.LuminanceChirp35p160t;
+
+            %% Binary noise
+                case 'luminance_binarynoise_100d_16seed_80s_20p_140t'
+                    obj = SpectralStimuli.LuminanceBinaryNoise100d80s20p140t_16;
+                case 'luminance_binarynoise_100d_42seed_80s_20p_140t'
+                    obj = SpectralStimuli.LuminanceBinaryNoise100d80s20p140t_42;
+                case 'luminance_binarynoise_100d_505seed_80s_20p_140t'
+                    obj = SpectralStimuli.LuminanceBinaryNoise100d80s20p140t_505;
+                case 'luminance_binarynoise_100d_614seed_80s_20p_140t'
+                    obj = SpectralStimuli.LuminanceBinaryNoise100d80s20p140t_614;
+                case 'luminance_binarynoise_100d_721seed_80s_20p_140t'
+                    obj = SpectralStimuli.LuminanceBinaryNoise100d80s20p140t_721;
+                case 'luminance_binarynoise_50d_614seed_80s_20p_140t'
+                    obj = SpectralStimuli.LuminanceBinaryNoise50d80s20p140t_614;
+                case 'luminance_binarynoise_50d_721seed_80s_20p_140t'
+                    obj = SpectralStimuli.LuminanceBinaryNoise50d80s20p140t_721;
+
+            %% Contrast Alt Sequence
+                case 'contrast_seq_u100_d100_u100_d100_20p_5s_120t'
+                    obj = SpectralStimuli.LuminanceContrastAltSeq4m5s20p120t;
+
             %% Cone-iso increments/decrements
                 case 'lcone_increment_20s_80t'
                     obj = SpectralStimuli.LconeIncrement20s80t;
@@ -1260,6 +1339,7 @@ classdef SpectralStimuli
                     obj = SpectralStimuli.LMconeIncrement20s80t;
                 case 'lmcone_decrement_20s_80t'
                     obj = SpectralStimuli.LMconeDecrement20s80t;
+
             %% 3 step modulations
                 case 'lmcone_steps_110t'
                     obj = SpectralStimuli.LMconeSteps110t;

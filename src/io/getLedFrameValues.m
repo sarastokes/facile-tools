@@ -47,13 +47,14 @@ function [T, frameRate] = getLedFrameValues(experimentDir, epochID)
     % Use the video size to determine which frames are relevant
     try
         videoPath = strrep(epochFile, '.csv', '.avi');
+        if ~exist(videoPath, 'file')
+            videoPath = strrep(epochFile, '.csv', 'O.avi');
+        end
         v = VideoReader(videoPath);
+        numFrames = v.NumFrames;
     catch
-        videoPath = strrep(epochFile, '.csv', 'O.avi');
-        v = VideoReader(videoPath);
+        numFrames = height(T);
     end
-
-    numFrames = v.NumFrames;
 
     % Remove extra frames and also the blank frames
     T = T(2:numFrames, :);

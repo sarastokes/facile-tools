@@ -21,7 +21,9 @@ function signals = signalBaselineCorrect(signals, bkgdWindow)
     bkgd = window2idx(bkgdWindow);
 
     if ndims(signals) == 3
-        signals = signals - median(signals(:,bkgd,:),2);
+        for i = 1:size(signals,3)
+            signals(:,:,i) = signals(:,:,i) - median(signals(:,bkgd,i),2);
+        end
     elseif ndims(signals) == 2
         signals = signals - median(signals(:, bkgd), 2);
     end

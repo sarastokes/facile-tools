@@ -1,29 +1,31 @@
 function [p, f] = signalPowerSpectrum(signal, sampleRate, varargin)
-    % SIGNALPOWERSPECTRUM
-    %
-    % Syntax:
-    %   [p, f] = signalPowerSpectrum(signal, sampleRate, verbose)
-    %
-    % Inputs:
-    %   signal          vector 
-    %       Data for calculating power spectrum
-    %   sampleRate      numeric
-    %       Samples per second (Hz)
-    % Optional inputs:
-    %   plot            logical (default = false)
-    %       Plot the output 
-    %
-    % Outputs:
-    %   p               vector
-    %       Power spectrum
-    %   f               vector
-    %       Frequencies (from 0 to sampleRate/2)
-    %
-    % History:
-    %   23Aug2020 - SSP
-    %   29Oct2021 - SSP - added compatibility with existing plots
-    %   27Oct2022 - SSP - added varargin pass to plot
-    % ---------------------------------------------------------------------
+% SIGNALPOWERSPECTRUM
+%
+% Syntax:
+%   [p, f] = signalPowerSpectrum(signal, sampleRate, verbose)
+%
+% Inputs:
+%   signal          vector 
+%       Data for calculating power spectrum
+%   sampleRate      numeric
+%       Samples per second (Hz)
+% Optional inputs:
+%   plot            logical (default = false)
+%       Plot the output 
+%   Parent          axis handle (default = false)
+%       Axis to plot output (if empty, new figure is created)
+%
+% Outputs:
+%   p               vector
+%       Power spectrum
+%   f               vector
+%       Frequencies (from 0 to sampleRate/2)
+%
+% History:
+%   23Aug2020 - SSP
+%   29Oct2021 - SSP - added compatibility with existing plots
+%   27Oct2022 - SSP - added varargin pass to plot
+% -------------------------------------------------------------------------
 
     ip = inputParser();
     ip.CaseSensitive = false;

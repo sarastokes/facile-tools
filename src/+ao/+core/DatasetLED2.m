@@ -124,6 +124,24 @@ classdef DatasetLED2 < ao.core.Dataset
                 A = cat(3, A, Ai);
             end
         end
+
+        function stim = getStimTrace(obj, stimName, whichLED, normFlag)
+        
+            if nargin < 4
+                normFlag = false;
+            end
+            
+            if nargin < 3
+                whichLED = 4;
+            end
+
+            epochIDs = obj.stim2epochs(stimName);
+            stim = obj.getEpochTrace(epochIDs(1), whichLED, true);
+            if normFlag
+                stim = (stim-min(stim)) / (max(stim)-min(stim));
+            end
+        end
+
     
         function stim = getEpochTrace(obj, epochID, whichLED, frames)
             % GETEPOCHTRACE
@@ -176,7 +194,7 @@ classdef DatasetLED2 < ao.core.Dataset
             %
             % See also:
             %   GETSQUAREMODULATIONTIMING
-            % -------------------------------------------------------------\
+            % -------------------------------------------------------------
             if ~isnumeric(ID)
                 ID = obj.stim2epochs(ID);
                 ID = ID(1);
@@ -329,7 +347,7 @@ classdef DatasetLED2 < ao.core.Dataset
             for i = 1:numel(obj.epochIDs)
                 % fileName = [obj.experimentDir, filesep, 'Vis', filesep, baseStr,... 
                 %     int2fixedwidthstr(obj.epochIDs(i), 4), '.json'];
-                visStr = [obj.extraHeader, 'vis_', int2fixedwidthstr(obj.epochIDs(i), 4)];
+                visStr = [obj.extraHeader, '_vis_', int2fixedwidthstr(obj.epochIDs(i), 4)];
                 idx = find(contains(visFiles, visStr));
                 if isempty(idx)
                     warning('JSON file for %u could not be found!', obj.epochIDs(i));

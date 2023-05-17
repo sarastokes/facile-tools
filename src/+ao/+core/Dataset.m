@@ -525,7 +525,7 @@ classdef Dataset < handle
             % -------------------------------------------------------------
 
             % If no input, guess the roi file name
-            if nargin < 2
+            if nargin < 2 || isempty(rois)
                 rois = normPath([obj.experimentDir, '\Analysis\',... 
                     obj.getLabel(), '_RoiSet.zip']);
             end
@@ -1415,7 +1415,13 @@ classdef Dataset < handle
             refFiles = refFiles(contains(refFiles, '.txt'));
             refFiles = refFiles(contains(refFiles, ['ref_', int2fixedwidthstr(epochID,4)]));
             refFiles = refFiles(~contains(refFiles, 'params'));
-            filePath = [obj.baseDirectory, filesep, 'Ref', filesep, char(refFiles(1))];
+            try
+                filePath = [obj.baseDirectory, filesep, 'Ref', filesep, char(refFiles(1))];
+            catch
+                warning('getAttributesFilename:FileNotFound',...
+                       'Attribut file was not found');
+                filePath = [];
+            end
         end
 
         function T = populateStimulusTable(obj)
@@ -1456,6 +1462,9 @@ classdef Dataset < handle
 
             for i = 1:numel(obj.epochIDs)
                 filePath = obj.getAttributesFilename(obj.epochIDs(i));
+                if isempty(filePath)
+                    continue
+                end
 
                 obj.stimulusFiles(i) = readProperty(filePath, 'Trial file name = ');
                 txt = strsplit(obj.stimulusFiles(i), filesep);

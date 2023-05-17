@@ -1,8 +1,11 @@
 classdef MatchedPoints < handle 
 
     properties (SetAccess = private)
+        % Image that is fixed
         fixedImage 
+        % Image that will change to be registered to fixedImage
         movingImage 
+        % 
         cpstruct
     
         tform
