@@ -25,7 +25,7 @@ classdef ImageComparisonApp < handle
 
             obj.im3 = imfuse(im1, im2,... 
                 'Scaling', 'joint',... 
-                'ColorChannels', [1 2 0]);
+                'ColorChannels', 'red-cyan');
 
             obj.alphaFactor = 0;
 

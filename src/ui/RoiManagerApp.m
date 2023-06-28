@@ -3,6 +3,9 @@ classdef RoiManagerApp < handle
     
     properties
         dataset
+        datasetName                     char
+        dsetImage      
+        rois                            double              
         roiTable
 
         Figure
@@ -40,15 +43,27 @@ classdef RoiManagerApp < handle
 
     methods
         function obj = RoiManagerApp(dataset, parentHandle)
+            if isa(dataset, 'ao.core.Dataset')
+                obj.datasetName = dataset.getLabel();
+                obj.dsetImage = dataset.avgImage;
+                obj.rois = dataset.rois;
+            elseif isa(dataset, 'SimpleDataset')
+                obj.datasetName = dataset.exptName;
+                obj.dsetImage = dataset.avgImage();
+                obj.rois = dataset.rois;
+            elseif isa(dataset, 'aod.builtin.annotations.Rois')
+                if ~isempty(dataset.Parent)
+                    obj.datasetName = dataset.Parent.getGroupName();
+                else
+                    obj.datasetName = dataset.Name;
+                end
+                obj.dsetImage = dataset.Image;
+                obj.rois = dataset.Data;
+            end
             obj.dataset = dataset;
 
             if nargin == 2
                 obj.Figure = parentHandle;
-            end
-
-            % Initialize UID matrix, if missing
-            if isempty(obj.dataset.roiUIDs)
-                obj.dataset.setRoiUIDs();
             end
 
             obj.createUi();
@@ -66,9 +81,13 @@ classdef RoiManagerApp < handle
 
     methods (Access = private)
         function onPush_Export(obj, ~, ~)
-            %assignin('base', 'roiUIDs', obj.Table.Data);
-            obj.dataset.setRoiUIDs(obj.Table.Data);
-            disp('Updated roiUIDs - remember to save dataset');
+            if isa(obj.dataset, 'aod.core.Annotation')
+                assignin('base', 'roiUIDs', obj.Table.Data);
+                disp('Saved to workspace as "roiUIDs"');
+            else
+                obj.dataset.setRoiUIDs(obj.Table.Data);
+                disp('Updated roiUIDs - remember to save dataset');
+            end
         end
 
         function onEdited_Cell(obj, src, evt)
@@ -124,7 +143,7 @@ classdef RoiManagerApp < handle
         function onImage_ButtonDown(obj, src, evt)
             switch class(src)
                 case 'matlab.graphics.primitive.Image'
-                    selectedRoi = obj.dataset.rois(...
+                    selectedRoi = obj.rois(...
                         round(evt.IntersectionPoint(2)), round(evt.IntersectionPoint(1)));
                 case {'matlab.graphics.chart.primitive.Line', 'matlab.graphics.primitive.Text'}
                     selectedRoi = obj.tag2roi(src.Tag);
@@ -234,7 +253,7 @@ classdef RoiManagerApp < handle
         function createUi(obj)
             if isempty(obj.Figure)
                 obj.Figure = uifigure(...
-                    'Name', obj.dataset.getLabel(),...
+                    'Name', obj.datasetName,...
                     'DefaultUicontrolFontSize', 12);
                 obj.Figure.Position(3) = obj.Figure.Position(3)+50;
                 obj.Figure.Position(4) = obj.Figure.Position(4)+100;
@@ -310,7 +329,7 @@ classdef RoiManagerApp < handle
             obj.Axes.Toolbar.Visible = 'off';
             hold(obj.Axes, 'on');
             obj.Image = imagesc(obj.Axes,... 
-                imadjust(obj.dataset.avgImage),... 
+                imadjust(obj.dsetImage),... 
                 'ButtonDownFcn', @obj.onImage_ButtonDown);
             axis(obj.Axes, 'equal', 'tight', 'off');
             colormap(obj.Axes, 'gray');
@@ -327,7 +346,7 @@ classdef RoiManagerApp < handle
         end
 
         function buildRoiViews(obj, parentHandle)
-             obj.roiTable = regionprops("table", obj.dataset.rois,... 
+             obj.roiTable = regionprops("table", obj.rois,... 
                 "Centroid", "EquivDiameter", "Extrema");
             obj.roiHandles = [];
             for i = 1:height(obj.roiTable)

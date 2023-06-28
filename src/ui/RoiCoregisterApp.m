@@ -1,23 +1,30 @@
 classdef RoiCoregisterApp < handle
+%
+% See also:
+%   RoiManagerApp, ImageComparisonApp
+% -----------------------------------------------------------------------
 
     properties
-        fixedDataset            % ao.core.Dataset
-        movingDataset           % ao.core.Dataset
+        fixedDataset                
+        movingDataset               
 
-        tform                   % affine2d
-        fixedXY(:,2)            double
-        movingXY(:,2)           double
+        tform                       % affine2d
+        fixedXY         (:,2)       double
+        movingXY        (:,2)       double
 
-        fixedUI                 % RoiManagerApp
-        movingUI                % RoiManagerApp
-        listeners
+        autoMode        (1,1)       logical             = false
+    end
 
-        autoMode(1,1)           logical                         = false
+    properties (Hidden, SetAccess = private)
+        fixedUI                     % RoiManagerApp
+        movingUI                    % RoiManagerApp
 
-        Figure(1,1)             %matlab.ui.Figure
-        MovingMarker(1,1)       matlab.graphics.primitive.Line
-        FixedMarker(1,1)        matlab.graphics.primitive.Line
-        StatusBox
+        listeners                   event.listener
+
+        Figure          (1,1)       matlab.ui.Figure
+        MovingMarker    (1,1)       matlab.graphics.primitive.Line
+        FixedMarker     (1,1)       matlab.graphics.primitive.Line
+        StatusBox       (1,1)       matlab.ui.control.Label
     end
 
     events
@@ -38,7 +45,6 @@ classdef RoiCoregisterApp < handle
             obj.listeners = [...
                 addlistener(obj.fixedUI, 'SelectedRoi', @obj.onRoiClicked),...
                 addlistener(obj.movingUI, 'SelectedRoi', @obj.onRoiClicked)];
-            % obj.movingUI.setListener(obj, 'SetNewUid');
         end
     end
 
@@ -69,11 +75,11 @@ classdef RoiCoregisterApp < handle
             grid(ax, 'on');
             ax.YLim(1) = 0; ax.XLim(1) = 0;
 
-            co = pmkmp(10, 'CubicL');
-            maxDist = max(roiDistances);
+            co = pmkmp(20, 'CubicL');
+            maxDist = max(roiDistances) - min(roiDistances)+1;
             for i = 1:numel(xM)
                 try
-                    iColor = co(10*round(roiDistances(i)/maxDist), :);
+                    iColor = co(round(20*(roiDistances(i)-min(roiDistances)+1)/maxDist), :);
                 catch
                     iColor = [0.2 0.2 0.5];
                 end
@@ -83,6 +89,19 @@ classdef RoiCoregisterApp < handle
             tightfig(ax.Parent);
             figPos(ax.Parent, 0.6, 1);
             drawnow;
+
+            figure(); hold on;
+            h = histogram(roiDistances, 'BinWidth', 0.5,...
+                'FaceColor', hex2rgb('0044cd'), 'FaceAlpha', 0.5);
+            h.BinLimits = [0 ceil(h.BinLimits(2))];
+            title([obj.movingUI.datasetName ' to ' obj.fixedUI.datasetName],...
+                'Interpreter', 'none');
+            xlabel("Co-registered ROI Distance");
+            ylabel("Number of ROIs")
+            figPos(gcf, 0.8, 0.6);
+            grid on
+            xlabel("Distance between Coregistered ROIs");
+            assignin('base','histHandle', h);
         end
 
         function checkTransform(obj)
@@ -123,16 +142,15 @@ classdef RoiCoregisterApp < handle
 
             % Compare images
             ax = axes('Parent', uipanel('Parent', mainLayout));
-            sameAsInput = affineOutputView(size(obj.movingDataset.avgImage),... 
+            sameAsInput = affineOutputView(size(obj.movingDataset.dsetImage),... 
                  obj.tform, 'BoundsStyle','SameAsInput');
-            imshowpair(obj.movingDataset.avgImage,...
-                imwarp(obj.fixedDataset.avgImage, obj.tform, 'OutputView', sameAsInput),... 
+            imshowpair(obj.movingDataset.dsetImage,...
+                imwarp(obj.fixedDataset.dsetImage, obj.tform, 'OutputView', sameAsInput),... 
                 'Scaling', 'independent', 'Parent', ax);
 
             set(tformLayout, 'Widths', [-1 242 -1]);
             set(leftLayout, 'Heights', [-1 67]);
             set(mainLayout, 'Widths', [-1 -0.75]);
-
         end
     
         function autoReg(obj)
@@ -300,6 +318,19 @@ classdef RoiCoregisterApp < handle
             obj.autoReg();
         end
 
+        function onMenu_CompareImages(obj, ~, ~)
+            if isempty(obj.tform)
+                return
+            end
+            outputView = affineOutputView(...
+                size(obj.fixedDataset.dsetImage), obj.tform,...
+                "BoundsStyle", "sameAsInput"); 
+            ImageComparisonApp(...
+                imadjust(obj.movingDataset.dsetImage), ...
+                imadjust(imwarp(obj.fixedDataset.dsetImage, obj.tform, ...
+                    'OutputView', outputView)));
+        end
+
         function onMenu_ListCoregistered(obj, ~, ~)
             idx = ismember(obj.fixedUI.Table.DisplayData{:,2},...
                 obj.movingUI.Table.DisplayData{:,2});
@@ -342,7 +373,7 @@ classdef RoiCoregisterApp < handle
 
         function createUi(obj)
             obj.Figure = uifigure(...
-                'Name', [obj.movingDataset.getLabel() ' to ' obj.fixedDataset.getLabel()],...
+                'Name', [obj.movingDataset.datasetName ' to ' obj.fixedDataset.datasetName],...
                 'DefaultUicontrolFontSize', 12,...
                 'KeyPressFcn', @obj.onKeyPress);
                        
@@ -389,8 +420,10 @@ classdef RoiCoregisterApp < handle
             mItem.MenuSelectedFcn = @obj.onMenu_ColorCoregistered;
 
             mItem = uimenu(hMenu, 'Text', 'List Coregistered');
-            mItem.Accelerator = 'L';
             mItem.MenuSelectedFcn = @obj.onMenu_ListCoregistered;
+
+            mItem = uimenu(hMenu, 'Text', 'Compare Registered Images');
+            mItem.MenuSelectedFcn = @obj.onMenu_CompareImages;
 
             % Create target marker
             obj.MovingMarker = line(obj.movingUI.Axes, NaN, NaN,...
