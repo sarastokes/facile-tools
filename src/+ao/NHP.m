@@ -7,6 +7,7 @@ classdef NHP < double
         MW00848 (848)
         MW00846 (846)
         MW00851 (851)
+        MW02105 (2105)
     end
 
     methods 
@@ -72,6 +73,12 @@ classdef NHP < double
                     else
                         out = 16.97;
                     end
+                case NHP.MW02105
+                    if strcmp(whichEye, 'OD')
+                        out = 21.18;
+                    else
+                        out = 21.21;
+                    end
             end            
         end
 
@@ -84,6 +91,8 @@ classdef NHP < double
                     out = 'M';
                 case NHP.MW00851
                     out = 'F';
+                case NHP.MW02105
+                    out = 'M';
                 otherwise
                     out = 'Unknown';
             end
@@ -165,6 +174,8 @@ classdef NHP < double
                     obj = NHP.MW00838;
                 elseif contains(ID, '848')
                     obj = NHP.MW00848;
+                elseif contains(ID, '105')
+                    obj = NHP.MW02105;
                 else
                     error('Unrecognized ID string: %s', ID);
                 end
@@ -176,6 +187,8 @@ classdef NHP < double
                         obj = NHP.MW00838;
                     case 848
                         obj = NHP.MW00848;
+                    case 2105
+                        obj = NHP.MW02105;
                     otherwise
                         error('Unrecognized ID number: %u', ID);
                 end

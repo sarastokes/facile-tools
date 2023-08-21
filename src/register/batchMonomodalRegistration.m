@@ -15,17 +15,18 @@ function [REG, quality, IDs] = batchMonomodalRegistration(imStack, refID, vararg
     % See also:
     %   runMonomodalRegistration2, registrationEstimator
     % ---------------------------------------------------------------------
-    
+
     ip = inputParser();
     ip.CaseSensitive = false;
-    addParameter(ip, 'Plot', false, @islogical);
+    ip.KeepUnmatched = true;
     addParameter(ip, 'OmitSkips', false, @islogical);
     addParameter(ip, 'IDs', 1:size(imStack,3), @isnumeric);
     parse(ip, varargin{:});
-    
-    plotFlag = ip.Results.Plot;
+
     omitSkips = ip.Results.OmitSkips;
     IDs = ip.Results.IDs;
+
+    assert(numel(IDs) == size(imStack, 3), 'Number of IDs must match number of images');
 
     % Extract reference from IDs and imStack
     refIdx = find(IDs==refID); disp(refIdx)
@@ -36,13 +37,12 @@ function [REG, quality, IDs] = batchMonomodalRegistration(imStack, refID, vararg
     REG = []; quality = [];
     for i = 1:(size(regStack, 3))
         fprintf('Registering %u\n\t', IDs(i));
-        [S, Q] = runMonomodalRegistration2(squeeze(regStack(:,:,i)), FIXED,...
-            'Normalize', false, 'Blur', false, 'Plot', plotFlag);
-        if Q.Warning
-            fprintf('\t');
-            [S, Q] = runMonomodalRegistration2(squeeze(regStack(:,:,i)), FIXED,...
-            'Normalize', true, 'Blur', true, 'Plot', plotFlag);
-        end
+        [S, Q] = runMonomodalRegistration2(squeeze(regStack(:,:,i)), FIXED, ip.Unmatched);
+        % if Q.Warning
+        %     fprintf('\t');
+        %     [S, Q] = runMonomodalRegistration2(squeeze(regStack(:,:,i)), FIXED,...
+        %     'Normalize', true, 'Blur', true, 'Plot', plotFlag);
+        % end
         REG = cat(1, REG, S);
         quality = cat(1, quality, Q);
     end
@@ -54,7 +54,7 @@ function [REG, quality, IDs] = batchMonomodalRegistration(imStack, refID, vararg
             badReg = cat(1, badReg, i);
             % Sometimes registration errors occur when the non-registered
             % images are already very similar. Flag these for registration
-            % to be skipped. 
+            % to be skipped.
             if quality(i).OldSSIM > 0.9
                 quality(i).RegFlag = false;
                 skipReg = cat(1, skipReg, i);

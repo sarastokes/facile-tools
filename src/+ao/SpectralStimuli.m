@@ -11,6 +11,8 @@ classdef SpectralStimuli
     end
 
     enumeration
+        NoiseBackground 
+        
     %% Backgrounds (varying mean and time)
         Background
         BackgroundQuarter
@@ -31,6 +33,7 @@ classdef SpectralStimuli
         Background35p80t
 
         Background20p100t
+        Background40p100t
 
         Background0p110t
         Background10p110t
@@ -40,7 +43,11 @@ classdef SpectralStimuli
         Background5p120t
         Background7p120t
         Background10p120t
+        Background20p120t
         Background35p120t
+        Background40p120t
+
+        Background40p130t
 
         % Cone isolating increments and decrements
         LconeIncrement20s80t
@@ -51,7 +58,7 @@ classdef SpectralStimuli
         SconeDecrement20s80t
         LMconeIncrement20s80t
         LMconeDecrement20s80t
-        
+
     %% 20 second, full contrasts modulations
         % 2 step stimuli
         LuminanceDecInc20s90t
@@ -64,7 +71,7 @@ classdef SpectralStimuli
         LuminanceSteps120t
 
         LuminanceIncDecInc5p10s80t
-        
+
         % 5 step stimuli
         LconeSquare150t
         MconeSquare150t
@@ -80,32 +87,40 @@ classdef SpectralStimuli
         LuminanceSquare160t
         LuminanceSine160t
 
-        LuminanceSquare20s160t
         IsoluminanceSquare20s160t
+        IsoluminanceSquare40p20s160t
 
+        LuminanceSquare20s160t
         LuminanceSquare5p20s160t
         LuminanceSquare7p20s160t
         LuminanceSquare10p20s160t
         LuminanceSquare35p20s160t
-        
+        LuminanceSquare40p20s160t
+
         SconeSquare20s160t
         SconeSquare5p20s160t
         SconeSquare10p20s160t
         SconeSquare35p20s160t
         SconeSquare5p10s160t
         SconeSquare10p10s160t
+        SconeSquare40p20s160t
 
         % 5 second, full contrast modulations
         LuminanceSquare5s50p90t
         IsoluminanceSquare5s50p90t
 
-        % Varying green LED 
+        LuminanceSquare5s40p130t
+        IsoluminanceSquare5s40p130t
+        LMconeSquare5s40p130t
+        SconeSquare5s40p130t
+
+        % Varying green LED
         IsoluminanceSquare5s50g50p90t
         IsoluminanceSquare5s100g50p90t
         IsoluminanceSquare5s200g50p90t
 
 %% 120t temporal modulations
-        % Sinewaves
+    % Sinewaves
         LuminanceSine002hz10p120t
         LuminanceSine1hz10p120t
         LuminanceSine5hz10p120t
@@ -118,7 +133,22 @@ classdef SpectralStimuli
         LuminanceSine50hz10p120t
         LuminanceSine100hz10p120t
 
+        LuminanceSine1hz40p120t
+        LuminanceSine5hz40p120t
+        LuminanceSine10hz40p120t
+        LuminanceSine15hz40p120t
+        LuminanceSine20hz40p120t
+        LuminanceSine25hz40p120t
+
         SConeSine10hz10p120t
+        SConeSine10hz40p120t
+
+        IsoluminanceSine1hz40p120t
+        IsoluminanceSine5hz40p120t
+        IsoluminanceSine10hz40p120t
+        IsoluminanceSine15hz40p120t
+        IsoluminanceSine20hz40p120t
+        IsoluminanceSine25hz40p120t
 
         LuminanceSine1hz25p120t
         LuminanceSine5hz25p120t
@@ -134,7 +164,7 @@ classdef SpectralStimuli
         LuminanceSine5hz35p120t
         LuminanceSine10hz35p120t
 
-        % Squarewaves
+    % Squarewaves
         LuminanceSquare002hz10p120t
         LuminanceSquare1hz10p120t
         LuminanceSquare5hz10p120t
@@ -163,7 +193,7 @@ classdef SpectralStimuli
         LuminanceSquare30hz25p120t
         LuminanceSquare50hz25p120t
         LuminanceSquare100hz25p120t
-        
+
         LuminanceSquare1hz35p120t
         LuminanceSquare5hz35p120t
         LuminanceSquare10hz35p120t
@@ -173,6 +203,10 @@ classdef SpectralStimuli
         LuminanceSquare30hz35p120t
         LuminanceSquare50hz35p120t
         LuminanceSquare100hz35p120t
+
+        LuminanceSquare1hz40p120t
+        LuminanceSquare5hz40p120t
+        LuminanceSquare10hz40p120t
 
         % ON sawtooths
         LuminanceOnSawtooth1hz10p110t
@@ -195,7 +229,7 @@ classdef SpectralStimuli
         LuminanceOffSawtooth30hz10p110t
         LuminanceOffSawtooth50hz10p110t
         LuminanceOffSawtooth100hz10p110t
-        
+
         LuminanceOffSawtooth1hz10p120t
         LuminanceOffSawtooth5hz10p120t
         LuminanceOffSawtooth10hz10p120t
@@ -205,7 +239,7 @@ classdef SpectralStimuli
         LuminanceOffSawtooth30hz10p120t
         LuminanceOffSawtooth50hz10p120t
         LuminanceOffSawtooth100hz10p120t
-        
+
 
     %% 160t temporal modulations
         % Sinewaves
@@ -218,7 +252,7 @@ classdef SpectralStimuli
         LuminanceSine30hz5p160t
         LuminanceSine50hz5p160t
         LuminanceSine100hz5p160t
-        
+
         LuminanceSine1hz25p160t
         LuminanceSine5hz25p160t
         LuminanceSine10hz25p160t
@@ -239,7 +273,7 @@ classdef SpectralStimuli
         LuminanceSquare30hz5p160t
         LuminanceSquare50hz5p160t
         LuminanceSquare100hz5p160t
-        
+
         % Off sawtooths
         LuminanceOffSawtooth1hz5p160t
         LuminanceOffSawtooth5hz5p160t
@@ -250,7 +284,7 @@ classdef SpectralStimuli
         LuminanceOffSawtooth30hz5p160t
         LuminanceOffSawtooth50hz5p160t
         LuminanceOffSawtooth100hz5p160t
-        
+
         LuminanceOffSawtooth1hz25p160t
         LuminanceOffSawtooth5hz25p160t
         LuminanceOffSawtooth10hz25p160t
@@ -271,7 +305,7 @@ classdef SpectralStimuli
         LuminanceOnSawtooth30hz5p160t
         LuminanceOnSawtooth50hz5p160t
         LuminanceOnSawtooth100hz5p160t
-        
+
         LuminanceOnSawtooth1hz25p160t
         LuminanceOnSawtooth5hz25p160t
         LuminanceOnSawtooth10hz25p160t
@@ -320,7 +354,7 @@ classdef SpectralStimuli
     %% Suppressed-by-contrast
         LuminanceSquare100hz2p80t
         LuminanceSquare100hz5p80t
-        
+
     %% Increments and decrements of varying types and lengths
         LuminanceIncrement20s80t
         LuminanceDecrement20s80t
@@ -359,7 +393,7 @@ classdef SpectralStimuli
         LuminanceIncrement0p10s60t
         LuminanceIncrement0p10s80t
         LuminanceIncrement0p20s80t
-        
+
     %% Intensity response functions
         IntensitySeq0p105t
         IntensitySeq5p105t
@@ -399,11 +433,15 @@ classdef SpectralStimuli
     %% Alternating contrast series
         ContrastAltSeq5s2p140t
         ContrastAltSeq5s10p140t
-        
+
         ContrastAltSeq5s7p160t
         ContrastAltSeq5s10p160t
 
         LuminanceContrastAltSeq4m5s20p120t
+        LuminanceContrastAltSeq6m5s40p160t
+
+    %% Temporal response functions
+        TemporalSeq1s3s5s10s100i0p160t
 
     %% Spectral response functions
         RgbSeq0p80t
@@ -420,7 +458,7 @@ classdef SpectralStimuli
         RgwSeq2p25m200t
         RgwSeq2p50m200t
         RgwSeq2p175m200t
-        
+
         RgwSeq5p25m200t
         RgwSeq5p50m200t
         RgwSeq5p100m200t
@@ -430,7 +468,8 @@ classdef SpectralStimuli
 
         RgySeq5p25m200t
         RgySeq5p175m200t
-        
+
+
         GrwSeq5p100m200t
         GrwSeq5p175m200t
 
@@ -438,7 +477,9 @@ classdef SpectralStimuli
 
         RgwSeq100m5s7p160t
         WgrSeq100m5s7p160t
-     
+
+        RgwSeq175m5s20p160t
+
     %% Toptica simulations
         TopticaSimBaselineAdapt
         TopticaSimIncrement20s
@@ -453,6 +494,7 @@ classdef SpectralStimuli
         LightsOn20p100t
         LightsOn25p100t
         LightsOn35p100t
+        LightsOn40p100t
         LightsOn50p100t
 
         LightsOff2p100t
@@ -462,6 +504,7 @@ classdef SpectralStimuli
         LightsOff20p100t
         LightsOff25p100t
         LightsOff35p100t
+        LightsOff40p100t
         LightsOff50p100t
 
     %% Chirps
@@ -471,11 +514,34 @@ classdef SpectralStimuli
         LuminanceChirp5p160t
         LuminanceChirp10p160t
         LuminanceChirp35p160t
+        LuminanceChirp40p160t
+        LuminanceChirpReversed40p160t
 
+        LuminanceChirp40p50s110t
+        LuminanceChirp40p60s120t
+        LuminanceChirp40p80s140t
+
+        RedChirp40p160t
+        GreenChirp40p160t
+        IsoluminanceChirp40p160t
+        IsoluminanceChirpReversed40p160t
+
+        LMconeChirp40p160t
+        LMconeChirp17c40p160t
+
+        SconeChirp40p160t
+
+        % Older versions with a step
         LuminanceChirp5p190t
         LuminanceChirp10p190t
         LuminanceChirp50p190t
-    
+
+    %% Step, chirp, contrast sweep together
+        LuminanceFullChirp40p225t
+
+    %% ContrastSweep
+        LuminanceContrastRamp10hz40p100s160t
+
     %% Noise
         LuminanceBinaryNoise100d80s20p140t_16
         LuminanceBinaryNoise100d80s20p140t_42
@@ -498,9 +564,9 @@ classdef SpectralStimuli
         MConeSinewave015hz50p140t
         SConeSinewave015hz50p140t
         LumSinewave015hz50p140t
-        
+
     %% Outdated contrast-varying stimuli
-        LmsxDecrement20s80t 
+        LmsxDecrement20s80t
         LmsxIncrement20s80t
         LuminanceIncrement20s80tOld
         LuminanceDecrement20s80tOld
@@ -512,20 +578,20 @@ classdef SpectralStimuli
     %% Other outdated stimuli
         LightsOn
         LightsOnQuarter
-        LightsOff 
+        LightsOff
 
     %% Misc old stimuli
         LuminanceSquarewave1
         LuminanceSquare5hz50p100t
 
     %% Placeholder for unrecognized stimuli
-        Other 
+        Other
     end
 
-    methods       
+    methods
         function tf = isBaseline(obj)
             import ao.SpectralStimuli;
-            
+
             if contains(char(obj), {'Background', 'Baseline'})
                  tf = true;
             else
@@ -569,7 +635,7 @@ classdef SpectralStimuli
             elseif contains(char(obj), '20s80t')
                 f = 1000;
             end
-            
+
         end
 
         function n = frames(obj, truncate)
@@ -586,10 +652,10 @@ classdef SpectralStimuli
             if nargin < 2
                 truncate = true;
             end
-            
+
             stimName = char(obj);
 
-            switch stimName 
+            switch stimName
                 case 'LmsxBackground'
                     n = 2000;
                 case {'Background', 'BackgroundQuarter'}
@@ -607,6 +673,9 @@ classdef SpectralStimuli
                         n = 2020;
                     elseif contains(stimName, '240t')
                         n = 6060;
+                    elseif contains(stimName, '225t') && contains(stimName, 'FullChirp')
+                        n = 5680;
+                        disp('hey')
                     elseif contains(stimName, '180t')
                         n = 4540;
                     elseif contains(stimName, '80t')
@@ -623,6 +692,8 @@ classdef SpectralStimuli
                         n = 2750;
                     elseif contains(stimName, '120t')
                         n = 3020;
+                    elseif contains(stimName, '130t')
+                        n = 3280;
                     elseif contains(stimName, '140t')
                         n = 3530;
                     elseif contains(stimName, '150t')
@@ -644,7 +715,7 @@ classdef SpectralStimuli
                 n = n - 1;
             end
         end
-        
+
         function bkgd = bkgd(obj, truncate)
             % BKGD
             %
@@ -656,7 +727,7 @@ classdef SpectralStimuli
             %       Account for removal of the first blank frame
             % ---------------------------------------------------------
             import ao.SpectralStimuli;
-            
+
             if nargin < 2
                 truncate = true;
             end
@@ -670,7 +741,7 @@ classdef SpectralStimuli
                     bkgd = [20 370];
                 case SpectralStimuli.LightsOn
                     bkgd = [250 490];
-                case {SpectralStimuli.LuminanceChirp5p190t, SpectralStimuli.LuminanceChirp5p160t, SpectralStimuli.LuminanceChirp10p160t, SpectralStimuli.LuminanceChirp10p190t, SpectralStimuli.LuminanceChirp50p190t}
+                case {SpectralStimuli.LuminanceChirp5p190t, SpectralStimuli.LuminanceContrastRamp10hz40p100s160t, SpectralStimuli.LuminanceChirp5p160t, SpectralStimuli.LuminanceChirp10p160t, SpectralStimuli.LuminanceChirp10p190t, SpectralStimuli.LuminanceChirp50p190t}
                     bkgd = [100 498];
                 case {'LConeSinewave015','LumSinewave015','MConeSinewave015','SConeSinewave015','ControlSinewave015'}
                     bkgd = [];
@@ -679,7 +750,7 @@ classdef SpectralStimuli
                         bkgd = [250 498];
                     elseif contains(stimName, '180t')
                         bkgd = [100 495];
-                    elseif contains(stimName, '140t')
+                    elseif contains(stimName, {'160t', '140t', '130t', '120t'})
                         bkgd = [150 495];
                     elseif contains(stimName, 'Chirp')
                         bkgd = [30 180]; % [1 190];
@@ -693,7 +764,7 @@ classdef SpectralStimuli
                         bkgd = [100 495];
                     elseif contains(stimName, 'Sine160t')
                         bkgd = [350 495];
-                    elseif contains(stimName, {'Steps', 'Square', 'DecInc', 'Sine', 'Sawtooth'})
+                    elseif contains(stimName, {'Steps', 'Square', 'DecInc', 'Sine', 'Sawtooth', 'Chirp'})
                         bkgd = [100 490]; % [1 500]
                     elseif contains(stimName, '20s80t')
                         if contains(stimName, 'Old')
@@ -709,12 +780,12 @@ classdef SpectralStimuli
                         bkgd = [];
                     end
             end
-            
+
             if truncate && ~isempty(bkgd)
                 bkgd(2) = bkgd(2) - 1;
             end
         end
-     
+
         function signal = signal(obj, truncate)
             % SIGNAL
             %
@@ -729,13 +800,13 @@ classdef SpectralStimuli
             if nargin < 2
                 truncate = true;
             end
-            
+
             switch obj
                 case SpectralStimuli.Background
                     signal = [500 1500];
                 case SpectralStimuli.LuminanceSteps120t
                     signal = [376 2250];
-                case SpectralStimuli.LuminanceChirp 
+                case SpectralStimuli.LuminanceChirp
                     signals = [196 1315];
                 otherwise
                     stimName = char(obj);
@@ -747,7 +818,7 @@ classdef SpectralStimuli
                         signal = [506 3036];
                     elseif contains(stimName, 'Steps120t')
                         signal = [380 2280];
-                    elseif contains(stimName, '20s80t') 
+                    elseif contains(stimName, '20s80t')
                         if contains(stimName, 'Old')
                             signal = [750 1250];
                         else  % cone, lmsx
@@ -756,14 +827,14 @@ classdef SpectralStimuli
                     elseif contains(stimName, '10s80t')
                         signal = [507 750];
                     elseif contains(stimName, '5s80t')
-                        signal = [507 1500]; 
+                        signal = [507 1500];
                     elseif contains(stimName, '3s80t')
                         signal = [507 1575];
                     else
                         signal = [];
                     end
             end
-            
+
             if truncate
                 signal = signal - 1;
             end
@@ -781,7 +852,7 @@ classdef SpectralStimuli
             if numel(epochID) > 1
                 epochID = epochID(1);
             end
-            
+
             stimName = char(obj);
             ups = [];
             downs = [];
@@ -792,7 +863,10 @@ classdef SpectralStimuli
                 else
                     [ups, downs] = getSquareModulationTiming(dataset.frameTables(epochID), 1, frameFlag);
                 end
-            elseif contains(stimName, 'RgbSeq') 
+            elseif contains(stimName, 'TemporalSeq')
+                ups = getSquareModulationTiming(dataset.frameTables(epochID), 4, frameFlag);
+                downs = [];
+            elseif contains(stimName, 'RgbSeq')
                 for i = 1:3
                     ups = cat(1, ups, dataset.getFrameTables(epochID, i, frameFlag));
                 end
@@ -801,7 +875,7 @@ classdef SpectralStimuli
                     tmp = getSquareModulationTiming(dataset.frameTables(epochID), i, frameFlag);
                     ups = cat(1, ups, tmp(1,:));
                 end
-            elseif contains(stimName, 'RgySeq')              
+            elseif contains(stimName, 'RgySeq')
                     ups = getSquareModulationTiming(dataset.frameTables(epochID), 1, frameFlag);
                     ups = cat(1, ups,...
                         getSquareModulationTiming(dataset.frameTables(epochID), 2, frameFlag));
@@ -817,7 +891,7 @@ classdef SpectralStimuli
                 [ups, downs] = getSquareModulationTiming(dataset.frameTables(epochID), 4, frameFlag);
             end
         end
-                 
+
         function stim = trace(obj, truncate)
             % TRACE
             %
@@ -835,7 +909,7 @@ classdef SpectralStimuli
             end
 
             stim = 0.5 * ones(1, obj.frames());
-            
+
             stimName = char(obj);
 
             if contains(stimName, 'LightsOn')
@@ -914,8 +988,8 @@ classdef SpectralStimuli
                     %modPts = modTime * 1000 / ledResolution;
                     stim(modPts(1):modPts(2)) = 0;
                 end
-            end 
-            
+            end
+
             if truncate
                 stim = stim((obj.FRAME_RATE+1):end);
             end
@@ -923,14 +997,14 @@ classdef SpectralStimuli
 
         function app = openRoiAverageView(obj, dataset)
             % OPENROIAVERAGEVIEW
-            % 
+            %
             % Description:
             %   Open RoiAverageView with stim-specific defaults
             %
             % Syntax:
             %   app = obj.openRoiAverageView(dataset)
             % -------------------------------------------------------------
-            import ao.SpectralStimuli;        
+            import ao.SpectralStimuli;
 
             % epochIDs = dataset.stim2epochs(obj);
             epochIDs = dataset.epochIDs(dataset.ledStimNames == obj);
@@ -938,9 +1012,9 @@ classdef SpectralStimuli
             titleStr = [char(dataset.experimentDate), ' ', char(obj)];
 
             if contains(char(obj), {'20s80t', '10s80t'})
-                app = RoiAverageView2(dataset, epochIDs, obj.bkgd,... 
+                app = RoiAverageView2(dataset, epochIDs, obj.bkgd,...
                     obj.signal, titleStr);
-            elseif contains(char(obj), 'Chirp')
+            elseif contains(char(obj), 'Chirp') && ~contains(char(obj), 'FullChirp')
                 app = RoiAverageView2(dataset, epochIDs, obj.bkgd,...
                     obj.signal, titleStr, dataset.getEpochTrace(epochIDs(1)));
             elseif contains(char(obj), {'SconeSquare', 'BlueIncrement'})
@@ -955,7 +1029,7 @@ classdef SpectralStimuli
                 app = RoiAverageView2(dataset, epochIDs, obj.bkgd,...
                     obj.signal, titleStr, obj.trace(true));
             elseif contains(char(obj), 'Background')
-                app = RoiAverageView2(dataset, epochIDs, [],... 
+                app = RoiAverageView2(dataset, epochIDs, [],...
                         [], titleStr);
             elseif contains(char(obj), {'LightsOn', 'LightsOff'})
                 app = RoiAverageView2(dataset, epochIDs, obj.bkgd,...
@@ -964,10 +1038,10 @@ classdef SpectralStimuli
                 app = RoiAverageView2(dataset, epochIDs, obj.bkgd,...
                     obj.getStimWindows(dataset, epochIDs(1), true), ...
                     titleStr, dataset.frameTables(epochIDs(1)));
-            elseif contains(char(obj), 'IntensitySeq')
+            elseif contains(char(obj), {'TemporalSeq', 'IntensitySeq'})
                 app = RoiAverageView2(dataset, epochIDs, obj.bkgd,...
                     obj.getStimWindows(dataset, epochIDs(1), true), ...
-                    titleStr, dataset.frameTables(epochIDs(1)));
+                    titleStr, dataset.getEpochTrace(epochIDs(1),4));
             else
                 warning('Using generic interface!');
                 app = RoiAverageView2(dataset, epochIDs, obj.bkgd,...
@@ -994,12 +1068,12 @@ classdef SpectralStimuli
             addParameter(ip, 'Omit', [], @isnumeric);
             parse(ip, varargin{:});
 
-            normFlag = ip.Results.Norm; 
+            normFlag = ip.Results.Norm;
             avgOnly = ip.Results.AvgOnly;
             omitIdx = ip.Results.Omit;
             clipValue = ip.Results.Clip;
             LW = ip.Results.LineWidth;
-            
+
             avgColor = ip.Results.Color;
             if isempty(avgColor)
                 [avgColor, allColor] = obj.getStimColor();
@@ -1101,7 +1175,7 @@ classdef SpectralStimuli
             allColor = lighten(avgColor, 0.7);
         end
     end
-    
+
     methods (Static)
         function stim = addPulse(stim, stimWindow, value)
             % ADDPULSE
@@ -1112,20 +1186,20 @@ classdef SpectralStimuli
             ind = window2idx(stimWindow);
             stim(ind) = value;
         end
-        
+
         function x = frames2leds(nFrames, truncate)
             if nargin < 2
                 truncate = true;
             end
-            
+
             t = nFrames * (1/ao.SpectralStimuli.FRAME_RATE);
-            
+
             ledTime = 1 / obj.LED_RATE;
             nLedPts = t / ledTime;
 
             x = 1:nLedPts;
             x = ledTime * x + ledTime;
-            
+
             if truncate
                 x(1) = [];
             end
@@ -1147,7 +1221,7 @@ classdef SpectralStimuli
 
             import ao.SpectralStimuli;
 
-            try 
+            try
                 obj = SpectralStimuli.(str);
                 return
             end
@@ -1156,31 +1230,40 @@ classdef SpectralStimuli
                 str = char(str);
             end
 
-            
+            if isempty(str)
+                obj = SpectralStimuli.NoiseBackground;
+                return
+            end
+
+
             if ismember('\', char(str)) % Stimulus files have PC filesep
                 str = strsplit(str, '\');
                 str = str{end};
             end
-            
+
             if strcmp(str(end), ' ')
                 str = str(1:end-1);
             end
-            
+
             str = erase(str, '.txt');
             str = erase(str, '_right');
             str = erase(str, '_left');
             str = erase(str, ',');
-            
+
             str = strrep(str, ' ', '_');
 
             % Remove date tag, if exists
-            if endsWith(str, '2022') || endsWith(str, '2023') 
+            if endsWith(str, '2022') || endsWith(str, '2023')
                 str = str(1:end-10);
             end
 
             % Auto identify: temporal tuning curves
             if contains(str, 'hz_')
                 disp(str)
+                if contains(str, 'contrastramp')
+                    obj = SpectralStimuli.LuminanceContrastRamp10hz40p100s160t;
+                    return
+                end
                 hz = num2str(extractFlaggedNumber(str, 'hz_'));
                 if contains(str, sprintf('0p%shz', hz))
                     hz = ['00', hz];
@@ -1199,6 +1282,8 @@ classdef SpectralStimuli
                         spectralClass = 'SCone';
                     case 'lumi'
                         spectralClass = 'Luminance';
+                    case 'isol'
+                        spectralClass = 'Isoluminance';
                 end
 
                 if contains(str, '_on_sawtooth')
@@ -1214,7 +1299,7 @@ classdef SpectralStimuli
                 end
 
                 objTxt = sprintf('%s%s%shz%s%up%ut',...
-                    spectralClass, modulationClass, hz,... 
+                    spectralClass, modulationClass, hz,...
                     contrastTxt, baseIntensity, totalTime);
                 obj = SpectralStimuli.(objTxt);
                 return
@@ -1227,6 +1312,8 @@ classdef SpectralStimuli
                     obj = SpectralStimuli.Background0p60t;
                 case 'baseline_20p_100t'
                     obj = SpectralStimuli.Background20p100t;
+                case 'baseline_40p_100t'
+                    obj = SpectralStimuli.Background40p100t;
                 case 'baseline_0p_120t'
                     obj = SpectralStimuli.Background0p120t;
                 case 'baseline_7p_120t'
@@ -1237,6 +1324,10 @@ classdef SpectralStimuli
                     obj = SpectralStimuli.Background20p120t;
                 case 'baseline_35p_120t'
                     obj = SpectralStimuli.Background35p120t;
+                case 'baseline_40p_120t'
+                    obj = SpectralStimuli.Background40p120t;
+                case 'baseline_40p_130t'
+                    obj = SpectralStimuli.Background40p130t;
                 case {'lmsx_background', 'baseline'}
                     obj = SpectralStimuli.LmsxBackground;
                 case 'luminance_background_80t'
@@ -1251,6 +1342,8 @@ classdef SpectralStimuli
                     obj = SpectralStimuli.LightsOn20p100t;
                 case 'luminance_lights_on_35p_100t'
                     obj = SpectralStimuli.LightsOn35p100t;
+                case 'luminance_lights_on_40p_100t'
+                    obj = SpectralStimuli.LightsOn40p100t;
                 case 'lightson'
                     obj = SpectralStimuli.LightsOn;
 
@@ -1263,13 +1356,15 @@ classdef SpectralStimuli
                     obj = SpectralStimuli.LightsOff20p100t;
                 case 'luminance_lights_off_35p_100t'
                     obj = SpectralStimuli.LightsOff35p100t;
+                case 'luminance_lights_off_40p_100t'
+                    obj = SpectralStimuli.LightsOff40p100t;
                 case 'lightsoff'
                     obj = SpectralStimuli.LightsOff;
 
             %% Intensity increments
-                case 'luminance_intensity_increment_100i_0p_10s_80t'
+                case {'luminance_intensity_increment_100i_0p_10s_80t', 'luminance_increment_100i_10s_0p_80t'}
                     obj = SpectralStimuli.IntensityIncrement0p10s80t;
-                
+
                 case 'luminance_increment_1i_80s_0p_180t'
                     obj = SpectralStimuli.IntensityIncrement1i0p80s180t;
                 case 'luminance_increment_2i_80s_0p_180t'
@@ -1287,12 +1382,27 @@ classdef SpectralStimuli
                 case 'luminance_increment_100i_80s_0p_180t'
                     obj = SpectralStimuli.IntensityIncrement0p80s180t;
 
+            %% Step square waves
                 case 'luminance_square_20s_100c_7p_160t'
                     obj = SpectralStimuli.LuminanceSquare7p20s160t;
                 case 'luminance_square_20s_100c_35p_160t'
                     obj = SpectralStimuli.LuminanceSquare35p20s160t;
+                case 'luminance_square_20s_100c_40p_160t'
+                    obj = SpectralStimuli.LuminanceSquare40p20s160t;
+                case 'isoluminance_square_20s_100c_40p_160t'
+                    obj = SpectralStimuli.IsoluminanceSquare40p20s160t;
                 case 'siso_square_20s_100c_35p_160t'
                     obj = SpectralStimuli.SconeSquare35p20s160t;
+                case 'siso_square_20s_100c_40p_160t'
+                    obj = SpectralStimuli.SconeSquare40p20s160t;
+                case 'siso_square_5s_100c_40p_130t'
+                    obj = SpectralStimuli.SconeSquare5s40p130t;
+                case 'isoluminance_square_5s_100c_40p_130t'
+                    obj = SpectralStimuli.IsoluminanceSquare5s40p130t;
+                case 'lmiso_square_5s_100c_40p_130t'
+                    obj = SpectralStimuli.LMconeSquare5s40p130t;
+                case 'luminance_square_5s_100c_40p_130t'
+                    obj = SpectralStimuli.LuminanceSquare5s40p130t;
 
             %% Chirp
                 case 'luminance_chirp'
@@ -1301,6 +1411,36 @@ classdef SpectralStimuli
                     obj = SpectralStimuli.LuminanceChirp10p160t;
                 case 'luminance_chirp_100s_35p_160t'
                     obj = SpectralStimuli.LuminanceChirp35p160t;
+                case 'luminance_chirp_100s_40p_160t'
+                    obj = SpectralStimuli.LuminanceChirp40p160t;
+                case 'luminance_reverse_chirp_100s_40p_160t'
+                    obj = SpectralStimuli.LuminanceChirpReversed40p160t;
+                case 'red_chirp_100s_40p_160t'
+                    obj = SpectralStimuli.RedChirp40p160t;
+                case 'green_chirp_100s_40p_160t'
+                    obj = SpectralStimuli.GreenChirp40p160t;
+                case 'isoluminance_chirp_100s_40p_160t'
+                    obj = SpectralStimuli.IsoluminanceChirp40p160t;
+                case 'isoluminance_reverse_chirp_100s_40p_160t'
+                    obj = SpectralStimuli.IsoluminanceChirpReversed40p160t;
+                case 'lmiso_chirp_100s_40p_160t'
+                    obj = SpectralStimuli.LMconeChirp40p160t;
+                case 'lmiso_chirp_17c_100s_40p_160t'
+                    obj = SpectralStimuli.LMconeChirp17c40p160t;
+                case 'siso_chirp_100s_40p_160t'
+                    obj = SpectralStimuli.SconeChirp40p160t;
+                case 'luminance_chirp_50s_40p_110t'
+                    obj = SpectralStimuli.LuminanceChirp40p50s110t;
+                case 'luminance_chirp_60s_40p_120t'
+                    obj = SpectralStimuli.LuminanceChirp40p60s120t;
+                case 'luminance_chirp_80s_40p_140t'
+                    obj = SpectralStimuli.LuminanceChirp40p80s140t;
+                case 'luminance_fullchirp_40p_225t'
+                    obj = SpectralStimuli.LuminanceFullChirp40p225t;
+
+            %% Contrast ramp
+                case 'luminance_contrastramp_10hz_100s_40p_160t'
+                    obj = SpectralStimuli.LuminanceContrastRamp10hz40p100s160t;
 
             %% Binary noise
                 case 'luminance_binarynoise_100d_16seed_80s_20p_140t'
@@ -1321,6 +1461,16 @@ classdef SpectralStimuli
             %% Contrast Alt Sequence
                 case 'contrast_seq_u100_d100_u100_d100_20p_5s_120t'
                     obj = SpectralStimuli.LuminanceContrastAltSeq4m5s20p120t;
+                case 'contrast_seq_u20_d20_u50_d50_u100_d100_20p_5s_160t'
+                    obj = SpectralStimuli.LuminanceContrastAltSeq6m5s40p160t;
+
+            %% Temporal Sequence
+                case 'luminance_temporal_seq_1s_3s_5s_10s_100i_0p_140t'
+                    obj = SpectralStimuli.TemporalSeq1s3s5s10s100i0p160t;
+
+            %% Spectral Sequence
+                case 'rgw_seq_5s_175m_20p_160t'
+                    obj = SpectralStimuli.RgwSeq175m5s20p160t;
 
             %% Cone-iso increments/decrements
                 case 'lcone_increment_20s_80t'
@@ -1358,7 +1508,7 @@ classdef SpectralStimuli
                     obj = SpectralStimuli.MconeSquare150t;
                 case 'scone_square_150t'
                     obj = SpectralStimuli.SconeSquare150t;
-                    
+
                 case 'luminance_square_160t'
                     obj = SpectralStimuli.LuminanceSquare160t;
                 case 'isoluminance_square_160t'
@@ -1372,10 +1522,10 @@ classdef SpectralStimuli
                 case 'scone_square_160t'
                     obj = SpectralStimuli.SconeSquare160t;
 
-                    
+
                 case 'luminance_squarewave_1hz'
                     obj = SpectralStimuli.LuminanceSquarewave1;
-                    
+
                 case 'luminance_increment_20s_80t'
                     obj = SpectralStimuli.LuminanceIncrement20s80t;
                 case 'luminance_increment_10s_80t'
@@ -1399,11 +1549,11 @@ classdef SpectralStimuli
                     obj = SpectralStimuli.TopticaSimIncrement20s;
                 case 'topticasim_contrast_decrement_20s_adapt'
                     obj = SpectralStimuli.TopticaSimDecrement20s;
-                    
+
                 otherwise
                     obj = SpectralStimuli.Other;
                     warning('Unrecognized stimulus %s', char(str));
             end
         end
     end
-end 
+end

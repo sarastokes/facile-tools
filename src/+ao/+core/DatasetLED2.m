@@ -97,6 +97,9 @@ classdef DatasetLED2 < ao.core.Dataset
             
             % Get the true frame count
             iStim = obj.epoch2stim(epochID);
+            if iStim == ao.SpectralStimuli.NoiseBackground
+                return
+            end
             nFrames = iStim.frames();
             % Clip off the extra frames
             try
@@ -121,7 +124,22 @@ classdef DatasetLED2 < ao.core.Dataset
                 iStim = obj.ledStimNames(obj.epoch2idx(epochID(i)));
                 [Ai, xpts] = getEpochResponses@ao.core.Dataset(obj, epochID(i),...
                     varargin{:}, 'Stim', iStim);
-                A = cat(3, A, Ai);
+                try
+                    A = cat(3, A, Ai);
+                catch
+                    % Epoch ended early or, for some reason, is long
+                    offset = size(A,2) - size(Ai,2);
+                    if offset > 0
+                        warning('Epoch %u is %u points too short! Filled with NaN',...
+                            epochID(i), offset);
+                        A = cat(3, A, [Ai, NaN(size(Ai,1), offset)]);
+                    else
+                        warning('Epoch %u is %u points too long!',...
+                            epochID(i), abs(offset));
+                        Ai = Ai(:, 1:size(A,2));
+                        A = cat(3, A, Ai);
+                    end
+                end
             end
         end
 

@@ -1,4 +1,4 @@
-function [y, x] = cycleData(data, varargin)
+function [y, x] = cycleData(data, temporalFrequency, varargin)
     % CYCLEDATA
     %
     % 

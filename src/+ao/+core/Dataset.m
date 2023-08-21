@@ -106,6 +106,7 @@ classdef Dataset < handle
         % Development
         roiUIDs
         avgImage
+        warningIDs    double
     end
 
     % Rarely used/accessed properties, properties under development
@@ -592,6 +593,10 @@ classdef Dataset < handle
             end
         end
 
+        function addWarningID(obj, IDs)
+            obj.warningIDs = unique([obj.warningIDs, IDs]);
+        end
+
         function loadAvgImage(obj, imPath)
             % LOADAVGIMAGE
             %
@@ -655,6 +660,12 @@ classdef Dataset < handle
                 fName = tforms;
                 tforms = readRigidTransform(fName);
                 obj.tformFileName = fName;
+            elseif isstruct(tforms) && isfield(tforms, 'Transformation')
+                if isa(tforms.Transformation, 'affinetform2d')
+                    tforms = tforms.Transformation.A';
+                else
+                    tforms = tforms.Transformation.A;
+                end
             end
 
             for i = 1:numel(IDs)
@@ -862,6 +873,11 @@ classdef Dataset < handle
             if isempty(idx)
                 warning('No epochs matched %u', epochID);
             end
+
+            if ismember(epochID, obj.warningIDs)
+                warning('getEpochStack:SuspiciousEpoch',...
+                    'Epoch %u has been marked to generate a warning, likely bad registration', epochID);
+            end
             
             if ~isempty(obj.workingDirectory)
                 videoName = normPath(strrep(char(obj.registeredVideos(idx)),... 
@@ -875,10 +891,6 @@ classdef Dataset < handle
                 S = load(videoName);
                 imStack = S.imStack;
             elseif endsWith(videoName, '.tif')
-                % warning('off', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
-                % warning('off', 'imageio:tiffmexutils:libtiffWarning');
-                % ts = TIFFStack(videoName);
-                % imStack = ts(:, :, :);
                 imStack = readTiffStack(videoName);
             elseif endsWith(videoName, '.avi')
                 imStack = video2stack(videoName, 'Side', obj.imagingSide);
@@ -964,6 +976,7 @@ classdef Dataset < handle
             %   Smooth          Sigma (default = [], no smoothing)
             %   HighPass        Cutoff frequency in Hz (default = [])
             %   BandPass        Frequency range in Hz (default = [])
+            %   Decimate        Integer for downsampling (1/value)
             %
             % Note:
             %   If bkgd is empty or not specified, the raw fluorescence
@@ -982,6 +995,7 @@ classdef Dataset < handle
             addParameter(ip, 'HighPass', [], @isnumeric);
             addParameter(ip, 'LowPass', [], @isnumeric);
             addParameter(ip, 'BandPass', [], @(x) numel(x)==2 & isnumeric(x));
+            addParameter(ip, 'Decimate', [], @isnumeric);
             addParameter(ip, 'Norm', false, @islogical);
             parse(ip, varargin{:});
 
@@ -992,6 +1006,8 @@ classdef Dataset < handle
             highPassCutoff = ip.Results.HighPass;
             bandPassCutoff = ip.Results.BandPass;
             normFlag = ip.Results.Norm;
+            decimateValue = ip.Results.Decimate;
+            
             
             if cellfind(ip.UsingDefaults, 'Bkgd')
                 iStim = obj.epoch2stim(epochID(1));
@@ -1052,8 +1068,27 @@ classdef Dataset < handle
             end
 
             if normFlag
-                signals = signalNormalize(signals, 2);
+                signals = signalNormalize(signals, bkgdWindow);
             end
+
+            if ~isempty(decimateValue)
+                mustBeInteger(decimateValue);
+                xpts = decimate(xpts, decimateValue);
+                [a,~,c] = size(signals);
+                ypts = zeros(a,numel(xpts),c);
+                if ismatrix(signals)
+                    for i = 1:a 
+                        ypts(i,:) = decimate(signals(i,:), decimateValue);
+                    end
+                else 
+                    for i = 1:a 
+                        for j = 1:c 
+                            ypts(i,:,j) = decimate(signals(i,:,j), decimateValue);
+                        end
+                    end
+                end
+                signals = ypts;
+            end                    
 
             if avgFlag && ndims(signals) == 3
                 signals = mean(signals, 3);
@@ -1144,7 +1179,7 @@ classdef Dataset < handle
 
             % If background window not specified, get stimulus default
             if cellfind(ip.UsingDefaults, 'Bkgd')
-                iStim = obj.epoch2stim(epochID(1));
+                iStim = obj.epoch2stim(epochs(1));
                 bkgdWindow = iStim.bkgd();
             end
 
@@ -1257,17 +1292,18 @@ classdef Dataset < handle
             for i = 1:numel(IDs) 
                 baseName = ['_', obj.getShortName(IDs(i)), '.png'];
                 imStack = obj.getEpochStack(IDs(i));
+                imStackD = im2double(imStack);
                 
                 % TODO: omit dropped frames
                 
-                imSum = sum(im2double(imStack), 3);
+                imSum = sum(imStackD, 3);
                 imwrite(uint8(255 * imSum/max(imSum(:))),...
                     [fPath, 'SUM', baseName], 'png');
                 imwrite(uint8(mean(imStack, 3)),...
                     [fPath, 'AVG', baseName], 'png');
                 imwrite(uint8(max(imStack, [], 3)),... 
                     [fPath, 'MAX', baseName], 'png');
-                imwrite(im2uint8(imadjust(std(im2double(imStack), [], 3))),... 
+                imwrite(im2uint8(imadjust(std(imStackD, [], 3))),... 
                     [fPath, 'STD', baseName], 'png');
                 progressbar(i / numel(IDs));
             end

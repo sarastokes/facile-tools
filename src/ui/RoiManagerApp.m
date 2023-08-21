@@ -47,6 +47,10 @@ classdef RoiManagerApp < handle
                 obj.datasetName = dataset.getLabel();
                 obj.dsetImage = dataset.avgImage;
                 obj.rois = dataset.rois;
+            elseif isa(dataset, 'ao.core.SpectralData')
+                obj.datasetName = [dataset.eyeName, upper(dataset.imagingSide(1)), '_', char(dataset.experimentDate)];
+                obj.dsetImage = dataset.avgImage;
+                obj.rois = dataset.rois;
             elseif isa(dataset, 'SimpleDataset')
                 obj.datasetName = dataset.exptName;
                 obj.dsetImage = dataset.avgImage();

@@ -20,7 +20,7 @@ function convertAvi(folderName, epochIDs)
 %   % Convert videos 1-10 in the "Ref" folder
 %   convertAvi('C:/Users/yourname/MC00838_20221122/Ref', 1:10)
 
-%   Sara Patterson, 2022 (facile-tools) 
+%   Sara Patterson, 2023 (facile-tools) 
 % -------------------------------------------------------------------------
 
     arguments
@@ -50,11 +50,15 @@ function convertAvi(folderName, epochIDs)
         if isempty(iFile)
             warning('No file found for ID %u, skipping...',... 
                 epochIDs(i));
-            return
+            continue
         elseif numel(iFile) > 1
-            warning('Found %u files for ID %u, skipping...',... 
-                numel(iFile), epochIDs(i));
-            return
+            % Was the match within the monkey ID or date?
+            iFile = iFile(contains(iFile, sprintf("_%04.0f", epochIDs(i))));
+            if numel(iFile) > 1
+                warning('Found %u files for ID %u, skipping...',... 
+                    numel(iFile), epochIDs(i));
+                continue
+            end
         end
 
         % Append a O to the end of the new video

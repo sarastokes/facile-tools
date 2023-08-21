@@ -245,9 +245,11 @@ classdef RoiAverageView2 < handle
                 % TODO: fix later
                 if numel(X) < size(allSignals, 1)
                     X = [0 X];
+                elseif numel(X) > size(allSignals, 1)
+                    X = X(1:size(allSignals,1));
                 end
                 for i = 1:size(allSignals, 2)
-                    plot(obj.signalAxis, X, allSignals(:, i),...
+                    plot(obj.signalAxis, X, allSignals(1:numel(X), i),...
                         'Color', co(i,:), 'LineWidth', 0.55,... 
                         'Tag', 'SignalLine');
                 end
@@ -268,7 +270,7 @@ classdef RoiAverageView2 < handle
                     h.patch.Tag = 'SignalLine';
                     arrayfun(@(X) set(X, 'Tag', 'SignalLine'), h.edge)
                 else
-                    plot(obj.signalAxis, X, avgSignal,...
+                    plot(obj.signalAxis, X, avgSignal(1:numel(X)),...
                         'Color', [0.1 0.1 0.1], 'LineWidth', 0.9,... 
                         'Tag', 'SignalLine');
                 end

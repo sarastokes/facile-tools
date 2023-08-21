@@ -10,13 +10,15 @@ function [videoNames, p] = processVideoPrep(experimentDir, epochIDs, varargin)
     %   be recognized in the file listing
     %
     % History:
-    %   01Nov2021 - SSP 
+    %   01Nov2021 - SSP
     %   05Aug2022 - SSP - Updated for mac
     %   26Oct2022 - SSP - Extra header
     %   09Nov2022 - SSP - Added UseFirst option (false = use last)
     % ---------------------------------------------------------------------
 
-    if experimentDir(end) ~= filesep 
+    % Ensure experiment folder path ends with a filesep
+    experimentDir = convertStringsToChars(experimentDir);
+    if experimentDir(end) ~= filesep
         experimentDir = [experimentDir, filesep];
     end
 
@@ -24,18 +26,21 @@ function [videoNames, p] = processVideoPrep(experimentDir, epochIDs, varargin)
     ip.CaseSensitive = false;
     addParameter(ip, 'ImagingSide', 'full',...
         @(x) ismember(x, {'left', 'right', 'right_smallFOV', 'full', 'top'}));
-    addParameter(ip, 'RegistrationType', 'frame',... 
+    addParameter(ip, 'FieldOfView', [496 360], @(x) isnumeric(x) & numel(x) == 2);
+    addParameter(ip, 'RegistrationType', 'frame',...
         @(x) ismember(x, {'frame', 'strip', 'none'}));
     addParameter(ip, 'ExtraHeader', [], @ischar);
     addParameter(ip, 'Reflect', false, @islogical);
     addParameter(ip, 'UsingLEDs', false, @islogical);
     addParameter(ip, 'UseFirst', true, @islogical);
+    addParameter(ip, 'Channel', 'vis', @(x) ismember(x, ["vis", "ref"]));
     parse(ip, varargin{:});
-    
+
     regType = ip.Results.RegistrationType;
     usingLEDs = ip.Results.UsingLEDs;
     extraHeader = ip.Results.ExtraHeader;
     useFirst = ip.Results.UseFirst;
+    whichChannel = ip.Results.Channel;
 
     % Keep parameters to pass back to ImageJ-MATLAB script
     p = ip.Results;
@@ -47,13 +52,18 @@ function [videoNames, p] = processVideoPrep(experimentDir, epochIDs, varargin)
         fprintf('%s: ', f{i}); disp(ip.Results.(f{i}));
     end
 
-    % Get all the filenames in 'Vis' folder
-    visDir = fullfile(experimentDir, 'Vis');
+    % Get all the filenames in channel's folder
+    if whichChannel == "vis"
+        channelDir = fullfile(experimentDir, 'Vis');
+    elseif whichChannel == "ref"
+        channelDir = fullfile(experimentDir, 'Ref');
+    end
+
     if ispc
-        f = ls(visDir);
+        f = ls(channelDir);
         f = deblank(string(f));
     else
-        d = dir(visDir);
+        d = dir(channelDir);
         f = arrayfun(@(x) string(x.name), d, 'UniformOutput', true);
     end
 
@@ -65,12 +75,16 @@ function [videoNames, p] = processVideoPrep(experimentDir, epochIDs, varargin)
     for i = 1:numel(epochIDs)
         if usingLEDs
             videoStr = ['fs#', int2fixedwidthstr(epochIDs(i), 3)];
-        else
-            videoStr = ['vis_', int2fixedwidthstr(epochIDs(i), 4)];
+        else % Standard file naming
+            if whichChannel == "vis"
+                videoStr = ['vis_', int2fixedwidthstr(epochIDs(i), 4)];
+            elseif whichChannel == "ref"
+                videoStr = ['ref_', int2fixedwidthstr(epochIDs(i), 4)];
+            end
         end
 
         if ~isempty(extraHeader)
-            videoStr = [extraHeader, videoStr]; %#ok<AGROW> 
+            videoStr = [extraHeader, videoStr]; %#ok<AGROW>
         end
 
         % Get the registered video
@@ -90,26 +104,26 @@ function [videoNames, p] = processVideoPrep(experimentDir, epochIDs, varargin)
             if usingLEDs
                 iNames = [];
                 for j = 1:numel(idx)
-                    iNames = cat(2, iNames, string(fullfile(visDir, char(f(idx(j))))));
+                    iNames = cat(2, iNames, string(fullfile(channelDir, char(f(idx(j))))));
                 end
                 videoNames(num2str(epochIDs(i))) = iNames;
                 continue
             else
                 if useFirst
-                    warning('PROCESSVIDEOPREP: epoch %u - found %u registered videos, using the first',... 
+                    warning('PROCESSVIDEOPREP: epoch %u - found %u registered videos, using the first',...
                         epochIDs(i), numel(idx));
                     idx = idx(1);
                 else
-                    warning('PROCESSVIDEOPREP: epoch %u - found %u registered videos, using the last',... 
+                    warning('PROCESSVIDEOPREP: epoch %u - found %u registered videos, using the last',...
                         epochIDs(i), numel(idx));
                     idx = idx(end);
                 end
-                    
+
             end
         end
-        videoNames(num2str(epochIDs(i))) = string(fullfile(visDir, char(f(idx))));
+        videoNames(num2str(epochIDs(i))) = string(fullfile(channelDir, char(f(idx))));
     end
-    
+
     if ~isempty(epochsNotFound)
         fprintf('%u epochs not found\n', numel(epochsNotFound));
     end
