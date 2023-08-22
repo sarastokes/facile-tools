@@ -5,8 +5,8 @@ classdef RoiCoregisterApp < handle
 % -----------------------------------------------------------------------
 
     properties
-        fixedDataset                
-        movingDataset               
+        fixedDataset
+        movingDataset
 
         tform                       % affine2d
         fixedXY         (:,2)       double
@@ -21,7 +21,7 @@ classdef RoiCoregisterApp < handle
 
         listeners                   event.listener
 
-        figureHandle          (1,1)       
+        figureHandle          (1,1)
         MovingMarker    (1,1)       matlab.graphics.primitive.Line
         FixedMarker     (1,1)       matlab.graphics.primitive.Line
         StatusBox       (1,1)       matlab.ui.control.Label
@@ -106,7 +106,7 @@ classdef RoiCoregisterApp < handle
 
         function checkTransform(obj)
             if isempty(obj.tform)
-                return 
+                return
             end
 
             [x1, y1, x2, y2] = obj.getMatchedPoints();
@@ -136,23 +136,23 @@ classdef RoiCoregisterApp < handle
                 'Data', round(obj.tform.T, 4),...
                 'ColumnName', [], 'RowName', [],...
                 'ColumnEditable', false,...
-                'ColumnWidth', {80 80 80},... 
+                'ColumnWidth', {80 80 80},...
                 'FontSize', 10, 'RowStriping', 'off');
             uix.Empty('Parent', tformLayout);
 
             % Compare images
             ax = axes('Parent', uipanel('Parent', mainLayout));
-            sameAsInput = affineOutputView(size(obj.movingUI.dsetImage),... 
+            sameAsInput = affineOutputView(size(obj.movingUI.dsetImage),...
                  obj.tform, 'BoundsStyle','SameAsInput');
             imshowpair(obj.movingUI.dsetImage,...
-                imwarp(obj.fixedUI.dsetImage, obj.tform, 'OutputView', sameAsInput),... 
+                imwarp(obj.fixedUI.dsetImage, obj.tform, 'OutputView', sameAsInput),...
                 'Scaling', 'independent', 'Parent', ax);
 
             set(tformLayout, 'Widths', [-1 242 -1]);
             set(leftLayout, 'Heights', [-1 67]);
             set(mainLayout, 'Widths', [-1 -0.75]);
         end
-    
+
         function autoReg(obj)
             numBlank = 0; numReg = 0;
             for i = 1:height(obj.movingUI.Table.DisplayData)
@@ -168,6 +168,10 @@ classdef RoiCoregisterApp < handle
                 end
                 numReg = numReg + 1;
                 alignedUid = obj.fixedDataset.roi2uid(alignedRoi);
+                if isempty(alignedUID) || alignedUid == ""
+                    fprintf('Aligned %u to blank UID\n', i);
+                    continue
+                end
                 if ismember(alignedUid, obj.movingUI.Table.Data{:,2})
                     warning('Check on UID %s', alignedUID);
                     continue
@@ -234,7 +238,7 @@ classdef RoiCoregisterApp < handle
                 roiID = obj.fixedDataset.rois(round(x), round(y));
             end
         end
-    
+
         function [x2, y2] = transformMovingToFixed(obj, x, y)
             if nargin < 3 && numel(x) == 2
                 y = x(2);
@@ -324,7 +328,7 @@ classdef RoiCoregisterApp < handle
             end
             outputView = affineOutputView(...
                 size(obj.fixedUI.dsetImage), obj.tform,...
-                "BoundsStyle", "sameAsInput"); 
+                "BoundsStyle", "sameAsInput");
             ImageComparisonApp(...
                 imadjust(obj.movingUI.dsetImage), ...
                 imadjust(imwarp(obj.fixedUI.dsetImage, obj.tform, ...
@@ -347,13 +351,13 @@ classdef RoiCoregisterApp < handle
             [movingIDs, fixedIDs] = obj.matchUIDs();
 
             for i = 1:numel(movingIDs)
-                h = findobj(obj.movingUI.roiHandles,... 
+                h = findobj(obj.movingUI.roiHandles,...
                     'Tag', ['roi', num2str(movingIDs(i))]);
                 h.Color = rgb('lavender');
                 drawnow;
             end
             for i = 1:numel(fixedIDs)
-                h = findobj(obj.fixedUI.roiHandles,... 
+                h = findobj(obj.fixedUI.roiHandles,...
                     'Tag', ['roi', num2str(fixedIDs(i))]);
                 h.Color = rgb('lavender');
                 drawnow;
@@ -375,7 +379,7 @@ classdef RoiCoregisterApp < handle
             obj.figureHandle = uifigure(...
                 'DefaultUicontrolFontSize', 12,...
                 'KeyPressFcn', @obj.onKeyPress);
-                       
+
             obj.figureHandle.Position(3) = obj.figureHandle.Position(3) * 1.65;
             obj.figureHandle.Position(4) = obj.figureHandle.Position(4) + 100;
             %movegui(obj.figureHandle, 'center');
@@ -396,7 +400,7 @@ classdef RoiCoregisterApp < handle
             obj.movingUI.setTag('moving');
             obj.movingUI.Layout.Layout.Row = 2;
             obj.movingUI.Layout.Layout.Column = 2;
-            
+
             set(obj.figureHandle, 'Name',...
                 [obj.movingUI.datasetName ' to ' obj.fixedUI.datasetName]);
 

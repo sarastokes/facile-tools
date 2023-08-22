@@ -11,8 +11,8 @@ classdef SpectralStimuli
     end
 
     enumeration
-        NoiseBackground 
-        
+        NoiseBackground
+
     %% Backgrounds (varying mean and time)
         Background
         BackgroundQuarter
@@ -521,23 +521,29 @@ classdef SpectralStimuli
         LuminanceChirp40p60s120t
         LuminanceChirp40p80s140t
 
-        RedChirp40p160t
-        GreenChirp40p160t
         IsoluminanceChirp40p160t
         IsoluminanceChirpReversed40p160t
+        Isoluminance50s40p110t
+        Isoluminance25s40p85t
 
         LMconeChirp40p160t
         LMconeChirp17c40p160t
+        LMconeChirp50s40p110t
+        LMconeChirp25s40p85t
+        LMconeChirpReversed40p160t
 
+        RedChirp40p160t
+        GreenChirp40p160t
         SconeChirp40p160t
+
+
+    %% Step, chirp, contrast sweep together
+        LuminanceFullChirp40p225t
 
         % Older versions with a step
         LuminanceChirp5p190t
         LuminanceChirp10p190t
         LuminanceChirp50p190t
-
-    %% Step, chirp, contrast sweep together
-        LuminanceFullChirp40p225t
 
     %% ContrastSweep
         LuminanceContrastRamp10hz40p100s160t
@@ -1423,10 +1429,20 @@ classdef SpectralStimuli
                     obj = SpectralStimuli.IsoluminanceChirp40p160t;
                 case 'isoluminance_reverse_chirp_100s_40p_160t'
                     obj = SpectralStimuli.IsoluminanceChirpReversed40p160t;
+                case 'isoluminance_chirp_50s_40p_110t'
+                    obj = SpectralStimuli.IsoluminanceChirp50s40p110t;
+                case 'isoluminance_chirp_25s_40p_85t'
+                    obj = SpectralStimuli.IsoluminanceChirp25s40p85t;
                 case 'lmiso_chirp_100s_40p_160t'
                     obj = SpectralStimuli.LMconeChirp40p160t;
                 case 'lmiso_chirp_17c_100s_40p_160t'
                     obj = SpectralStimuli.LMconeChirp17c40p160t;
+                case 'lmiso_reverse_chirp_100s_40p_160t'
+                    obj = SpectralStimuli.LMconeChirpReversed40p160t;
+                case 'lmiso_chirp_50s_40p_110t'
+                    obj = SpectralStimuli.LMconeChirp50s40p110t;
+                case 'lmiso_chirp_25s_40p_85t'
+                    obj = SpectralStimuli.LMconeChirp25s40p85t;
                 case 'siso_chirp_100s_40p_160t'
                     obj = SpectralStimuli.SconeChirp40p160t;
                 case 'luminance_chirp_50s_40p_110t'
