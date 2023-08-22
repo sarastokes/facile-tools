@@ -167,6 +167,7 @@ classdef NHP < double
         end
 
         function obj = init(ID)
+            import ao.NHP
             if ischar(ID)
                 if contains(ID, '702')
                     obj = NHP.MW00702;
@@ -187,6 +188,8 @@ classdef NHP < double
                         obj = NHP.MW00838;
                     case 848
                         obj = NHP.MW00848;
+                    case 851
+                        obj = NHP.MW00851;
                     case 2105
                         obj = NHP.MW02105;
                     otherwise
