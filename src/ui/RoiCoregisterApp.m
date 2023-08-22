@@ -168,12 +168,12 @@ classdef RoiCoregisterApp < handle
                 end
                 numReg = numReg + 1;
                 alignedUid = obj.fixedDataset.roi2uid(alignedRoi);
-                if isempty(alignedUID) || alignedUid == ""
+                if isempty(alignedUid) || alignedUid == ""
                     fprintf('Aligned %u to blank UID\n', i);
                     continue
                 end
                 if ismember(alignedUid, obj.movingUI.Table.Data{:,2})
-                    warning('Check on UID %s', alignedUID);
+                    warning('Check on UID %s', alignedUid);
                     continue
                 end
 
