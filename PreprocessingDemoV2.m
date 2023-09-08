@@ -36,6 +36,7 @@ convertAvi(fullfile(experimentDir, 'Vis'), [2:24, 26:34, 36]);
 
 % You will get warnings if registered videos aren't found for any of the
 % supplied epochIDs
+run('PreprocessFunctionalImagingData.m');
 
 
 %% MATLAB object
@@ -75,8 +76,8 @@ save('MC00851_ODR_20230821B', 'MC00851_ODR_20230821B');
 % - Save results in log as .txt file
 % - Save original stack (useful if you decide to change transform later)
 
-tformFileName = '';
-MC00851_ODR_20230814B.loadTransforms(fullfile(...
+tformFileName = '851_ODR_20230821_rigid_ref0020.txt';
+MC00851_ODR_20230821B.loadTransforms(fullfile(...
     experimentDir, 'Analysis', tformFileName),...
     epochIDs(1:end-1));
 % First input is the file name, second input is the epoch IDs (here the
@@ -104,7 +105,7 @@ MC00851_ODR_20230821B.makeStackSnapshots();
 % Make a Z-projection of the registered stack in ImageJ and save it as a
 % .png file in the Analysis folder. This will be used when coregistering
 zProjFileName = '851_ODR_20230821_SUM_DUP_SUM.png';
-MC00851_ODR_20230814B.setAvgImage(fullfile(experimentDir,...
+MC00851_ODR_20230821B.setAvgImage(fullfile(experimentDir,...
     'Analysis', '851_ODR_20230821_SUM_DUP_SUM.png'));
 
 % Once you have some ROIs to import, load them here

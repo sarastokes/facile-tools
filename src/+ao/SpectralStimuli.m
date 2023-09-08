@@ -94,6 +94,7 @@ classdef SpectralStimuli
         LuminanceSquare5p20s160t
         LuminanceSquare7p20s160t
         LuminanceSquare10p20s160t
+        LuminanceSquare18p20s160t
         LuminanceSquare35p20s160t
         LuminanceSquare40p20s160t
 
@@ -103,6 +104,7 @@ classdef SpectralStimuli
         SconeSquare35p20s160t
         SconeSquare5p10s160t
         SconeSquare10p10s160t
+        SconeSquare18p10s160t
         SconeSquare40p20s160t
 
         % 5 second, full contrast modulations
@@ -491,6 +493,7 @@ classdef SpectralStimuli
         LightsOn5p100t
         LightsOn7p100t
         LightsOn10p100t
+        LightsOn18p100t
         LightsOn20p100t
         LightsOn25p100t
         LightsOn35p100t
@@ -501,6 +504,7 @@ classdef SpectralStimuli
         LightsOff5p100t
         LightsOff7p100t
         LightsOff10p100t
+        LightsOff18p100t
         LightsOff20p100t
         LightsOff25p100t
         LightsOff35p100t
@@ -513,18 +517,21 @@ classdef SpectralStimuli
         LuminanceChirp50p240t
         LuminanceChirp5p160t
         LuminanceChirp10p160t
+        LuminanceChirp18p160t
         LuminanceChirp35p160t
         LuminanceChirp40p160t
         LuminanceChirpReversed40p160t
+        LuminanceChirpReversed18p160t
 
         LuminanceChirp40p50s110t
         LuminanceChirp40p60s120t
         LuminanceChirp40p80s140t
 
         IsoluminanceChirp40p160t
+        IsoluminanceChirp18p160t
         IsoluminanceChirpReversed40p160t
-        Isoluminance50s40p110t
-        Isoluminance25s40p85t
+        IsoluminanceChirp50s40p110t
+        IsoluminanceChirp25s40p85t
 
         LMconeChirp40p160t
         LMconeChirp17c40p160t
@@ -535,7 +542,6 @@ classdef SpectralStimuli
         RedChirp40p160t
         GreenChirp40p160t
         SconeChirp40p160t
-
 
     %% Step, chirp, contrast sweep together
         LuminanceFullChirp40p225t
@@ -1344,6 +1350,8 @@ classdef SpectralStimuli
                     obj = SpectralStimuli.LightsOn7p100t;
                 case 'luminance_lights_on_10p_100t'
                     obj = SpectralStimuli.LightsOn10p100t;
+                case 'luminance_lights_on_18p_100t'
+                    obj = SpectralStimuli.LightsOn18p100t;
                 case 'luminance_lights_on_20p_100t'
                     obj = SpectralStimuli.LightsOn20p100t;
                 case 'luminance_lights_on_35p_100t'
@@ -1358,6 +1366,8 @@ classdef SpectralStimuli
                     obj = SpectralStimuli.LightsOff10p100t;
                 case 'luminance_lights_off_7p_100t'
                     obj = SpectralStimuli.LightsOff7p100t;
+                case 'luminance_lights_off_18p_100t'
+                    obj = SpectralStimuli.LightsOff18p100t;
                 case 'luminance_lights_off_20p_100t'
                     obj = SpectralStimuli.LightsOff20p100t;
                 case 'luminance_lights_off_35p_100t'
@@ -1391,6 +1401,8 @@ classdef SpectralStimuli
             %% Step square waves
                 case 'luminance_square_20s_100c_7p_160t'
                     obj = SpectralStimuli.LuminanceSquare7p20s160t;
+                case 'luminance_square_20s_100c_18p_160t'
+                    obj = SpectralStimuli.LuminanceSquare18p20s160t;
                 case 'luminance_square_20s_100c_35p_160t'
                     obj = SpectralStimuli.LuminanceSquare35p20s160t;
                 case 'luminance_square_20s_100c_40p_160t'
@@ -1403,6 +1415,8 @@ classdef SpectralStimuli
                     obj = SpectralStimuli.SconeSquare40p20s160t;
                 case 'siso_square_5s_100c_40p_130t'
                     obj = SpectralStimuli.SconeSquare5s40p130t;
+                case 'siso_square_10s_100c_18p_160t'
+                    obj = SpectralStimuli.SconeSquare18p10s160t;
                 case 'isoluminance_square_5s_100c_40p_130t'
                     obj = SpectralStimuli.IsoluminanceSquare5s40p130t;
                 case 'lmiso_square_5s_100c_40p_130t'
@@ -1415,16 +1429,22 @@ classdef SpectralStimuli
                     obj = SpectralStimuli.LuminanceChirp;
                 case 'luminance_chirp_100s_10p_160t'
                     obj = SpectralStimuli.LuminanceChirp10p160t;
+                case 'luminance_chirp_100s_18p_160t'
+                    obj = SpectralStimuli.LuminanceChirp18p160t;
                 case 'luminance_chirp_100s_35p_160t'
                     obj = SpectralStimuli.LuminanceChirp35p160t;
                 case 'luminance_chirp_100s_40p_160t'
                     obj = SpectralStimuli.LuminanceChirp40p160t;
+                case 'luminance_reverse_chirp_100s_18p_160t'
+                    obj = SpectralStimuli.LuminanceChirpReversed18p160t;
                 case 'luminance_reverse_chirp_100s_40p_160t'
                     obj = SpectralStimuli.LuminanceChirpReversed40p160t;
                 case 'red_chirp_100s_40p_160t'
                     obj = SpectralStimuli.RedChirp40p160t;
                 case 'green_chirp_100s_40p_160t'
                     obj = SpectralStimuli.GreenChirp40p160t;
+                case 'isoluminance_chirp_100s_18p_160t'
+                    obj = SpectralStimuli.IsoluminanceChirp18p160t;
                 case 'isoluminance_chirp_100s_40p_160t'
                     obj = SpectralStimuli.IsoluminanceChirp40p160t;
                 case 'isoluminance_reverse_chirp_100s_40p_160t'

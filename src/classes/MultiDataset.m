@@ -1,5 +1,26 @@
 classdef MultiDataset < handle
-%#ok<*AGROW> 
+%#ok<*AGROW>
+%
+% obj = MultiDataset(851, "OSR", "spectral");
+%
+% stimFilter = @(x) beginsWith(x, "LuminanceChirp") & contains(x, "10p");
+% obj.setStimFilter(stimFilter);
+%
+% % Check results and confirm or refine filter
+% disp(obj.StimTable);
+% obj.acceptFilter();
+%
+% % Check directories and change if needed
+% obj.checkDirectories();
+% obj.setWorkingDirectory(2, '\AO\MC00851_20220426\');
+%
+% obj.collectResponses([200 498], 'Smooth', 100);
+%
+% % Set the stimulus window for plotting (optional)
+% obj.setStimWindows();
+%
+% obj.go();
+% -------------------------------------------------------------------------
 
     properties
         ups
@@ -15,10 +36,10 @@ classdef MultiDataset < handle
 
         xpts
 
-        stimFilter 
+        stimFilter
         respProps
 
-        StimTable 
+        StimTable
         uidTable
         uidTable2
         datasetNames
@@ -33,12 +54,12 @@ classdef MultiDataset < handle
         hasMotion
         omitMatrix
 
-        manualBad 
+        manualBad
         manualGood
     end
 
     properties %(Transient, SetAccess = private)
-        datasets 
+        datasets
         hasStim
     end
 
@@ -56,7 +77,7 @@ classdef MultiDataset < handle
         DEC_PROPS = {'FaceColor', [0.55, 0.55, 0.55], 'FaceAlpha', 0.4};
     end
 
-    methods 
+    methods
         function obj = MultiDataset(source, location, stimulusType)
             obj.source = source;
             obj.location = location;
@@ -64,8 +85,8 @@ classdef MultiDataset < handle
                 "stimulusType must be either spectral or spatial");
             obj.stimulusType = stimulusType;
 
-            obj.uidResponses = aod.util.Parameters();
-            obj.roiResponses = aod.util.Parameters();
+            obj.uidResponses = aod.common.KeyValueMap();
+            obj.roiResponses = aod.common.KeyValueMap();
 
             obj.collectDatasets();
         end
@@ -118,7 +139,7 @@ classdef MultiDataset < handle
 
         function signals = getRoiResponse(obj, dsetID, roiID)
             dsetData = obj.roiResponses{dsetID};
-            signals = dsetData(roiID, :, :);
+            signals = dsetData(roiID, 1:size(obj.allResponses,2), :);
         end
 
         function uids = getGoodUIDs(obj)
@@ -188,6 +209,28 @@ classdef MultiDataset < handle
             obj.uidTable.Bad(ID) = true;
         end
 
+        function plotColorScale(obj)
+            exptDates = [];
+            for i = 1:obj.numDatasets
+                exptDates = cat(1, exptDates,...
+                    repmat(string(obj.datasets(i).experimentDate), [obj.StimTable.NumReps(i), 1]));
+            end
+            cmap = obj.colormap;
+
+            ax = axes('Parent', figure());
+            hold(ax, 'on');
+            for i = 1:size(cmap, 1)
+                text(ax, 0, i*2, exptDates(i),...
+                    'Color', cmap(i,:), 'HorizontalAlignment', 'center',...
+                    'FontSize', 12, 'FontName', 'Arial');
+            end
+            xticks([]); yticks([]);
+            xlim([-0.5, 0.5]); ylim([1, i*2+1]);
+            ax.Position(3) = ax.Position(3)/3;
+            set(ax, 'Box', 'on');
+            tightfig(ax.Parent);
+        end
+
         function plotUuidErr(obj, uuid, varargin)
             ip = aod.util.InputParser();
             addParameter(ip, 'Parent', [], @ishandle);
@@ -206,7 +249,7 @@ classdef MultiDataset < handle
             thresh = ip.Results.Cutoff;
             lineProp = ip.Results.LineProp;
             normFlag = ip.Results.Norm;
-                
+
             if isnumeric(uuid)
                 ID = uuid;
                 uuid = obj.id2uid(ID);
@@ -217,7 +260,7 @@ classdef MultiDataset < handle
 
             data = obj.getUuidResponse(uuid);
             if isempty(data) || nnz(obj.isValid(ID, [], thresh)) == 0
-                warning('No valid data!\n');
+                warning('No valid data!');
                 return
             end
 
@@ -226,11 +269,11 @@ classdef MultiDataset < handle
                 if normFlag
                     data = data ./ max(abs(data), [], 2, 'omitnan');
                 end
-                plot(ax, obj.xpts, mean(data(obj.isValid(ID, [], thresh),:), 1),... 
+                plot(ax, obj.xpts, mean(data(obj.isValid(ID, [], thresh),:), 1),...
                     'k', 'LineWidth', 1.5);
                 for i = 1:size(data, 1)
                     if obj.isValid(ID, i)
-                        plot(ax, obj.xpts, data(i,:),... 
+                        plot(ax, obj.xpts, data(i,:),...
                             'Color', co(i,:), 'LineWidth', 0.7);
                     end
                 end
@@ -239,7 +282,7 @@ classdef MultiDataset < handle
                 if normFlag
                     data = data ./ max(abs(data), [], 2, 'omitnan');
                 end
-                shadedErrorBar(obj.xpts, data,... 
+                shadedErrorBar(obj.xpts, data,...
                     {@(x)mean(x, 1, 'omitnan'), @(x)std(x, [], 1, 'omitnan')},...
                     'lineprops', {lineProp, 'LineWidth', 1, 'Parent', ax});
             end
@@ -263,7 +306,7 @@ classdef MultiDataset < handle
             end
         end
 
-        function [avgR, R] = getUuidCorr(obj, uuid)            
+        function [avgR, R] = getUuidCorr(obj, uuid)
             if isnumeric(uuid)
                 uuid = obj.uidTable.UUID(uuid);
             end
@@ -283,6 +326,8 @@ classdef MultiDataset < handle
             obj.stimFilter = stimFilter;
 
             obj.sortByFilter();
+
+            disp(obj.StimTable);
         end
 
         function acceptFilter(obj)
@@ -335,7 +380,7 @@ classdef MultiDataset < handle
                 [obj.ups, obj.downs] = obj.datasets(1).getModWindows(...
                     obj.StimTable.Stimulus(1));
             else
-                obj.ups = ups; 
+                obj.ups = ups;
                 obj.downs = downs;
             end
         end
@@ -344,7 +389,7 @@ classdef MultiDataset < handle
             if nargin < 2
                 motionCutoff = 0.9;
             end
-            
+
             obj.hasMotion = zeros(obj.numUUIDs, obj.numReps);
 
             for i = 1:obj.numUUIDs
@@ -354,7 +399,7 @@ classdef MultiDataset < handle
                         [p, f] = signalPowerSpectrum(data, 25);
                         maxVal = p(findclosest(f, 0.22));
                         maxPcts = maxVal/max(p);
-    
+
                         if maxPcts > motionCutoff
                             fprintf('Motion: %s rep %u (%.2f)\n', obj.uniqueUUIDs(i), j, maxPcts);
                             obj.hasMotion(i,j) = 1;
@@ -426,7 +471,7 @@ classdef MultiDataset < handle
                 %end
                 for j = 1:numel(rep)
                     if isnan(obj.repCorr(uid(i), rep(j)))...
-                            || obj.repCorr(uid(i),rep(j)) < cutoff... 
+                            || obj.repCorr(uid(i),rep(j)) < cutoff...
                             || obj.hasMotion(uid(i),rep(j))
                         tf(i,j) = false;
                     else
@@ -441,7 +486,7 @@ classdef MultiDataset < handle
         end
     end
 
-    methods %(Access = private)
+    methods  (Access = private)
         function rowIdx = getDsetRows(obj, dsetID)
             if dsetID == 1
                 rowIdx = 1:obj.StimTable.NumReps(1);
@@ -466,9 +511,9 @@ classdef MultiDataset < handle
         function sortByFilter(obj)
             obj.hasStim = false(1, obj.numDatasets);
             dsetCounter = 0;
-            allReps = []; allStimNames = []; 
+            allReps = []; allStimNames = [];
             allDsets = []; allDsetNames = [];
-            for i = 1:obj.numDatasets 
+            for i = 1:obj.numDatasets
                 stimuliUsed = string(obj.datasets(i).stim.Stimulus);
                 idx = find(obj.stimFilter(stimuliUsed));
                 if isempty(idx)
@@ -492,6 +537,11 @@ classdef MultiDataset < handle
                 dsetIDs = obj.uidTable2{obj.uidTable2.UUID == obj.uniqueUUIDs(i), "ID"};
                 for j = 1:numel(dsetIDs)
                     roiID = obj.datasets(dsetIDs(j)).uid2roi(obj.uniqueUUIDs(i));
+                    if numel(roiID) > 1
+                        warning('Dset %u, found %u ROI IDs for UID %s, using first', ...
+                            dsetIDs(j), numel(roiID), obj.uniqueUUIDs(i));
+                        roiID = roiID(1);
+                    end
                     rowIdx = obj.getDsetRows(dsetIDs(j));
                     obj.allResponses(i, :, rowIdx) = obj.getRoiResponse(dsetIDs(j), roiID);
                 end
@@ -503,8 +553,8 @@ classdef MultiDataset < handle
             dsetID = []; nReps = [];
             for i = 1:obj.numDatasets
                 iUUID = obj.datasets(i).roiUIDs.UID;
-                dsetID = [dsetID; repmat(i, [numel(iUUID), 1])]; 
-                allUUIDs = [allUUIDs; obj.datasets(i).roiUIDs.UID]; 
+                dsetID = [dsetID; repmat(i, [numel(iUUID), 1])];
+                allUUIDs = [allUUIDs; obj.datasets(i).roiUIDs.UID];
                 nReps = [nReps; repmat(obj.StimTable.NumReps(i), [numel(iUUID), 1])];
             end
             obj.uidTable2 = table(dsetID, allUUIDs, nReps, 'VariableNames', {'ID', 'UUID', 'N'});
@@ -513,7 +563,7 @@ classdef MultiDataset < handle
                 fprintf('%u blank UUIDs found!\n', numel(blankIdx));
                 obj.uidTable2(blankIdx,:) = [];
             end
-            
+
             [g, groupNames] = findgroups(obj.uidTable2.UUID);
             N = splitapply(@sum, obj.uidTable2.N, g);
             [~, idx] = sort(groupNames);
@@ -585,7 +635,7 @@ classdef MultiDataset < handle
                     QI(i) = NaN;
                     continue
                 end
-                QI(i) = qualityIndex(reshape(signals,... 
+                QI(i) = qualityIndex(reshape(signals,...
                     [1, size(signals,1), size(signals,2)]));
                 obj.uidTable.QIadj = QI;
             end
@@ -631,6 +681,17 @@ classdef MultiDataset < handle
                     ];
                 end
             elseif source == 851 && location == "ODR"
+                if stimulusType == "spectral"
+                    dsets = [...
+                        "MC00851_ODR_20221101B",...
+                        "MC00851_ODR_20221108B",...
+                        "MC00851_ODR_20221201B",...
+                        "MC00851_ODR_20221208B",...
+                        "MC00851_ODR_20230627B",...
+                        "MC00851_ODR_20230714B",...
+                        "MC00851_ODR_20230726B",...
+                        "MC00851_ODR_20230821B"];
+                end
             elseif source == 851 && location == "OSR"
                 if stimulusType == "spectral"
                     dsets = [...
@@ -648,6 +709,9 @@ classdef MultiDataset < handle
                         "MC00851_OSR_20220523B",...
                         "MC00851_OSR_20220614B",...
                         "MC00851_OSR_20220719B",...
+                        "MC00851_OSR_20220802B",...
+                        "MC00851_OSR_20230627B",...
+                        "MC00851_OSR_20230814B"
                     ];
                 end
             end
@@ -665,7 +729,7 @@ classdef MultiDataset < handle
             % Ensure expeirment directories are correct
             obj.checkDirectories();
             if ispc
-                obj.setWorkingDirectory(1,... 
+                obj.setWorkingDirectory(1,...
                     'C:\Users\sarap\Dropbox\Postdoc\Data\AO\MC00838_20220524\');
             else
                 obj.setWorkingDirectory(1,...
@@ -687,11 +751,11 @@ classdef MultiDataset < handle
         function CHIRP851 = demo851()
             CHIRP851 = MultiDataset(851, "OSR", "spectral");
 
-            stimFilter = @(x) contains(x, "LuminanceChirp") & contains(x, "10p") & contains(x, "160t");
+            stimFilter = @(x) beginsWith(x, "LuminanceChirp") & contains(x, "10p") & contains(x, "160t");
             CHIRP851.setStimFilter(stimFilter);
             CHIRP851.acceptFilter();
 
-            CHIRP851.setWorkingDirectory(2,... 
+            CHIRP851.setWorkingDirectory(2,...
                 'C:\Users\sarap\Dropbox\Postdoc\Data\AO\MC00851_20220426\');
 
             CHIRP851.collectResponses([200 498], 'Smooth', 100);
@@ -704,4 +768,4 @@ classdef MultiDataset < handle
             CHIRP851.go();
         end
     end
-end 
+end

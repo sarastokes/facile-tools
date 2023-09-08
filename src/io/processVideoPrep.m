@@ -34,6 +34,7 @@ function [videoNames, p] = processVideoPrep(experimentDir, epochIDs, varargin)
     addParameter(ip, 'UsingLEDs', false, @islogical);
     addParameter(ip, 'UseFirst', true, @islogical);
     addParameter(ip, 'Channel', 'vis', @(x) ismember(x, ["vis", "ref"]));
+    addParameter(ip, 'BackgroundRegion', [], @(x) isnumeric(x) && numel(x) == 4);
     parse(ip, varargin{:});
 
     regType = ip.Results.RegistrationType;
@@ -41,6 +42,7 @@ function [videoNames, p] = processVideoPrep(experimentDir, epochIDs, varargin)
     extraHeader = ip.Results.ExtraHeader;
     useFirst = ip.Results.UseFirst;
     whichChannel = ip.Results.Channel;
+    backgroundRegion = ip.Results.BackgroundRegion;
 
     % Keep parameters to pass back to ImageJ-MATLAB script
     p = ip.Results;
@@ -127,4 +129,3 @@ function [videoNames, p] = processVideoPrep(experimentDir, epochIDs, varargin)
     if ~isempty(epochsNotFound)
         fprintf('%u epochs not found\n', numel(epochsNotFound));
     end
-

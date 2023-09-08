@@ -8,6 +8,7 @@ classdef NHP < double
         MW00846 (846)
         MW00851 (851)
         MW02105 (2105)
+        MW02121 (2121)
     end
 
     methods 
@@ -177,6 +178,8 @@ classdef NHP < double
                     obj = NHP.MW00848;
                 elseif contains(ID, '105')
                     obj = NHP.MW02105;
+                elseif contains(ID, '2121')
+                    obj = NHP.MW02121;
                 else
                     error('Unrecognized ID string: %s', ID);
                 end
@@ -192,6 +195,8 @@ classdef NHP < double
                         obj = NHP.MW00851;
                     case 2105
                         obj = NHP.MW02105;
+                    case 2121
+                        obj = NHP.MW02121;
                     otherwise
                         error('Unrecognized ID number: %u', ID);
                 end

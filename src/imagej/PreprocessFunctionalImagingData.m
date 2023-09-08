@@ -22,6 +22,7 @@
 %   06Dec2021 - SSP - Changed 'baseDir' to 'experimentDir'
 %   10Jun2023 - SSP - Option for reflectance video processing
 %   27Jun2023 - SSP - Added default creation of analysis folders
+%   04Sep2023 - SSP - Added background subtraction for v low SNR data
 % -------------------------------------------------------------------------
 
 % Variable validation
@@ -48,11 +49,17 @@ if ~isfolder(videoDir)
     mkdir(videoDir);
 end
 
-%expName = strsplit(p.experimentDir, filesep);
-
 % Connect to imagej (if connection does not already exist)
 run('ConnectToImageJ.m');
 import ij.*;
+
+% Prep background region, if needed
+if ~isempty(p.BackgroundRegion)
+    x0 = p.BackgroundRegion(1);
+    x = p.BackgroundRegion(3);
+    y0 = p.BackgroundRegion(2);
+    y = p.BackgroundRegion(4);
+end
 
 % Loop through the epochs creating a video and snapshots
 k = videoNames.keys;
@@ -65,7 +72,7 @@ for i = 1:numel(k)
     iNames = videoNames(k{i});
     for j = 1:numel(iNames)
         IJ.run("AVI...", java.lang.String("select=" + iNames(j) + " avi=" + iNames(j)));
-            disp(iNames(j));
+        fprintf('Processing %s...\n', iNames(j));
     end
 
     if numel(iNames) > 1
@@ -80,12 +87,32 @@ for i = 1:numel(k)
     if p.Channel == "ref"
         newTitle = strrep(newTitle, "vis", "ref");
     end
-    disp(newTitle);
+    fprintf('Saving as %s... ', newTitle);
 
     % Reflect, if needed
     if p.Reflect
-        IJ.run("Flip Vertically");
+        IJ.run("Flip Vertically", "stack");
     end
+
+    % Subtract background, if needed
+    if ~isempty(p.BackgroundRegion)
+        curVidName = getTitle(IJ.getImage());
+        IJ.run("Specify...", java.lang.String(['width=', num2str(x), ' height=', num2str(y), ' x=', num2str(x0), ' y=', num2str(y0), ' slice=1']));
+        IJ.run("Duplicate...", java.lang.String(['title=', 'tmp', ' duplicate']));
+        curBkgdName = getTitle(IJ.getImage());
+        IJ.run("Z Project...", "projection=[Average Intensity]");
+
+        IJM.getDatasetAs('vid');
+        bkgdValue = mean(vid, "all");
+        openImg = IJ.getImage();
+        openImg.close();
+        IJ.selectWindow(java.lang.String(['tmp']));
+        openImg = IJ.getImage();
+        openImg.close();
+
+        IJ.selectWindow(java.lang.String([curVidName]));
+    end
+
 
     % Crop, if needed
     switch p.ImagingSide
@@ -109,6 +136,11 @@ for i = 1:numel(k)
 
     % Save the new stack
     IJ.run("Duplicate...", java.lang.String(['title=', newTitle, ' duplicate']));
+
+    if ~isempty(p.BackgroundRegion)
+        IJ.run("Subtract...", java.lang.String(['value=', num2str(bkgdValue), ' stack']));
+        fprintf('Subtracting %.3f...', bkgdValue);
+    end
 
     savePath = fullfile(videoDir, [newTitle, '.tif']);
     IJ.saveAs("Tiff", java.lang.String(savePath));
@@ -139,6 +171,7 @@ for i = 1:numel(k)
 
     % Close out
     IJ.run('Close All');
+    fprintf('Done\n');
 
     % Update progress bar
     progressbar(i / numel(k));
@@ -147,5 +180,5 @@ progressbar(1);
 
 % Clean up workspace
 clear i j k iNames newTitle source expIDs epochID baseName expDate
-clear openImg img fijiDir makeSummary
+clear openImg img fijiDir makeSummary vid bkgdValue x y x0 y0
 clear snapshotDir videoDir

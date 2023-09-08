@@ -33,6 +33,8 @@ function [h, h2] = roiOverlay(im, rois, varargin)
     
     if isstruct(rois)  % roi structure
         roiMasks = labelmatrix(rois);
+    elseif iscategorical(rois)
+        roiMasks = double(rois)-1;
     else
         roiMasks = rois;
     end
