@@ -15,6 +15,7 @@ function h = addCalibrationBarX(ax, xStart, xLength, varargin)
     ip.CaseSensitive = false;
     addParameter(ip, 'YLoc', [], @isnumeric);
     addParameter(ip, 'YOffset', [], @isnumeric);
+    addParameter(ip, 'LineWidth', 1, @isnumeric);
     parse(ip, varargin{:});
 
     yLoc = ip.Results.YLoc;
@@ -29,7 +30,7 @@ function h = addCalibrationBarX(ax, xStart, xLength, varargin)
 
     % Add y-axis calibration
     h = plot([xStart, xStart+xLength], [yLoc yLoc], ...
-        'k', 'LineWidth', 1, 'Tag', 'CalibrationBar');
+        'k', 'LineWidth', ip.Results.LineWidth, 'Tag', 'CalibrationBar');
 
     % Add the offset value to the x-axis
     if yLoc < y(1)
@@ -39,4 +40,4 @@ function h = addCalibrationBarX(ax, xStart, xLength, varargin)
     ax.XLim = x; ax.YLim = y;
 
     % Don't need axes anymore 
-    hideAxes();
+    hideAxes(gca);

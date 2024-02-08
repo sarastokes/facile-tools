@@ -1,4 +1,3 @@
-
 function tf = isFullyContained(roiBox, patchBox, nHalo)
 % ISFULLYCONTAINED
 %

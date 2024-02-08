@@ -107,6 +107,7 @@ classdef Dataset < handle
         roiUIDs
         avgImage
         warningIDs    double
+        omittedEpochs 
     end
 
     % Rarely used/accessed properties, properties under development
@@ -156,7 +157,7 @@ classdef Dataset < handle
             obj.epochIDs = sort(epochIDs);
             obj.stimWavelength = stimWL;
 
-            obj.baseDirectory = baseDir;
+            obj.baseDirectory = convertCharsToStrings(baseDir);
             if ~strcmp(obj.baseDirectory(end), filesep)
                 obj.baseDirectory = [obj.baseDirectory, filesep];
             end
@@ -272,7 +273,15 @@ classdef Dataset < handle
             % Syntax:
             %   setWorkingDirectory(obj, filePath)
             % -------------------------------------------------------------
+            arguments
+                obj
+                filePath        char
+            end
+            
             assert(isfolder(filePath), 'filePath is not valid!');
+            if filePath(end) ~= filesep
+                filePath = [filePath, filesep];
+            end
             obj.workingDirectory = filePath;
         end
 
@@ -465,6 +474,7 @@ classdef Dataset < handle
                 error('AO.CORE.DATASET/STIM2EPOCHS: unrecognized input');
             end
             epochs = epochs{:};
+            % epochs = setdiff(epochs, obj.omittedEpochs);
         end
 
         function uid = roi2uid(obj, roiID)
@@ -582,8 +592,8 @@ classdef Dataset < handle
             %   obj.reloadRois()
             % -------------------------------------------------------------
             if ~isempty(obj.roiFileName)
-                if ~isempty(obj.workingDirectory)
-                    roiFile = strrep(obj.roiFileName, obj.baseDirectory, obj.workingDirectory);
+                if ~isempty(obj.experimentDir)
+                    roiFile = strrep(obj.roiFileName, obj.baseDirectory, obj.experimentDir);
                 else
                     roiFile = obj.roiFileName;
                 end
@@ -862,6 +872,15 @@ classdef Dataset < handle
             %   imStack     uint8 matrix [X Y T]
             % -------------------------------------------------------------
             
+            % if ismember(epochID, obj.omittedEpochs)
+            %     warning('Epoch %s is part of omitted epochs', ...
+            %         value2string(epochID(ismember(epochID, obj.omittedEpochs))));
+            %     if numel(epochID) == 1
+            %         imStack = [];
+            %         return
+            %     end
+            % end
+
             % First check the video cache
             if isKey(obj.videoCache, num2str(epochID))
                 imStack = obj.videoCache(num2str(epochID));
@@ -881,7 +900,7 @@ classdef Dataset < handle
             
             if ~isempty(obj.workingDirectory)
                 videoName = normPath(strrep(char(obj.registeredVideos(idx)),... 
-                    obj.baseDirectory, obj.experimentDir));
+                    obj.baseDirectory, obj.workingDirectory));
             else
                 videoName = normPath(char(obj.registeredVideos(idx)));
             end
@@ -997,6 +1016,7 @@ classdef Dataset < handle
             addParameter(ip, 'BandPass', [], @(x) numel(x)==2 & isnumeric(x));
             addParameter(ip, 'Decimate', [], @isnumeric);
             addParameter(ip, 'Norm', false, @islogical);
+            addParameter(ip, 'KeepOmitted', false, @islogical);
             parse(ip, varargin{:});
 
             bkgdWindow = ip.Results.Bkgd;
@@ -1007,6 +1027,7 @@ classdef Dataset < handle
             bandPassCutoff = ip.Results.BandPass;
             normFlag = ip.Results.Norm;
             decimateValue = ip.Results.Decimate;
+            keepOmitted = ip.Results.KeepOmitted;
             
             
             if cellfind(ip.UsingDefaults, 'Bkgd')
@@ -1019,6 +1040,10 @@ classdef Dataset < handle
                 [signals, xpts] = roiResponses(imStack, obj.rois, bkgdWindow,...
                     'FrameRate', obj.frameRate, ip.Unmatched);
             else % Multiple epochs
+                % if any(ismember(epochID, obj.omittedEpochs)) && ~keepOmitted
+                %     warning('Skipping epoch %u', obj.omittedEpochs);
+                %     epochID = setdiff(epochID, obj.omittedEpochs);
+                % end
                 iStim = obj.epoch2stim(epochID(1));
                 signals = zeros(obj.numROIs, iStim.frames(), numel(epochID));
                 for i = 1:numel(epochID)
@@ -1166,16 +1191,22 @@ classdef Dataset < handle
             ip.KeepUnmatched = true;
             addOptional(ip, 'Bkgd', [], @isnumeric);
             addParameter(ip, 'Average', false, @islogical);
+            addParameter(ip, 'KeepOmitted', false, @islogical);
             % addParameter(ip, 'Smooth', [], @isnumeric);
             parse(ip, varargin{:});
 
             avgFlag = ip.Results.Average;
             bkgdWindow = ip.Results.Bkgd;
-            % smoothFac = ip.Results.Smooth;
+            keepOmitted = ip.Results.KeepOmitted;
 
-            % epochs = obj.stim2epochs(char(whichStim));
             epochs = obj.stim2epochs(whichStim);
             iStim = obj.epoch2stim(epochs(1));
+
+            % if any(ismember(epochs, obj.omittedEpochs)) && ~keepOmitted
+            %     warning('Omitting epoch %s', ...
+            %         value2string(epochs(ismember(epochs, obj.omittedEpochs))));
+            %     epochs = setdiff(epochs, obj.omittedEpochs);
+            % end
 
             % If background window not specified, get stimulus default
             if cellfind(ip.UsingDefaults, 'Bkgd')
@@ -1218,6 +1249,9 @@ classdef Dataset < handle
                 numel(idx), obj.stimuliUsed(stimulusID));
             avgStack = [];
             for i = 1:numel(idx)
+                % if ismember(idx(i), obj.omittedEpochs)
+                %     continue
+                % end
                 avgStack = cat(4, avgStack, obj.getEpochStack(obj.epochIDs(idx(i))));
             end
             avgStack = squeeze(mean(avgStack, 4));
@@ -1269,6 +1303,25 @@ classdef Dataset < handle
 
     % Analysis methods
     methods 
+        function makePrctleSnapshots(obj, IDs)
+            if nargin < 2
+                IDs = obj.epochIDs;
+            end
+
+            fPath = normPath([obj.experimentDir, filesep, 'Analysis', filesep, 'Snapshots', filesep]);
+            progressbar();
+
+            for i = 1:numel(IDs) 
+                baseName = ['_', obj.getShortName(IDs(i)), '.png'];
+                imStack = obj.getEpochStack(IDs(i));
+                imStackD = im2double(imStack);
+                progressbar(i / numel(IDs));
+                imwrite(im2uint8(prctile(imStackD, 0.9, 3)),... 
+                    [fPath, 'PCT', baseName], 'png');
+            end
+            progressbar(1);
+        end
+
         function makeStackSnapshots(obj, IDs)
             % MAKESTACKSNAPSHOTS
             %

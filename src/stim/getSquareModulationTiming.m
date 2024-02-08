@@ -27,15 +27,19 @@ function [ups, downs] = getSquareModulationTiming(T, whichLED, outputFrames)
         whichLED = 1;
     end
         
-    switch whichLED
-        case 1  % Red
-            stim = T.R;
-        case 2  % Green
-            stim = T.G;
-        case 3  % Blue
-            stim = T.B;
-        case 4  % All
-            stim = T.R + T.G + T.B;
+    if istable(T)
+        switch whichLED
+            case 1  % Red
+                stim = T.R;
+            case 2  % Green
+                stim = T.G;
+            case 3  % Blue
+                stim = T.B;
+            case 4  % All
+                stim = T.R + T.G + T.B;
+        end
+    else
+        stim = T;
     end
 
     bkgd = stim(1);

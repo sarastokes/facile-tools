@@ -1,18 +1,19 @@
 classdef RoiCoregisterApp < handle
+% ROICOREGISTERAPP
 %
 % See also:
 %   RoiManagerApp, ImageComparisonApp
 % -----------------------------------------------------------------------
 
     properties
-        fixedDataset
-        movingDataset
+        fixedDataset                % ao.core.Dataset
+        movingDataset               % ao.core.Dataset
 
         tform                       % affine2d
-        fixedXY         (:,2)       double
-        movingXY        (:,2)       double
+        fixedXY          (:,2)      double
+        movingXY         (:,2)      double
 
-        autoMode        (1,1)       logical             = false
+        registrationType (1,1)      string      = "nonreflectivesimilarity"
     end
 
     properties (Hidden, SetAccess = private)
@@ -21,10 +22,15 @@ classdef RoiCoregisterApp < handle
 
         listeners                   event.listener
 
-        figureHandle          (1,1)
+        figureHandle    (1,1)
         MovingMarker    (1,1)       matlab.graphics.primitive.Line
         FixedMarker     (1,1)       matlab.graphics.primitive.Line
         StatusBox       (1,1)       matlab.ui.control.Label
+    end
+
+    properties (Dependent)
+        movingImage
+        fixedImage
     end
 
     events
@@ -41,6 +47,14 @@ classdef RoiCoregisterApp < handle
             obj.bind();
         end
 
+        function out = get.movingImage(obj)
+            out = obj.movingUI.dsetImage;
+        end
+
+        function out = get.fixedImage(obj)
+            out = obj.fixedUI.dsetImage;
+        end
+
         function bind(obj)
             obj.listeners = [...
                 addlistener(obj.fixedUI, 'SelectedRoi', @obj.onRoiClicked),...
@@ -52,8 +66,26 @@ classdef RoiCoregisterApp < handle
         function registerImages(obj)
             % REGISTERIMAGES
             [xM, yM, xF, yF] = obj.getMatchedPoints();
-            obj.tform = fitgeotrans([xF yF], [xM yM], 'nonreflectivesimilarity');
+            if strcmpi(obj.registrationType, 'polynomial')
+                obj.tform = fitgeotrans([xF, yF], [xM, yM], 'polynomial', 3);
+            else
+                obj.tform = fitgeotrans([xF yF], [xM yM], obj.registrationType);
+            end
             obj.StatusBox.Text = sprintf('Registered with %u ROIs', numel(xM));
+        end
+
+        function onMenu_ShowDisplacement(obj)
+            if isempty(obj.tform)
+                return
+            end
+            [X, Y] = meshgrid(1:5:size(obj.movingImage,1), 1:5:size(obj.movingImage,2));
+            [xOffset, yOffset] = transformPointsForward(obj.tform, X, Y);
+            
+            axes('Parent', figure('Name', 'Displacement'));
+            quiverC2D(Y(:), X(:), yOffset(:), xOffset(:));
+            colormap(slanCM('thermal-2', 256));
+            axis equal tight
+            tightfig(gcf);
         end
 
         function checkOffsets(obj)
@@ -62,7 +94,6 @@ classdef RoiCoregisterApp < handle
             for i = 1:numel(xM)
                 roiDistances(i) = fastEuclid2d([xM(i) yM(i)], [xF(i), yF(i)]);
             end
-            assignin('base', 'roiDistances', roiDistances);
 
             ax = axes('Parent', figure('Name', 'Offsets'));
             hold(ax, 'on');
@@ -122,6 +153,12 @@ classdef RoiCoregisterApp < handle
             plot(ax, x2a, y2a, 'xr', 'LineStyle', 'none', 'Display', 'FixedT');
             title(ax, 'o = Moving, x = FixedT', ...
                 'FontSize', 10, 'FontWeight', 'normal');
+            residualError = zeros(size(x1));
+            for i = 1:numel(x1)
+                residualError(i) = fastEuclid2d([x1(i), y1(i)], [x2a(i), y2a(i)]);
+            end
+            title(ax, sprintf('Error = %.2f +- %.2f', ...
+                mean(residualError), std(residualError)));
             grid(ax, 'on');
             axis(ax, 'equal');
             axis(ax, 'tight');
@@ -142,11 +179,16 @@ classdef RoiCoregisterApp < handle
 
             % Compare images
             ax = axes('Parent', uipanel('Parent', mainLayout));
-            sameAsInput = affineOutputView(size(obj.movingUI.dsetImage),...
-                 obj.tform, 'BoundsStyle','SameAsInput');
-            imshowpair(obj.movingUI.dsetImage,...
-                imwarp(obj.fixedUI.dsetImage, obj.tform, 'OutputView', sameAsInput),...
-                'Scaling', 'independent', 'Parent', ax);
+            try
+                sameAsInput = affineOutputView(size(obj.movingImage),...
+                     obj.tform, 'BoundsStyle','SameAsInput');
+                imshowpair(obj.movingImage,...
+                    imwarp(obj.fixedImage, obj.tform, "OutputView", sameAsInput));
+            catch
+                imshowpair(obj.movingImage,...
+                    imwarp(obj.fixedImage, imref2d(size(obj.fixedImage)), obj.tform),...
+                    'Scaling', 'independent', 'Parent', ax);
+            end
 
             set(tformLayout, 'Widths', [-1 242 -1]);
             set(leftLayout, 'Heights', [-1 67]);
@@ -154,7 +196,7 @@ classdef RoiCoregisterApp < handle
         end
 
         function autoReg(obj)
-            numBlank = 0; numReg = 0;
+            numBlank = 0; numReg = 0; flaggedUIDs = [];
             for i = 1:height(obj.movingUI.Table.DisplayData)
                 if obj.movingUI.Table.DisplayData{i,2} ~= ""
                     continue
@@ -173,8 +215,22 @@ classdef RoiCoregisterApp < handle
                     continue
                 end
                 if ismember(alignedUid, obj.movingUI.Table.Data{:,2})
-                    warning('Check on UID %s', alignedUid);
-                    continue
+                    flaggedUIDs = [flaggedUIDs; alignedUid]; %#ok<AGROW>
+                    otherRoiID = obj.movingUI.Table.Data{obj.movingUI.Table.Data == alignedUid, 1};
+                    refXY = obj.fixedXY(obj.fixedDataset.uid2roi(alignedUid),:);
+                    D = fastEuclid2d(refXY, [obj.movingXY(i,:); obj.movingXY(otherRoiID, :)]);
+                    if D(1) > D(2)
+                        chosenROI = i;
+                    else
+                        chosenROI = otherRoiID;
+                        obj.movingUI.Table.Data{i,2} = "";
+                    end
+                    % TODO: Check which has the smallest distance to UID
+                    warning('Check on UID %s. Chose %u. Distances: %u=%.2f %u=%.2f\n',... 
+                        alignedUid, i, chosenROI, D(1), otherRoiID, D(2));
+                    if D(1) > 2
+                        continue
+                    end
                 end
 
                 obj.StatusBox.Text = sprintf('ROI estimate = %u, %s\n',...
@@ -189,6 +245,9 @@ classdef RoiCoregisterApp < handle
             end
             fprintf('RoiCoregisterApp: %u blank, %u registered\n',...
                 numBlank, numReg);
+            if ~isempty(flaggedUIDs)
+                fprintf('Flagged UIDs: '); disp(flaggedUIDs);
+            end
         end
     end
 
@@ -302,6 +361,12 @@ classdef RoiCoregisterApp < handle
             end
         end
 
+        function onMenu_ChangeRegistrationType(obj, src, ~)
+            obj.registrationType = string(src.Text);
+            set(findall(obj.figureHandle, "Tag", "RegType"), "Checked", false);
+            src.Checked = true;
+        end
+
         function onMenu_CheckOffsets(obj, ~, ~)
             obj.checkOffsets();
         end
@@ -327,11 +392,11 @@ classdef RoiCoregisterApp < handle
                 return
             end
             outputView = affineOutputView(...
-                size(obj.fixedUI.dsetImage), obj.tform,...
+                size(obj.fixedImage), obj.tform,...
                 "BoundsStyle", "sameAsInput");
             ImageComparisonApp(...
-                imadjust(obj.movingUI.dsetImage), ...
-                imadjust(imwarp(obj.fixedUI.dsetImage, obj.tform, ...
+                imadjust(obj.movingImage), ...
+                imadjust(imwarp(obj.fixedImage, obj.tform, ...
                     'OutputView', outputView)));
         end
 
@@ -404,39 +469,60 @@ classdef RoiCoregisterApp < handle
             set(obj.figureHandle, 'Name',...
                 [obj.movingUI.datasetName ' to ' obj.fixedUI.datasetName]);
 
+            % Registration menu
             hMenu = uimenu(obj.figureHandle, 'Text', 'Registration');
-            mItem = uimenu(hMenu, 'Text', 'Check Offsets');
-            mItem.Accelerator = 'O';
-            mItem.MenuSelectedFcn = @obj.onMenu_CheckOffsets;
-
             mItem = uimenu(hMenu,'Text','&Register ROIs');
             mItem.Accelerator = 'R';
             mItem.MenuSelectedFcn = @obj.onMenu_RegisterImages;
+            
+            sMenu = uimenu(hMenu, "Text", "Registration Type");
+            mItem = uimenu(sMenu,"Text", "Affine", "Tag", "RegType");
+            mItem.MenuSelectedFcn = @obj.onMenu_ChangeRegistrationType;
+            mItem = uimenu(sMenu, "Text", "NonreflectiveSimilarity",...
+                "Checked", "on", "Tag", "RegType");
+            mItem.MenuSelectedFcn = @obj.onMenu_ChangeRegistrationType;
+            mItem = uimenu(sMenu, "Text", "projective", "Tag", "RegType");
+            mItem.MenuSelectedFcn = @obj.onMenu_ChangeRegistrationType;
+            mItem = uimenu(sMenu, "Text", "Polynomial", "Tag", "RegType");
+            mItem.MenuSelectedFcn = @obj.onMenu_ChangeRegistrationType;
 
-            mItem = uimenu(hMenu, 'Text', '&Check Registration');
-            mItem.Accelerator = 'C';
-            mItem.MenuSelectedFcn = @obj.onMenu_CheckTransform;
 
             mItem = uimenu(hMenu, 'Text', 'Auto Register');
             mItem.Accelerator = 'A';
             mItem.MenuSelectedFcn = @obj.onMenu_AutoRegister;
 
-            mItem = uimenu(hMenu, 'Text', 'Color Coregistered');
-            mItem.Accelerator = 'X';
-            mItem.MenuSelectedFcn = @obj.onMenu_ColorCoregistered;
-
             mItem = uimenu(hMenu, 'Text', 'List Coregistered');
             mItem.MenuSelectedFcn = @obj.onMenu_ListCoregistered;
 
+            % Visualization menu
+            hMenu = uimenu(obj.figureHandle, "Text", "Visualization");
+
+            mItem = uimenu(hMenu, 'Text', '&Check Registration');
+            mItem.Accelerator = 'C';
+            mItem.MenuSelectedFcn = @obj.onMenu_CheckTransform;
+
+            mItem = uimenu(hMenu, 'Text', 'Check Offsets');
+            mItem.Accelerator = 'O';
+            mItem.MenuSelectedFcn = @obj.onMenu_CheckOffsets;
+
             mItem = uimenu(hMenu, 'Text', 'Compare Registered Images');
             mItem.MenuSelectedFcn = @obj.onMenu_CompareImages;
+
+            mItem = uimenu(hMenu,  'Text', 'Show displacement');
+            mItem.MenuSelectedFcn = @obj.onMenu_ShowDisplacement;
+
+            mItem = uimenu(hMenu, 'Text', 'Color Coregistered');
+            mItem.Accelerator = 'X';
+            mItem.MenuSelectedFcn = @obj.onMenu_ColorCoregistered;
+            
 
             % Create target marker
             obj.MovingMarker = line(obj.movingUI.Axes, NaN, NaN,...
                 'Marker', 'x', 'Color', 'r', 'LineStyle', 'None',...
                 'LineWidth', 1.5, 'MarkerSize', 10);
             obj.FixedMarker = line(obj.fixedUI.Axes, NaN, NaN,...
-                'Marker', 'x', 'Color', 'r', 'LineStyle', 'None');
+                'Marker', 'x', 'Color', 'r', 'LineStyle', 'None',...
+                'LineWidth', 1.5, 'MarkerSize', 10);
         end
     end
 end

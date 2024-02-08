@@ -42,7 +42,7 @@ function [videoNames, p] = processVideoPrep(experimentDir, epochIDs, varargin)
     extraHeader = ip.Results.ExtraHeader;
     useFirst = ip.Results.UseFirst;
     whichChannel = ip.Results.Channel;
-    backgroundRegion = ip.Results.BackgroundRegion;
+    backgroundRegion = ip.Results.BackgroundRegion; %#ok<NASGU>
 
     % Keep parameters to pass back to ImageJ-MATLAB script
     p = ip.Results;

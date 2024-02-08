@@ -18,6 +18,8 @@ function [fStack, secondStack] = pixelDfStack(imStack, bkgdWindow, varargin)
     %       How much to downsample the video (default = no downsampling)
     %   smoothFac           integer
     %       How much to smooth the data in time (default = no smoothing)
+    %   highPass            double
+    %       Cutoff frequency for high pass filtering (default = none)
     %   gaussFac            integer
     %       How much to spatially smooth the data with imgaussfilt
     %   normFlag            logical
@@ -32,22 +34,29 @@ function [fStack, secondStack] = pixelDfStack(imStack, bkgdWindow, varargin)
     %   05May2022 - SSP
     %   12Jun2022 - SSP - Added second stack option
     %   21Jun2022 - SSP - Added normalization option
+    %   10Nov2023 - SSP - Added high pass filter and frame rate options
     % ---------------------------------------------------------------------
 
     ip = inputParser();
     ip.CaseSensitive = false;
     addParameter(ip, 'DownsampFac', [], @isnumeric);
     addParameter(ip, 'SmoothFac', [], @isnumeric);
+    addParameter(ip, 'HighPass', [], @isnumeric);
     addParameter(ip, 'GaussFac', [], @isnumeric);
+    addParameter(ip, 'FrameRate', 25, @isnumeric);
     addParameter(ip, 'SecondStack', [], @isnumeric);
     addParameter(ip, 'Norm', false, @islogical);
+    addParameter(ip, 'MethodName', "df", @(x) ismember(x, ["df", "dff"]));
     parse(ip, varargin{:});
 
     downsampFac = ip.Results.DownsampFac;
     smoothFac = ip.Results.SmoothFac;
+    highPassCutoff = ip.Results.HighPass;
     gaussFac = ip.Results.GaussFac;
     normFlag = ip.Results.Norm;
     secondStack = ip.Results.SecondStack;
+    methodName = ip.Results.MethodName;
+    frameRate = ip.Results.FrameRate;
 
     if ~isa(imStack, 'double')
         imStack = im2double(imStack);
@@ -63,9 +72,23 @@ function [fStack, secondStack] = pixelDfStack(imStack, bkgdWindow, varargin)
     bkgd = reshape(bkgd, [x*y, 1]);
 
     fStack = imStack - bkgd;
+    if methodName == "dff"
+        for i = 1:size(fStack,1)
+            fStack(i,:) = fStack(i,:) / bkgd(i);
+        end
+    end
 
     if ~isempty(smoothFac)
         fStack = mysmooth2(fStack, smoothFac);
+    end
+
+    if ~isempty(highPassCutoff)
+        fStack = signalHighPassFilter(fStack, highPassCutoff, frameRate);
+        if isempty(bkgdWindow)
+            fStack = signalMeanCorrect(fStack);
+        else
+            fStack = signalBaselineCorrect(fStack, bkgdWindow); 
+        end
     end
 
     if ~isempty(downsampFac)

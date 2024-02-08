@@ -30,43 +30,62 @@ classdef MultiDataset < handle
     end
 
     properties %(SetAccess = private)
-        source
-        location
-        stimulusType
 
         xpts
 
+        % The filter used to extract desired stimuli
         stimFilter
+        % The key/value properties used when importing ROI responses
         respProps
+        % Stimulus region used for computing quality index and correlation
+        analysisRegion
 
         StimTable
         uidTable
         uidTable2
         datasetNames
+        % How many frames were in each experiment's presentation of stim
         frameCounts
+        % How many ROIs were present for each experiment
         roiCounts
+        % The unique UUIDs across experiments
         uniqueUUIDs
+        % Cell array with the nRois x T x nReps per stim & exp
         roiResponses
         uidResponses
+        % nUUID by time matrix of responses
         allResponses
+        % The QIs for each datasets
+        roiQIs
+        % QIs where UIDs with less than 3 repeats are NaN
+        validQI
 
         repCorr
         hasMotion
         omitMatrix
 
+        % Manual override of quality decisions
         manualBad
         manualGood
+
+        datasets
     end
 
-    properties %(Transient, SetAccess = private)
-        datasets
+    properties (SetAccess = private)
+        source
+        location
+        stimulusType
+    end
+
+    properties (Access = private)
         hasStim
     end
 
     properties (Dependent)
-        numDatasets
-        numUUIDs
-        numReps
+        numDatasets         (1,1)       {mustBeInteger}
+        numStimuli          (1,1)       {mustBeInteger}
+        numUUIDs            (1,1)       {mustBeInteger}
+        numReps             (1,1)       {mustBeInteger}
 
         colormap
     end
@@ -78,16 +97,27 @@ classdef MultiDataset < handle
     end
 
     methods
-        function obj = MultiDataset(source, location, stimulusType)
+        function obj = MultiDataset(source, location, stimulusType, varargin)
+
             obj.source = source;
             obj.location = location;
             assert(ismember(stimulusType, ["spectral", "spatial"]),...
                 "stimulusType must be either spectral or spatial");
             obj.stimulusType = stimulusType;
 
+            % Optional key/value input parsing
+            ip = inputParser();
+            ip.CaseSensitive = false;
+            addParameter(ip, 'AnalysisRegion', [1 0], @isnumeric);
+            parse(ip, varargin{:});
+
+            obj.analysisRegion = ip.Results.AnalysisRegion;
+
+            % Initialize
             obj.uidResponses = aod.common.KeyValueMap();
             obj.roiResponses = aod.common.KeyValueMap();
 
+            % Load all possible datasets
             obj.collectDatasets();
         end
     end
@@ -116,6 +146,14 @@ classdef MultiDataset < handle
                 value = 0;
             else
                 value = sum(obj.StimTable.NumReps);
+            end
+        end
+
+        function value = get.numStimuli(obj)
+            if isempty(obj.StimTable)
+                value = 0;
+            else
+                value = height(obj.StimTable);
             end
         end
 
@@ -209,108 +247,12 @@ classdef MultiDataset < handle
             obj.uidTable.Bad(ID) = true;
         end
 
-        function plotColorScale(obj)
-            exptDates = [];
-            for i = 1:obj.numDatasets
-                exptDates = cat(1, exptDates,...
-                    repmat(string(obj.datasets(i).experimentDate), [obj.StimTable.NumReps(i), 1]));
-            end
-            cmap = obj.colormap;
-
-            ax = axes('Parent', figure());
-            hold(ax, 'on');
-            for i = 1:size(cmap, 1)
-                text(ax, 0, i*2, exptDates(i),...
-                    'Color', cmap(i,:), 'HorizontalAlignment', 'center',...
-                    'FontSize', 12, 'FontName', 'Arial');
-            end
-            xticks([]); yticks([]);
-            xlim([-0.5, 0.5]); ylim([1, i*2+1]);
-            ax.Position(3) = ax.Position(3)/3;
-            set(ax, 'Box', 'on');
-            tightfig(ax.Parent);
-        end
-
-        function plotUuidErr(obj, uuid, varargin)
-            ip = aod.util.InputParser();
-            addParameter(ip, 'Parent', [], @ishandle);
-            addParameter(ip, 'All', false, @islogical);
-            addParameter(ip, 'Cutoff', obj.repCutoff, @isnumeric);
-            addParameter(ip, 'LineProp', '-b', @ischar);
-            addParameter(ip, 'Norm', false, @islogical);
-            parse(ip, varargin{:});
-
-            if isempty(ip.Results.Parent)
-                ax = axes('Parent', figure()); hold on;
-            else
-                ax = ip.Results.Parent;
-            end
-            hold(ax, 'on');
-            thresh = ip.Results.Cutoff;
-            lineProp = ip.Results.LineProp;
-            normFlag = ip.Results.Norm;
-
-            if isnumeric(uuid)
-                ID = uuid;
-                uuid = obj.id2uid(ID);
-            else
-                uuid = upper(uuid);
-                ID = obj.uid2id(uuid);
-            end
-
-            data = obj.getUuidResponse(uuid);
-            if isempty(data) || nnz(obj.isValid(ID, [], thresh)) == 0
-                warning('No valid data!');
-                return
-            end
-
-            if ip.Results.All
-                co = obj.colormap;
-                if normFlag
-                    data = data ./ max(abs(data), [], 2, 'omitnan');
-                end
-                plot(ax, obj.xpts, mean(data(obj.isValid(ID, [], thresh),:), 1),...
-                    'k', 'LineWidth', 1.5);
-                for i = 1:size(data, 1)
-                    if obj.isValid(ID, i)
-                        plot(ax, obj.xpts, data(i,:),...
-                            'Color', co(i,:), 'LineWidth', 0.7);
-                    end
-                end
-            else
-                data = data(obj.isValid(ID, [], thresh), :);
-                if normFlag
-                    data = data ./ max(abs(data), [], 2, 'omitnan');
-                end
-                shadedErrorBar(obj.xpts, data,...
-                    {@(x)mean(x, 1, 'omitnan'), @(x)std(x, [], 1, 'omitnan')},...
-                    'lineprops', {lineProp, 'LineWidth', 1, 'Parent', ax});
-            end
-            xlim(ax, [min(obj.xpts), max(obj.xpts)]);
-            addZeroBarIfNeeded(ax);
-            roundYAxisLimits(ax, 0.5);
-            if ax.YLim(1) > 0
-                ax.YLim(1) = 0;
-            end
-            if ~isempty(obj.ups)
-                addStimPatch(ax, obj.ups, obj.INC_PROPS{:});
-            end
-            if ~isempty(obj.downs)
-                addStimPatch(ax, obj.downs, obj.DEC_PROPS{:});
-            end
-            title(ax, uuid);
-            showGrid(ax, 'y');
-            reverseChildOrder(ax);
-            if isempty(ip.Results.Parent)
-                figPos(ax.Parent, 0.5, 0.5);
-            end
-        end
-
         function [avgR, R] = getUuidCorr(obj, uuid)
             if isnumeric(uuid)
                 uuid = obj.uidTable.UUID(uuid);
             end
             data = obj.getUuidResponse(uuid);
+            data = data(:, obj.analysisRegion(1):end-obj.analysisRegion(2));
 
             R = corrcoef(data');
             avgR = zeros(1,size(R,1));
@@ -367,12 +309,17 @@ classdef MultiDataset < handle
             if isempty(obj.roiResponses)
                 error('Cannot proceed until collectResponses is run!');
             end
+            fprintf('Compiling multidataset... ');
             obj.collectUUIDs();
+            fprintf('Assigning responses... ');
             obj.assignResponses();
+            fprintf('Computing quality indices... ');
             obj.computeQualityIndex();
+            fprintf('Identifying bad ROIs... ');
             obj.getMotionROIs();
             obj.getOmittedROIs();
             obj.calcAdjustedQI();
+            fprintf('Done!\n');
         end
 
         function setStimWindows(obj, ups, downs)
@@ -486,7 +433,161 @@ classdef MultiDataset < handle
         end
     end
 
-    methods  (Access = private)
+    methods
+        function getExptQI(obj)
+            obj.roiQIs = cell(1, numel(obj.roiResponses));
+            for i = 1:numel(obj.roiResponses)
+                if ismatrix(obj.roiResponses{i})
+                    obj.roiQIs{i} = NaN(size(obj.roiResponses{i}, 1), 1);
+                    continue
+                end
+                obj.roiQIs{i} = qualityIndex(obj.roiResponses{i});
+            end
+        end
+    end
+
+    methods
+        function plotUuidSummary(obj)
+            figure('Name', 'UUID Summary');
+            subplot(1,2,1); hold on; grid on;
+            binEdges = 0:obj.numDatasets;
+            histogram(obj.uidTable.N, 'BinEdges', binEdges+0.5);
+            xlabel('Number of Presentations');
+            ylabel('Number of UUIDs');
+            title(sprintf('%u UUIDs', obj.numUUIDs));
+            xticks(1:obj.numDatasets);
+
+            subplot(1,2,2); hold on; grid on;
+            histogram(obj.uidTable.Reps, 'NumBins', obj.numReps);
+            xlabel('Number of Repeats');
+            ylabel('Number of UUIDs');
+            xticks(1:obj.numReps);
+            title(sprintf('%u UUIDs', obj.numUUIDs));
+
+            figPos(gcf, 1.1, 0.7);
+            tightfig(gcf);
+        end
+
+        function plotColorScale(obj)
+            exptDates = [];
+            for i = 1:obj.numDatasets
+                exptDates = cat(1, exptDates,...
+                    repmat(string(obj.datasets(i).experimentDate), [obj.StimTable.NumReps(i), 1]));
+            end
+            cmap = obj.colormap;
+
+            ax = axes('Parent', figure());
+            hold(ax, 'on');
+            for i = 1:size(cmap, 1)
+                text(ax, 0, i*2, exptDates(i),...
+                    'Color', cmap(i,:), 'HorizontalAlignment', 'center',...
+                    'FontSize', 12, 'FontName', 'Arial');
+            end
+            xticks([]); yticks([]);
+            xlim([-0.5, 0.5]); ylim([1, i*2+1]);
+            ax.Position(3) = ax.Position(3)/3;
+            set(ax, 'Box', 'on');
+            tightfig(ax.Parent);
+        end
+
+        function plotQualityIndices(obj)
+            idx = obj.uidTable.Reps >= 3;
+
+            ax = axes('Parent', figure()); hold(ax, 'on');
+            h1 = histogram(ax, obj.uidTable.QI(idx),...
+                "Normalization", "cdf", "BinEdges", 0:0.05:1,...
+                "FaceColor", "b", "FaceAlpha", 0.3, ...
+                "EdgeColor", "none", "DisplayName", "QI");
+            h2 = histogram(ax, obj.uidTable.Corr(idx),...
+                "Normalization", "cdf", "BinEdges", 0:0.05:1,...
+                "FaceColor", "r", "FaceAlpha", 0.3,...
+                "EdgeColor", "none", "DisplayName", "R");
+            legend(ax, "Location", "northwest");
+            grid(ax, 'on');
+            xlabel(ax, 'Metric'); xticks(0:0.1:1);
+            ylabel(ax, 'Proportion of neurons'); yticks(0:0.1:1);
+            figPos(ax.Parent, 0.7, 0.7);
+            axis square
+            tightfig(gcf);
+        end
+
+        function plotUuidErr(obj, uuid, varargin)
+            ip = aod.util.InputParser();
+            addParameter(ip, 'Parent', [], @ishandle);
+            addParameter(ip, 'All', false, @islogical);
+            addParameter(ip, 'Cutoff', obj.repCutoff, @isnumeric);
+            addParameter(ip, 'LineProp', '-b', @ischar);
+            addParameter(ip, 'Norm', false, @islogical);
+            parse(ip, varargin{:});
+
+            if isempty(ip.Results.Parent)
+                ax = axes('Parent', figure()); hold on;
+            else
+                ax = ip.Results.Parent;
+            end
+            hold(ax, 'on');
+            thresh = ip.Results.Cutoff;
+            lineProp = ip.Results.LineProp;
+            normFlag = ip.Results.Norm;
+
+            if isnumeric(uuid)
+                ID = uuid;
+                uuid = obj.id2uid(ID);
+            else
+                uuid = upper(uuid);
+                ID = obj.uid2id(uuid);
+            end
+
+            data = obj.getUuidResponse(uuid);
+            if isempty(data) || nnz(obj.isValid(ID, [], thresh)) == 0
+                warning('No valid data!');
+                return
+            end
+
+            if ip.Results.All
+                co = obj.colormap;
+                if normFlag
+                    data = data ./ max(abs(data), [], 2, 'omitnan');
+                end
+                plot(ax, obj.xpts, mean(data(obj.isValid(ID, [], thresh),:), 1),...
+                    'k', 'LineWidth', 1.5);
+                for i = 1:size(data, 1)
+                    if obj.isValid(ID, i)
+                        plot(ax, obj.xpts, data(i,:),...
+                            'Color', co(i,:), 'LineWidth', 0.7);
+                    end
+                end
+            else
+                data = data(obj.isValid(ID, [], thresh), :);
+                if normFlag
+                    data = data ./ max(abs(data), [], 2, 'omitnan');
+                end
+                shadedErrorBar(obj.xpts, data,...
+                    {@(x)mean(x, 1, 'omitnan'), @(x)std(x, [], 1, 'omitnan')},...
+                    'lineprops', {lineProp, 'LineWidth', 1, 'Parent', ax});
+            end
+            xlim(ax, [min(obj.xpts), max(obj.xpts)]);
+            addZeroBarIfNeeded(ax);
+            roundYAxisLimits(ax, 0.5);
+            if ax.YLim(1) > 0
+                ax.YLim(1) = 0;
+            end
+            if ~isempty(obj.ups)
+                addStimPatch(ax, obj.ups, obj.INC_PROPS{:});
+            end
+            if ~isempty(obj.downs)
+                addStimPatch(ax, obj.downs, obj.DEC_PROPS{:});
+            end
+            title(ax, uuid);
+            showGrid(ax, 'y');
+            reverseChildOrder(ax);
+            if isempty(ip.Results.Parent)
+                figPos(ax.Parent, 0.5, 0.5);
+            end
+        end
+    end
+
+    methods  %(Access = private)
         function rowIdx = getDsetRows(obj, dsetID)
             if dsetID == 1
                 rowIdx = 1:obj.StimTable.NumReps(1);
@@ -526,26 +627,47 @@ classdef MultiDataset < handle
                 allStimNames = cat(1, allStimNames, stimuliUsed(idx));
                 allReps = cat(1, allReps, obj.datasets(i).stim.N(idx));
             end
-            obj.StimTable = table(allDsets, allDsetNames, allStimNames, allReps,...
-                'VariableNames', {'ID', 'Dataset', 'Stimulus', 'NumReps'});
+            obj.StimTable = table(allDsets,  allDsetNames, allStimNames, allReps,...
+                'VariableNames', {'ID', 'Stimulus', 'NumReps'});
             fprintf('%u of %u matched stimulus filter\n', nnz(obj.hasStim), obj.numDatasets);
         end
 
         function assignResponses(obj)
             obj.allResponses = nan(obj.numUUIDs, min(obj.frameCounts), obj.numReps);
-            for i = 1:obj.numUUIDs
-                dsetIDs = obj.uidTable2{obj.uidTable2.UUID == obj.uniqueUUIDs(i), "ID"};
-                for j = 1:numel(dsetIDs)
-                    roiID = obj.datasets(dsetIDs(j)).uid2roi(obj.uniqueUUIDs(i));
-                    if numel(roiID) > 1
-                        warning('Dset %u, found %u ROI IDs for UID %s, using first', ...
-                            dsetIDs(j), numel(roiID), obj.uniqueUUIDs(i));
-                        roiID = roiID(1);
+            for i = 1:height(obj.StimTable)
+                rowIdx = obj.getDsetRows(i);
+                Dataset = obj.datasets(obj.StimTable.ID(i));
+                for j = 1:Dataset.numROIs
+                    iUid = Dataset.roi2uid(j);
+                    if iUid == ""
+                        continue
                     end
-                    rowIdx = obj.getDsetRows(dsetIDs(j));
-                    obj.allResponses(i, :, rowIdx) = obj.getRoiResponse(dsetIDs(j), roiID);
+                    uidIdx = find(obj.uniqueUUIDs == iUid);
+                    if isempty(uidIdx)
+                        warning('used 2nd catch in assignResponses()');
+                        continue
+                    end
+                    obj.allResponses(uidIdx, :, rowIdx) = obj.getRoiResponse(i, j);
                 end
             end
+            % for i = 1:obj.numUUIDs
+            %     % The unique dataset IDs
+            %     datasetIDs = obj.uidTable2{obj.uidTable2.UUID == obj.uniqueUUIDs(i), "ID"};
+            %     % The roiResponse index (including multi-stim datasets)
+            %     dsetIDs = find(ismember(obj.StimTable.ID, datasetIDs));
+            %     for j = 1:numel(dsetIDs)
+            %         % The unique dataset index for this response set
+            %         iDset = obj.StimTable.ID(dsetIDs(j));
+            %         roiID = obj.datasets(iDset).uid2roi(obj.uniqueUUIDs(i));
+            %         if numel(roiID) > 1
+            %             warning('Dset %u, found %u ROI IDs for UID %s, using first', ...
+            %                 iDset, numel(roiID), obj.uniqueUUIDs(i));
+            %             roiID = roiID(1);
+            %         end
+            %         rowIdx = obj.getDsetRows(iDset);
+            %         obj.allResponses(i, :, rowIdx) = obj.getRoiResponse(dsetIDs(j), roiID);
+            %     end
+            % end
         end
 
         function collectUUIDs(obj)
@@ -574,23 +696,6 @@ classdef MultiDataset < handle
             for i = 1:height(obj.uidTable)
                 obj.uidTable.N(i) = numel(find(allUUIDs == obj.uidTable.UUID(i)));
             end
-
-            figure(); hold on; grid on;
-            binEdges = 0:obj.numDatasets;
-            histogram(obj.uidTable.N, 'BinEdges', binEdges+0.5);
-            xlabel('Number of Presentations');
-            ylabel('Number of UUIDs');
-            title(sprintf('%u UUIDs', obj.numUUIDs));
-            xticks(1:obj.numDatasets);
-            figPos(gcf, 0.7, 0.7);
-
-            figure(); hold on; grid on;
-            histogram(obj.uidTable.Reps, 'NumBins', obj.numReps);
-            xlabel('Number of Repeats');
-            ylabel('Number of UUIDs');
-            xticks(1:obj.numReps);
-            title(sprintf('%u UUIDs', obj.numUUIDs));
-            figPos(gcf, 0.7, 0.7);
         end
 
         function QI = computeQualityIndex(obj)
@@ -600,19 +705,25 @@ classdef MultiDataset < handle
                     QI(i) = NaN;
                     continue
                 end
+                % TODO: Background window
                 signals = obj.getUuidResponse(obj.uniqueUUIDs(i), true)';
+                if isnumeric(obj.analysisRegion)
+                    signals = signals(obj.analysisRegion(1):end-obj.analysisRegion(2),:);
+                end
                 QI(i) = qualityIndex(reshape(signals, [1, size(signals,1), size(signals,2)]));
             end
 
             obj.uidTable.QI = QI;
             thresholds = 0.6:0.1:0.9;
-            realQI = QI(~isnan(QI));
+            realQI = QI(obj.uidTable.Reps >= 3);
             for i = 1:numel(thresholds)
-                fprintf('%u UUIDs above %.1f\n', ...
-                    nnz(realQI > thresholds(i)), thresholds(i));
+                nPass = nnz(realQI > thresholds(i));
+                fprintf('%u UUIDs (%.2f%%) above %.1f\n', ...
+                    nPass, 100*nPass/numel(realQI), thresholds(i));
             end
-            fprintf('%u UUIDs have NaN QI, %u UUIDs total\n', ...
-                numel(QI)-numel(realQI), obj.numUUIDs);
+            fprintf('%u UUIDs have less than 3 repeats, %u UUIDs total\n', ...
+                obj.numUUIDs-numel(realQI), obj.numUUIDs);
+            obj.validQI = realQI;
         end
 
         function calcAdjustedQI(obj)
@@ -635,6 +746,7 @@ classdef MultiDataset < handle
                     QI(i) = NaN;
                     continue
                 end
+                signals = signals(:, obj.analysisRegion(1):end-obj.analysisRegion(2));
                 QI(i) = qualityIndex(reshape(signals,...
                     [1, size(signals,1), size(signals,2)]));
                 obj.uidTable.QIadj = QI;
@@ -642,6 +754,7 @@ classdef MultiDataset < handle
         end
 
         function getRepCorr(obj)
+            % TODO: Remove background
             obj.repCorr = zeros(obj.numUUIDs, obj.numReps);
             for i = 1:obj.numUUIDs
                 obj.repCorr(i,:) = obj.getUuidCorr(i);
@@ -689,8 +802,8 @@ classdef MultiDataset < handle
                         "MC00851_ODR_20221208B",...
                         "MC00851_ODR_20230627B",...
                         "MC00851_ODR_20230714B",...
-                        "MC00851_ODR_20230726B",...
-                        "MC00851_ODR_20230821B"];
+                        "MC00851_ODR_20231102B"];%,...
+                        %"MC00851_ODR_20230726B"];
                 end
             elseif source == 851 && location == "OSR"
                 if stimulusType == "spectral"
@@ -711,8 +824,7 @@ classdef MultiDataset < handle
                         "MC00851_OSR_20220719B",...
                         "MC00851_OSR_20220802B",...
                         "MC00851_OSR_20230627B",...
-                        "MC00851_OSR_20230814B"
-                    ];
+                        "MC00851_OSR_20230814B"];
                 end
             end
         end

@@ -48,8 +48,8 @@ function convertAvi(folderName, epochIDs)
 
         % Catch unexpected results
         if isempty(iFile)
-            warning('No file found for ID %u, skipping...',... 
-                epochIDs(i));
+            warning('No file found for ID %u (%s), skipping...',... 
+                epochIDs(i), sprintf("%04.0f", epochIDs(i)));
             continue
         elseif numel(iFile) > 1
             % Was the match within the monkey ID or date?

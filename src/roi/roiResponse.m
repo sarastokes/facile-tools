@@ -43,10 +43,11 @@ function [signals, xpts] = roiResponse(imStack, roi, bkgdWindow, varargin)
     respType = ip.Results.Method;
     sampleRate = ip.Results.SampleRate;
     
-    signals = roiDFF(imStack, roi, bkgdWindow, ip.Unmatched);
-    
     if strcmpi(respType, 'zscore')
+        signals = roiDFF(imStack, roi, [], ip.Unmatched);
         signals = roiZScores(signals, bkgdWindow);
+    else
+        signals = roiDFF(imStack, roi, bkgdWindow, ip.Unmatched);
     end
     
     % Get xpts while accounting for first blank frame thrown out

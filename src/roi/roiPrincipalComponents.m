@@ -1,4 +1,4 @@
-function [U, ev, proj] = roiPrincipalComponents(A, N)
+function [U, ev, proj, est] = roiPrincipalComponents(A0, N)
 % ROIPRINCIPALCOMPONENTS
 %
 % Description:
@@ -21,9 +21,10 @@ function [U, ev, proj] = roiPrincipalComponents(A, N)
 % ---------------------------------------------------------------------
 
     % zero mean
-    A = A - ones(size(A, 1), 1) * mean(A);
+    %A = A0 - ones(size(A0, 1), 1) * mean(A0);
+    A = A0 ./ max(abs(A0), [], 2);
 
-    [U, S, ~] = svd(A');
+    [U, S, V] = svd(A');
 
     ev = diag(S) .^ 2;
     ev = ev ./ sum(ev);
@@ -34,3 +35,7 @@ function [U, ev, proj] = roiPrincipalComponents(A, N)
     end
 
     proj = U' * A';
+
+    recon = proj * V';
+    recon = recon + ones(N,1) * mean(A0,2)';
+    est = recon' * -U';
