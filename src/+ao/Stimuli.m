@@ -1,9 +1,9 @@
-classdef Stimuli 
+classdef Stimuli
 % STIMULI
 %
 % Description:
 %   Stimulus attributes for display/analysis purposes
-% 
+%
 % History:
 %   20201204 - SSP
 % -------------------------------------------------------------------------
@@ -44,18 +44,18 @@ classdef Stimuli
         ContrastDecrement5
         ContrastIncrement3
         ContrastDecrement3
-        
+
         ContrastIncrement20s80t
         ContrastDecrement20s80t
         ContrastDecrementIncrement20s90t
-        
+
         TemporalSquarewave05
         TemporalSquarewave1
         TemporalContrastSquarewave05
-        
+
         Chirp
         ShortChirp
-        
+
         % INDIVIDUAL BARS -------------------------------------------------
         % Iteration One
         Bar1of8
@@ -93,7 +93,7 @@ classdef Stimuli
         Bar14of16
         Bar15of16
         Bar16of16
-        
+
         % Iteration Three
         Bar4of32
         Bar5of32
@@ -120,8 +120,8 @@ classdef Stimuli
         Bar26of32
         Bar27of32
         Bar28of32
-        
-        % Iteration 4 
+
+        % Iteration 4
         DecrementIncrementBar4of32
         DecrementIncrementBar5of32
         DecrementIncrementBar6of32
@@ -235,7 +235,7 @@ classdef Stimuli
         SpacedOutBars5of7
         SpacedOutBars6of7
         SpacedOutBars7of7
-        
+
         % Iteration Two
         SpacedOutIncrementBars1of7
         SpacedOutIncrementBars2of7
@@ -298,10 +298,10 @@ classdef Stimuli
 
         % SEQUENTIALBARS --------------------------------------------------
         SequentialBarDecrement4to12of16
-        
+
         % MOVING BARS -----------------------------------------------------
         VerticalMovingBar
-        
+
         MovingBar0
         MovingBar90
         MovingBar180
@@ -336,7 +336,7 @@ classdef Stimuli
         MovingBar8pix240
         MovingBar8pix270
         MovingBar8pix300
-        MovingBar8pix330 
+        MovingBar8pix330
 
         MovingBarCardinal18pix1v180t
         MovingBarDiagonal18pix1v180t
@@ -365,8 +365,8 @@ classdef Stimuli
         TemporalBinaryNoise42
         TemporalBinaryNoise35
         TemporalBinaryNoise11
-        
-        
+
+
         % TOPTICA SIM -----------------------------------------------------
         TopticaSimBaselineAdapt
         TopticaSimIncrement20s
@@ -377,9 +377,9 @@ classdef Stimuli
         LMConeIncrement
         LConeIncrement
         LConeDecrement
-        MConeIncrement 
-        MConeDecrement 
-        SConeIncrement 
+        MConeIncrement
+        MConeDecrement
+        SConeIncrement
         SConeDecrement
 
         LuminanceBaseline
@@ -393,12 +393,12 @@ classdef Stimuli
         LuminanceDecrement3s80t
         LuminanceChirp
         LuminanceSquarewave1
-        
-        
+
+
         Other  % For backwards compatibility
     end
 
-    methods 
+    methods
 
         function n = frames(obj, truncate)
             % FRAMES
@@ -448,8 +448,10 @@ classdef Stimuli
                         n = 4043;
                     elseif contains(stimName, 'TopticaSim')
                         n = 4500;
-                    elseif contains(stimName, '80t') 
-                        if contains(stimName, 'Luminance')
+                    elseif contains(stimName, '80t')
+                        if contains(stimName, '180t')
+                            n = 4500;
+                        elseif contains(stimName, 'Luminance')
                             n = 2040;
                         else
                             n = 2000;
@@ -474,7 +476,7 @@ classdef Stimuli
             %
             % -------------------------------------------------------------
             import ao.Stimuli;
-            
+
             if obj == Stimuli.SequentialBarDecrement4to12of16
                 n = 15;
             elseif contains(char(obj), 'DecrementIncrement')
@@ -492,7 +494,7 @@ classdef Stimuli
             end
 
             stim = 0.5 * ones(1, obj.frames());
-            
+
             stimName = char(obj);
             switch obj
                 case Stimuli.IntensityIncrement1s80t
@@ -571,7 +573,7 @@ classdef Stimuli
                     S = load('chirp.mat');
                     stim = S.chirp;
                 case {Stimuli.MovingBarCardinal18pix1v180t, Stimuli.MovingBarDiagonal18pix1v180t}
-                    stim = dlmread('trace_movingbars_18pix_1v_180t.txt'); %#ok<*DLMRD> 
+                    stim = dlmread('trace_movingbars_18pix_1v_180t.txt'); %#ok<*DLMRD>
                 case {Stimuli.MovingBarCardinal20pix1v180t, Stimuli.MovingBarCardinal20pix3v180t,...
                         Stimuli.MovingBarDiagonal20pix1v180t}
                     barTimes = [20, 60, 100, 140];
@@ -590,7 +592,7 @@ classdef Stimuli
                         stim(barTimes(i):barTimes(i)+numel(barTrace)-1) = barTrace;
                     end
 
-                otherwise 
+                otherwise
                     if contains(stimName, 'HorizontalDecrementIncrement')
                         stim(:, 251:750) = 0;
                         stim(:, 751:1250) = 1;
@@ -630,7 +632,7 @@ classdef Stimuli
             %       Account for removal of the first blank frame
             % -------------------------------------------------------------
             import ao.Stimuli;
-            
+
             if nargin < 2
                 truncate = true;
             end
@@ -668,7 +670,7 @@ classdef Stimuli
                         bkgd = [1 250];
                     end
             end
-            
+
             if truncate && ~isempty(bkgd)
                 bkgd(2) = bkgd(2) - 1;
             end
@@ -685,7 +687,7 @@ classdef Stimuli
             %       Account for removal of the first blank frame
             % -------------------------------------------------------------
             import ao.Stimuli;
-            
+
             if nargin < 2
                 truncate = true;
             end
@@ -752,7 +754,7 @@ classdef Stimuli
                         signal = [251 1375];
                     end
             end
-            
+
             if truncate
                 signal = signal - 1;
             end
@@ -764,7 +766,7 @@ classdef Stimuli
 
             epochIDs = epochGroup.stim{epochGroup.stim.Stimulus == obj, 4};
             epochIDs = epochIDs{1};
-            
+
             titleStr = [char(epochGroup.experimentDate), ' ', char(obj)];
 
             switch obj
@@ -775,7 +777,7 @@ classdef Stimuli
                     app = RoiAverageView2(epochGroup, epochIDs, obj.bkgd,...
                         obj.signal, titleStr);
                 case {Stimuli.Baseline, Stimuli.BaselineLong, Stimuli.LuminanceBaseline, Stimuli.BaselineLongZeroMean}
-                    app = RoiAverageView(epochGroup, epochIDs, [1 1000],... 
+                    app = RoiAverageView(epochGroup, epochIDs, [1 1000],...
                         [], titleStr);
                 case {Stimuli.TemporalSquarewave05, Stimuli.TemporalSquarewave1, Stimuli.LuminanceSquarewave1}
                     app = RoiAverageView(epochGroup, epochIDs, obj.bkgd,...
@@ -787,11 +789,11 @@ classdef Stimuli
                     app = RoiAverageView(epochGroup, epochIDs, obj.bkgd,...
                         [], titleStr, obj.trace);
                 case {Stimuli.TemporalNoise11, Stimuli.TemporalNoise16, Stimuli.TemporalNoise20, Stimuli.TemporalNoise35, Stimuli.TemporalNoise42}
-                    app = RoiAverageView(epochGroup, epochIDs, obj.bkgd,... 
+                    app = RoiAverageView(epochGroup, epochIDs, obj.bkgd,...
                         obj.signal, titleStr);
                 otherwise
                     if contains(char(obj), 'DecrementIncrement')
-                        app = RoiAverageView2(epochGroup, epochIDs, obj.bkgd,... 
+                        app = RoiAverageView2(epochGroup, epochIDs, obj.bkgd,...
                             obj.signal, titleStr, obj.trace(true));
                     elseif contains(char(obj), 'MovingBar')
                         app = RoiAverageView2(epochGroup, epochIDs, obj.bkgd,...
@@ -810,10 +812,10 @@ classdef Stimuli
                     end
             end
         end
-                
+
         function tf = isNoise(obj)
             import ao.Stimuli;
-            
+
             if contains(char(obj), 'Noise')
                 tf = true;
             else
@@ -830,7 +832,7 @@ classdef Stimuli
         end
     end
 
-    methods 
+    methods
         function makeMultiplot(obj, dataset, roiID, varargin)
 
             if ~isnumeric(roiID)
@@ -873,37 +875,37 @@ classdef Stimuli
                 signals = signals(roiID,:);
                 avgSignal = signals;
             end
-            
+
         end
     end
-    
+
     methods (Static)
         function obj = init(str)
             % INIT  Initialize object from stimulus name
             import ao.Stimuli;
-            
-            try 
+
+            try
                 obj = Stimuli.(str);
                 return
             end
-            
+
             if ismember('\', char(str)) % Stimulus files have PC filesep
                 str = strsplit(str, '\');
                 str = str{end};
             end
-            
+
             if strcmp(str(end), ' ')
                 str = str(1:end-1);
             end
-            
+
             str = erase(str, '.txt');
             str = erase(str, '_right');
             str = erase(str, '_left');
             str = erase(str, ',');
-            
+
             str = strrep(str, ' ', '_');
 
-            
+
             switch lower(str)
                 case 'zero_mean_bkgd'
                     obj = Stimuli.BaselineZeroMean;
@@ -921,7 +923,7 @@ classdef Stimuli
                     obj = Stimuli.IntensityIncrement3s80t;
                 case 'zero_mean_increment_5s_80t'
                     obj = Stimuli.IntensityIncrement5s80t;
-                    
+
                 case 'zero_mean_increment_10s'
                     obj = Stimuli.IntensityIncrement10s80t;
                 case 'zero_mean_increment_20s'
@@ -1529,7 +1531,7 @@ classdef Stimuli
                     warning('Unrecognized stimulus %s', char(str));
             end
         end
-          
+
         function stim = getNoise(noiseSeed, isBinary)
             if nargin < 2
                 isBinary = false;
@@ -1554,15 +1556,15 @@ classdef Stimuli
             end
             stim = stim + bkgd;
         end
-        
+
         function stim = getModulation(temporalFrequency, stimFrames, squarewave)
             if nargin < 3
                 squarewave = false;
             end
-            
+
             bkgd = 0.5;
             t = (1:stimFrames) / 25;
-            
+
             if squarewave
                 stim = bkgd * sign(sin(temporalFrequency * 2 * pi * t)) + bkgd;
             else

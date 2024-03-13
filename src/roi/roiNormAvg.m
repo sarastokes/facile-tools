@@ -1,5 +1,16 @@
 function avgSignals = roiNormAvg(signals, bkgdWindow)
-
+% ROINORMAVG
+%
+% Description:
+%   Normalize (0-1) followed by translation to baseline correct, then
+%   takes the average (if multiple repeats were provided)
+%
+% Syntax:
+%   avgSignals = roiNormAvg(signals, bkgdWindow)
+%
+% See also:
+%   rescale
+% --------------------------------------------------------------------------
     if ismatrix(signals)
         for i = 1:numel(signals,1)
             signals(i,:) = rescale(signals(i,:));

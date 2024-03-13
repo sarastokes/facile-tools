@@ -20,8 +20,6 @@ function [U, ev, proj, est] = roiPrincipalComponents(A0, N)
 %   06Nov2020 - SSP
 % ---------------------------------------------------------------------
 
-    % zero mean
-    %A = A0 - ones(size(A0, 1), 1) * mean(A0);
     A = A0 ./ max(abs(A0), [], 2);
 
     [U, S, V] = svd(A');

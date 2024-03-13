@@ -26,6 +26,7 @@ function fh = plotResponseVsCluster(signals, clustIdx, clustAvg, opts)
         opts.X          (1,:) double                      = []
         opts.ups              double                      = []
         opts.Counter    (1,1) double      {mustBeInteger} = 0
+        opts.ID
     end
 
     if isempty(clustAvg)
@@ -51,7 +52,7 @@ function fh = plotResponseVsCluster(signals, clustIdx, clustAvg, opts)
             end
             counter = counter + 1;
             clustID = clustIdx(counter);
-            subplot(opts.gridSize, opts.gridSize, counter);
+            subplot(opts.gridSize, opts.gridSize, counter-opts.Counter);
             hold on;
             area(xpts, clustAvg(clustID, :),...
                 'FaceColor', lighten(cmap(clustID,:), 0.4),...
@@ -67,7 +68,7 @@ function fh = plotResponseVsCluster(signals, clustIdx, clustAvg, opts)
             yticks(-1:0.5:1); grid on;
             xticklabels([]); yticklabels([]);
             clustCorr = corrcoef(signals(counter, :), clustAvg(clustID, :));
-            title(sprintf('%u (%u)', counter, round(100*clustCorr(1,2))));
+            title(sprintf('%u (%g)', counter, round(100*clustCorr(1,2))));
         end
         drawnow;
     end

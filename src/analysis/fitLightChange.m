@@ -19,8 +19,7 @@ function [fitresult, gof] = fitLightChange(xpts, data, varargin)
         data = data';
     end
 
-    %ft = fittype('exp2');
-    ft = fittype('a*exp(-((x-b).^2)./((heaviside(x-b)*(2*c^2)+(1-heaviside(x-b))*(2*(c^2)*d))))',... 
+    ft = fittype('a*exp(-((x-b).^2)./((heaviside(x-b)*(2*c^2)+(1-heaviside(x-b))*(2*(c^2)*d))))',...
         'independent', 'x', 'dependent', 'y');
     opts = fitoptions('Method', 'NonlinearLeastSquares');
     opts.Display = 'final';

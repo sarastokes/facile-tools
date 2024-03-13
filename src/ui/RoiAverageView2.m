@@ -20,6 +20,7 @@ classdef RoiAverageView2 < handle
         includedEpochs
         stimWindow
         bkgdWindow
+        otherStat
 
         autoX
 

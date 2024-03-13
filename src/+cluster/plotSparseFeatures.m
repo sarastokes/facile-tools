@@ -1,4 +1,4 @@
-function plotSparseFeatures(b, v, xpts)
+function plotSparseFeatures(b, v, xpts, varargin)
 %
 % Syntax:
 %   plotSparseFeatures(b, v, xpts)
@@ -8,6 +8,10 @@ function plotSparseFeatures(b, v, xpts)
 %   v       [1 x features]
 % -------------------------------------------------------------------------
 
+    ip = inputParser();
+    addParameter(ip, 'Area', false, @islogical);
+    parse(ip, varargin{:});
+
     nComp = numel(v);
     nNonZero = nnz(b(:,1));
 
@@ -15,7 +19,12 @@ function plotSparseFeatures(b, v, xpts)
     figure('Name', 'Feature Detection');
     subplot(1, 2, 1); hold on; axis square
     for i = 1:nComp
-        plot(xpts, b(:, i), 'Color', co(i, :));
+        if ip.Results.Area
+            area(xpts, b(:, i), 'EdgeColor', co(i, :), 'LineWidth', 0.75,...
+                'FaceAlpha', 0.1, 'FaceColor', co(i,:));
+        else
+            plot(xpts, b(:, i), 'Color', co(i, :), 'LineWidth', 0.75);
+        end
     end
     title(sprintf('N=%u, F=%u', nComp, nNonZero));
     xlabel('Time (s)');

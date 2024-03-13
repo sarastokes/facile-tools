@@ -1,9 +1,23 @@
 function T = roiF1F2(avgCycle)
-    % ROIF1F2
-    %
-    % History:
-    %   15Apr2022 - SSP
-    % ---------------------------------------------------------------------
+% ROIF1F2
+%
+% Description:
+%   Given the average cycle, Get the F1 and F2 amplitude and phase plus F0.
+%
+% Syntax:
+%   T = roiF1F2(avgCycle)
+%
+% Inputs:
+%   avgCycle        double, [N x t]
+%       The cycle averaged response with t determined by stim frequency
+%
+% History:
+%   15Apr2022 - SSP
+% --------------------------------------------------------------------------
+
+    arguments
+        avgCycle    (:,:)       double
+    end
 
     F0 = zeros(size(avgCycle,1),1);
     F1 = zeros(size(F0));
