@@ -41,6 +41,8 @@ classdef FrequencyView < handle
                 'FaceColor', mycolors('peacock'));
             xlim(obj.axHandle, [0.01 12.5]);
             xlabel(obj.axHandle, 'Frequency (Hz)');
+            xticks([0.01 0.1 1 10]);
+            xticklabels([0.01 0.1 1 10]);
             obj.axHandle.Parent.Position(3:4) = obj.axHandle.Parent.Position(3:4)/1.5;
         end
     end

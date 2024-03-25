@@ -23,6 +23,7 @@ classdef RoiAverageView2 < handle
         otherStat
 
         autoX
+        yTight
 
         currentRoi
 
@@ -68,6 +69,9 @@ classdef RoiAverageView2 < handle
             end
 
             [obj.signals, obj.xpts] = data.getEpochResponses(epochIDs, bkgdWindow);
+            if isempty(bkgdWindow)
+                obj.signals = signalBaselineCorrect(obj.signals, 10:size(obj.signals,2), false);
+            end
             try
                 obj.signalsZ = roiZScores(data.getEpochResponses(epochIDs, []), bkgdWindow);
             catch
@@ -94,6 +98,7 @@ classdef RoiAverageView2 < handle
             obj.includedEpochs = true(1, numel(obj.epochIDs));
             obj.currentRoi = 1;
             obj.autoX = true;
+            obj.yTight = true;
 
             obj.createUi();
         end
@@ -175,6 +180,17 @@ classdef RoiAverageView2 < handle
                 allSignals = allSignals';
             end
 
+            % Detrend signals, if needed
+            h = findobj(obj.figureHandle, 'Tag', 'detrend');
+            if h.Value
+                allSignals = roiPrctFilt(allSignals', 30, 1000, 1000)';
+                if ~isempty(obj.bkgdWindow)
+                    allSignals = signalBaselineCorrect(allSignals', obj.bkgdWindow, false)';
+                else
+                    allSignals = allSignals - mean(allSignals,1);
+                end
+            end
+
             % Smooth each signal if needed
             h = findobj(obj.figureHandle, 'Tag', 'Smooth');
             if ~isempty(h.String) && ~ismember(h.String, {'0', '1'})
@@ -245,10 +261,10 @@ classdef RoiAverageView2 < handle
                 allSignals = signalButterFilter(allSignals', obj.SAMPLE_RATE, 3, obj.butterFreq)';
             end
 
-            % Deconvolve 
-            if get(findByTag(obj.figureHandle, 'deconv'), 'Value')
-                allSignals = signalDeconv6s(allSignals', 1.5, obj.SAMPLE_RATE)';
-            end
+            % Convolve
+            % if get(findByTag(obj.figureHandle, 'conv'), 'Value')
+            %     allSignals = signalConv6s(allSignals', 1.25, obj.SAMPLE_RATE)';
+            % end
 
             % Plot the individual signals, if necessary
             delete(findall(obj.signalAxis, 'Tag', 'SignalLine'));
@@ -321,8 +337,9 @@ classdef RoiAverageView2 < handle
                 h(i).YData = [1 1 -1 -1];
             end
 
-
-            if get(findobj(obj.figureHandle, 'Tag', 'ZScore'), 'Value')
+            if obj.yTight
+                obj.signalAxis.YLim = max(abs(allSignals(:))) * [-1.1 1.1];
+            elseif get(findobj(obj.figureHandle, 'Tag', 'ZScore'), 'Value')
                 if maxVal < 1
                     ylim(obj.signalAxis, [-1 1]);
                 else
@@ -501,7 +518,7 @@ classdef RoiAverageView2 < handle
                 obj.butterFreq = [];
                 return
             end
-        
+
             if obj.checkNumericInput(src)
                 obj.butterFreq = str2double(src.String);
                 obj.changeRoi();
@@ -550,6 +567,11 @@ classdef RoiAverageView2 < handle
 
         function onUser_ChangedPlot(obj, ~, ~)
             obj.changeRoi();
+        end
+
+        function onCheck_YTight(obj, src, ~)
+            obj.yTight = src.Value;
+
         end
 
         function onCheck_AutoAxis(obj, src, ~)
@@ -724,7 +746,7 @@ classdef RoiAverageView2 < handle
             uicontrol(g, 'Style', 'text', 'String', 'Butter');
             uicontrol(g, 'Style', 'text', 'String', 'Normalize');
             uicontrol(g, 'Style', 'text', 'String', 'Derivative');
-            uicontrol(g, 'Style', 'text', 'String', 'Deconv');
+            uicontrol(g, 'Style', 'text', 'String', 'Detrend');
             uicontrol(g, 'Style', 'text', 'String', 'Median');
             uicontrol(g, 'Style', 'text', 'String', 'ZScore');
             uicontrol(g, 'Style', 'text', 'String', 'Shaded error:');
@@ -744,7 +766,7 @@ classdef RoiAverageView2 < handle
             uicontrol(g, 'Style', 'check', 'String', '',...
                 'Tag', 'dfdt', 'Callback', @obj.onUser_ChangedPlot);
             uicontrol(g, 'Style', 'check', 'String', '',...
-                'Tag', 'deconv', 'Callback', @obj.onUser_ChangedPlot);
+                'Tag', 'detrend', 'Callback', @obj.onUser_ChangedPlot);
             uicontrol(g, 'Style', 'check', 'String', '',...
                 'Tag', 'UseMedian', 'Callback', @obj.onUser_ChangedPlot);
             uicontrol(g, 'Style', 'check', 'String', '',...
@@ -806,6 +828,16 @@ classdef RoiAverageView2 < handle
                 'Tag', 'AutoX',...
                 'Callback', @obj.onCheck_AutoAxis);
             heights = [heights, -1, 40, 20];
+
+
+            uix.Empty('Parent', parentHandle, 'BackgroundColor', 'w');
+            uicontrol(parentHandle,...
+                'Style', 'check',...
+                'String', 'Y Axis Tight',...
+                'Value', false,...
+                'Tag', 'YTight',...
+                'Callback', @obj.onCheck_YTight);
+            heights = [heights, -1, 20];
 
             uix.Empty('Parent', parentHandle, 'BackgroundColor', 'w');
             exportLayout = uix.HBox('Parent', parentHandle,...

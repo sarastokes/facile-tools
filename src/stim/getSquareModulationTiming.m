@@ -43,7 +43,7 @@ function [ups, downs] = getSquareModulationTiming(T, whichLED, outputFrames)
     end
 
     bkgd = stim(1);
-    changes = [0; diff(stim)];
+    changes = [0; diff(stim(:))];
 
     idx = find(changes ~= 0);
     idx = [idx; height(T)];

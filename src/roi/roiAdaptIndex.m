@@ -44,4 +44,6 @@ function [adaptIndex, maxValues, adaptValues] = roiAdaptIndex(signals, frameRang
 
     if ndims(adaptIndex) == 3
         adaptIndex = squeeze(adaptIndex);
+        maxValues = squeeze(maxValues);
+        adaptValues = squeeze(adaptValues);
     end

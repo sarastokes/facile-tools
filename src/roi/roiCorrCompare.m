@@ -1,13 +1,13 @@
-function R = roiResponseCorr(data1, data2, opts)
-% ROIRESPONSECORR
+function R = roiCorrCompare(data1, data2, opts)
+% ROICORRCOMPARE
 %
 % Description:
 %   Calculate correlation coefficient between ROI responses to two stimuli.
 %   Optional normalization and specification of a time region of interest.
 %
 % Syntax:
-%   R = roiResponseCorr(data1, data2)
-%   R = roiResponseCorr(data1, data2, 'Bkgd', [250 498], 'Window', [500 750])
+%   R = roiCorrCompare(data1, data2)
+%   R = roiCorrCompare(data1, data2, 'Bkgd', [250 498], 'Window', [500 750])
 %
 % History:
 %   01Mar2024 - SSP
@@ -52,5 +52,7 @@ function R = roiResponseCorr(data1, data2, opts)
         iR = corrcoef(data1(i,:), data2(i,:));
         R(i) = iR(1,2);
     end
+
+    printStat(R);
 
 

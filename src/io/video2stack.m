@@ -24,6 +24,7 @@ function imStack = video2stack(videoPath, varargin)
     ip.CaseSensitive = false;
     addParameter(ip, 'Side', 'none', @ischar);
     addParameter(ip, 'Save', false, @islogical);
+    addParameter(ip, 'Double', true, @islogical);
     parse(ip, varargin{:});
 
     if isempty(videoPath) || nargin == 0
@@ -53,10 +54,14 @@ function imStack = video2stack(videoPath, varargin)
     imStack(:, :, 1) = frame(:, imWindow);
 
     for i = 2:numFrames
-        frame = im2double(readFrame(v));
+        frame = readFrame(v);
         imStack(:, :, i) = frame(:, imWindow);
     end 
     
+    if ip.Results.Double 
+        imStack = im2double(imStack);
+    end
+
     if ip.Results.Save
         savePath = [videoPath(1:end-4), '.mat'];
         fprintf('Saved as: %s\n', savePath);

@@ -46,7 +46,7 @@ function [A, xpts] = roiSignals(imStack, roiMask, varargin)
     for i = 1:numROIs
         try
             [signal, xpts] = roiSignal(imStack, roiMask == roiList(i), varargin);
-        catch
+        catch ME
             signal = zeros([1, size(imStack, 3)]);
             warning('ROISIGNALS: Error extracting signal for ROI %u', i);
         end

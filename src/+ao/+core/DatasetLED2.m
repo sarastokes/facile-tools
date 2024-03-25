@@ -327,18 +327,22 @@ classdef DatasetLED2 < ao.core.Dataset
             warning('off', 'MATLAB:table:ModifiedAndSavedVarnames');
             obj.frameTables = containers.Map('KeyType', 'double', 'ValueType', 'any');
             obj.frameRates = NaN(size(obj.epochIDs));
-            baseStr = [num2str(double(obj.source)), '_', ...
-                char(obj.experimentDate), obj.extraHeader, '_ref_'];
+            baseStr = string([num2str(double(obj.source)), '_', ...
+                char(obj.experimentDate), obj.extraHeader, '_ref_']);
             progressbar();
             for i = 1:numel(obj.epochIDs)
-                fName = [obj.experimentDir, filesep, 'Ref', filesep, baseStr,... 
-                    int2fixedwidthstr(obj.epochIDs(i), 4), '.csv'];
+                fName = [obj.experimentDir + filesep + "Ref" + filesep + baseStr +... 
+                    string(int2fixedwidthstr(obj.epochIDs(i), 4)) + ".csv"];
                 try 
                     [T, obj.frameRates(i)] = getLedFrameValues( ...
-                        obj.baseDirectory, obj.epochIDs(i));
-                catch
+                        char(obj.baseDirectory), obj.epochIDs(i));
+                catch ME
                     T = [];
-                    warning('Could not load %s', fName);
+                    if strcmp(ME.identifier, 'MATLAB:table:IncorrectNumberOfVarNames')
+                        warning('No frame file found for epoch %u', obj.epochIDs(i));
+                    else
+                        warning('Epoch %u: Could not load %s', obj.epochIDs(i), fName);
+                    end
                 end
                 obj.frameTables(obj.epochIDs(i)) = T;
                 progressbar(i / numel(obj.epochIDs));
@@ -355,9 +359,9 @@ classdef DatasetLED2 < ao.core.Dataset
             %
             % ---------------------------------------------------------
             obj.ledTables = containers.Map('KeyType', 'double', 'ValueType', 'any');
-            baseStr = [num2str(double(obj.source)), '_', char(obj.experimentDate), '_vis_'];
+            %baseStr = [num2str(double(obj.source)), '_', char(obj.experimentDate), '_vis_'];
 
-            visFiles = ls([obj.baseDirectory, filesep, 'Vis']);
+            visFiles = ls(obj.baseDirectory + "Vis");
             visFiles = string(deblank(visFiles));
             visFiles = visFiles(contains(visFiles, '.json'));
 
@@ -365,7 +369,7 @@ classdef DatasetLED2 < ao.core.Dataset
             for i = 1:numel(obj.epochIDs)
                 % fileName = [obj.experimentDir, filesep, 'Vis', filesep, baseStr,... 
                 %     int2fixedwidthstr(obj.epochIDs(i), 4), '.json'];
-                visStr = [obj.extraHeader, '_vis_', int2fixedwidthstr(obj.epochIDs(i), 4)];
+                visStr = obj.extraHeader + "_vis_" + string(int2fixedwidthstr(obj.epochIDs(i), 4));
                 idx = find(contains(visFiles, visStr));
                 if isempty(idx)
                     warning('JSON file for %u could not be found!', obj.epochIDs(i));
@@ -373,7 +377,7 @@ classdef DatasetLED2 < ao.core.Dataset
                 end
                 fileName = visFiles(idx);
                 try
-                    T = readJsonLED([obj.baseDirectory, filesep, 'Vis', filesep, char(fileName)]);
+                    T = readJsonLED(obj.baseDirectory + "Vis" + filesep +fileName);
                     % Add a column for epoch-specific timing
                     T.Timing = obj.getEpochTiming(T);
                 catch

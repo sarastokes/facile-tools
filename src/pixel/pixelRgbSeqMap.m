@@ -1,13 +1,19 @@
 function rgbMap = pixelRgbSeqMap(dataset, epochIDs, varargin)
-    % PIXELRGBSEQMAP
-    %
-    % Syntax:
-    %   rgbMap = pixelRgbSeqMap(dataset, epochIDs, varargin)
-    %
+% PIXELRGBSEQMAP
+%
+% Syntax:
+%   rgbMap = pixelRgbSeqMap(dataset, epochIDs, varargin)
+%
+% Inputs:
+%   dataset         ao.core.DatasetLED2
+%   epochIDs        numeric, integers
+% Optional inputs:
+%   Sigma           numeric scalar
 
-    % History:
-    %   11Mar2022 - SSP
-    % ---------------------------------------------------------------------
+
+% History:
+%   11Mar2022 - SSP
+% ---------------------------------------------------------------------
 
     ip = inputParser();
     ip.CaseSensitive = false;
@@ -27,7 +33,7 @@ function rgbMap = pixelRgbSeqMap(dataset, epochIDs, varargin)
 
 
     bkgd = mean(imStack(:,:,300:498), 3);
-    
+
     redOnset = mean(imStack(:,:,window2idx(redUp)), 3) - bkgd;
     greenOnset = mean(imStack(:,:,window2idx(greenUp)), 3) - bkgd;
     blueOnset = mean(imStack(:,:,window2idx(blueUp)), 3) - bkgd;
@@ -41,7 +47,7 @@ function rgbMap = pixelRgbSeqMap(dataset, epochIDs, varargin)
     rgbMap = rgbMap / (max(abs(rgbMap(:))));
 
     figure(); image(0.5 + (rgbMap / 2));
-    title(dataset.getLabel(),... 
+    title(dataset.getLabel(),...
         'FontSize', 10, 'FontName', 'Roboto',...
         'Interpreter', 'none');
     axis equal tight off;
@@ -54,16 +60,16 @@ function rgbMap = pixelRgbSeqMap(dataset, epochIDs, varargin)
         imagesc(rgbMap(:,:,i));
         colormap(gray)
         caxis(gca, [-1 1]);
-        title(titles{i},... 
+        title(titles{i},...
             'FontSize', 10, 'FontName', 'Roboto',...
-            'Interpreter', 'none');       
+            'Interpreter', 'none');
         axis equal tight off;
     end
     subplot(1,4,4); hold on;
     image(0.5 + (rgbMap / 2));
     axis equal tight off;
-    title(dataset.getLabel(),... 
+    title(dataset.getLabel(),...
         'FontSize', 10, 'FontName', 'Roboto',...
-        'Interpreter', 'none');   
-    figPos(gcf, 1.25, 1); 
+        'Interpreter', 'none');
+    figPos(gcf, 1.25, 1);
     tightfig(gcf);

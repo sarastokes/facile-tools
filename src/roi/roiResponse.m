@@ -44,7 +44,9 @@ function [signals, xpts] = roiResponse(imStack, roi, bkgdWindow, varargin)
     sampleRate = ip.Results.SampleRate;
     
     if strcmpi(respType, 'zscore')
+        % Use DFF function to get raw fluorescence (no bkgdWindow)
         signals = roiDFF(imStack, roi, [], ip.Unmatched);
+        % Pass fluorescence to the Z-score function
         signals = roiZScores(signals, bkgdWindow);
     else
         signals = roiDFF(imStack, roi, bkgdWindow, ip.Unmatched);

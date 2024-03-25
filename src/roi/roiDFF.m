@@ -43,12 +43,13 @@ function [A, xpts] = roiDFF(imStack, roiMask, bkgdWindow, varargin)
     ip.CaseSensitive = false;
     ip.KeepUnmatched = true;
     addParameter(ip, 'FrameRate', 25, @isnumeric);
+    %addParameter(ip, 'KeepZero', true, @islogical);
     addParameter(ip, 'Median', false, @islogical);
     parse(ip, varargin{:});
     
     sampleRate = ip.Results.FrameRate;
     useMedian = ip.Results.Median;
-    
+
     roiMask = double(roiMask);
     
     roiList = unique(roiMask(:));
@@ -69,6 +70,7 @@ function [A, xpts] = roiDFF(imStack, roiMask, bkgdWindow, varargin)
         for j = 1:numel(a)
             signal(j, :) = squeeze(imStack(a(j), b(j), :));
         end
+
         % Average timecourse over all pixels in the ROI
         signal = mean(signal);
 

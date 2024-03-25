@@ -39,6 +39,10 @@ function [signals, xpts] = roiResponses(imStack, roiMask, bkgdWindow, varargin)
     addParameter(ip, 'SampleRate', 25, @isnumeric);
     parse(ip, varargin{:});
     sampleRate = ip.Results.SampleRate;
+
+    if isa(imStack, "uint8")
+        imStack = im2double(imStack);
+    end
     
     % Get the number of ROIs (discounting background of 0s)
     roiMask = double(roiMask);

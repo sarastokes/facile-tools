@@ -117,7 +117,11 @@ for i = 1:numel(k)
     % Crop, if needed
     switch p.ImagingSide
         case 'left'
-            IJ.run("Specify...", "width=248 height=360 x=0 y=0 slice=1");
+            if isequal(p.FieldOfView, [496 400])
+                IJ.run("Specify...", "width=238 height=398 x=1 y=1");
+            else
+                IJ.run("Specify...", "width=248 height=358 x=0 y=1 slice=1");
+            end
         case 'right'  % 20220308 on
             if p.FieldOfView == [496 360]
                 IJ.run("Specify...", "width=242 height=360 x=254 y=0 slice=1");
