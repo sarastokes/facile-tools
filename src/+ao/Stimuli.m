@@ -34,9 +34,13 @@ classdef Stimuli
         ContrastDecrement20
         ContrastIncrement20Long
         ContrastDecrement20Long
+        ContrastIncrement20Half
         ContrastDecrement20Half
+        ContrastIncrement20Quarter
+        ContrastDecrement20Quarter
         ContrastIncrement10a
         ContrastDecrement10a
+        ContrastIncrement10Half
         ContrastDecrement10Half
         ContrastIncrement10
         ContrastDecrement10
@@ -742,6 +746,8 @@ classdef Stimuli
                         else
                             signal = [500 1500];
                         end
+                    elseif contains(char(obj), {'Decrement20', 'Increment20'}) && ~contains(char(obj), '20s')
+                        signal = [251 750]
                     elseif contains(char(obj), 'IntensityBar')
                         signal = [501 750];
                     elseif contains(char(obj), 'Bar')
@@ -779,8 +785,8 @@ classdef Stimuli
                 case {Stimuli.Baseline, Stimuli.BaselineLong, Stimuli.LuminanceBaseline, Stimuli.BaselineLongZeroMean}
                     app = RoiAverageView(epochGroup, epochIDs, [1 1000],...
                         [], titleStr);
-                case {Stimuli.TemporalSquarewave05, Stimuli.TemporalSquarewave1, Stimuli.LuminanceSquarewave1}
-                    app = RoiAverageView(epochGroup, epochIDs, obj.bkgd,...
+                case {Stimuli.TemporalSquarewave05, Stimuli.TemporalSquarewave1, Stimuli.LuminanceSquarewave1, Stimuli.TemporalContrastSquarewave05}
+                    app = RoiAverageView2(epochGroup, epochIDs, obj.bkgd,...
                         [], titleStr, obj.trace(true));
                 case {Stimuli.Chirp, Stimuli.ShortChirp, Stimuli.LuminanceChirp}
                     app = RoiAverageView(epochGroup, epochIDs, obj.bkgd,...
@@ -807,7 +813,7 @@ classdef Stimuli
                     elseif contains(char(obj), {'TopticaSim', 'IntensityIncrement', 'LightsOn'})
                         app = RoiAverageView2(epochGroup, epochIDs, obj.bkgd, obj.signal, titleStr);
                     else
-                        warndlg('Stimulus not yet implemented!');
+                        warning('Stimulus not yet implemented')
                         return;
                     end
             end
@@ -924,7 +930,7 @@ classdef Stimuli
                 case 'zero_mean_increment_5s_80t'
                     obj = Stimuli.IntensityIncrement5s80t;
 
-                case 'zero_mean_increment_10s'
+                case {'zero_mean_increment_10s', 'zero_mean_increment_10s_80t'}
                     obj = Stimuli.IntensityIncrement10s80t;
                 case 'zero_mean_increment_20s'
                     obj = Stimuli.IntensityIncrement20s80t;
@@ -938,6 +944,14 @@ classdef Stimuli
                     obj = Stimuli.ContrastDecrement20;
                 case 'temporal_contrast_decinc_20s_90t'
                     obj = Stimuli.ContrastDecrementIncrement20s90t;
+                case '20s_contrast_increment_half'
+                    obj = Stimuli.ContrastIncrement20Half;
+                case '20s_contrast_decrement_half'
+                    obj = Stimuli.ContrastDecrement20Half;
+                case '20s_contrast_increment_quarter'
+                    obj = Stimuli.ContrastIncrement20Quarter;
+                case '20s_contrast_decrement_quarter'
+                    obj = Stimuli.ContrastDecrement20Quarter;
                 case 'temporal_contrast_dec_10s'
                     obj = Stimuli.ContrastDecrement10;
                 case 'temporal_contrast_dec_5s'

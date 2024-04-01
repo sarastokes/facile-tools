@@ -26,5 +26,6 @@ function signals = roiEWF(imStack, roiMask)
         pix = getRoiPixels(imStack, roiMask, i);
         signals(i,:) = sum(pix, 1)./sum(pix>0, 1);
     end
+    signals(isnan(signals)) = 0;
 
     

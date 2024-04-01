@@ -114,13 +114,16 @@ classdef SpectralStimuli
         SconeSquare5p10s160t
         SconeSquare10p10s160t
         SconeSquare18p10s160t
+        SconeSquare40p10s160t
         SconeSquare50p10s160t
 
         % 3 second, full contrast modulations
+        LuminanceSquare40p3s150t
         LuminanceSquare50p3s150t
         % 5 second, full contrast modulations
         LuminanceSquare5s40p130t
         LuminanceSquare5s50p90t
+        LuminanceSquare40p5s160t
         LuminanceSquare50p5s160t
 
         LMconeSquare5s40p130t
@@ -132,6 +135,7 @@ classdef SpectralStimuli
         IsoluminanceSquare5s50g50p90t
         IsoluminanceSquare5s100g50p90t
         IsoluminanceSquare5s200g50p90t
+
 
 %% 120t temporal modulations
     % Sinewaves
@@ -534,7 +538,9 @@ classdef SpectralStimuli
         LightsOff40p100t
         LightsOff50p100t
 
+        LightsOn40p120t
         LightsOn50p120t
+        LightsOff40p120t
         LightsOff50p120t
 
     %% Chirps
@@ -1417,6 +1423,8 @@ classdef SpectralStimuli
                 case 'lightson'
                     obj = SpectralStimuli.LightsOn;
 
+                case 'luminance_lights_on_40p_120t'
+                    obj = SpectralStimuli.LightsOn40p120t;
                 case 'luminance_lights_on_50p_120t'
                     obj = SpectralStimuli.LightsOn50p120t;
 
@@ -1440,6 +1448,8 @@ classdef SpectralStimuli
                 case 'lightsoff'
                     obj = SpectralStimuli.LightsOff;
 
+                case 'luminance_lights_off_40p_120t'
+                    obj = SpectralStimuli.LightsOff40p120t;
                 case 'luminance_lights_off_50p_120t'
                     obj = SpectralStimuli.LightsOff50p120t;
 
@@ -1475,8 +1485,12 @@ classdef SpectralStimuli
                     obj = SpectralStimuli.LuminanceSquare40p20s160t;
                 case 'luminance_square_20s_100c_50p_160t'
                     obj = SpectralStimuli.LuminanceSquare50p20s160t;
+                case 'luminance_square_3s_100c_40p_150t'
+                    obj = SpectralStimuli.LuminanceSquare40p3s150t;
                 case 'luminance_square_3s_100c_50p_150t'
                     obj = SpectralStimuli.LuminanceSquare50p3s150t;
+                case 'luminance_square_5s_100c_40p_160t'
+                    obj = SpectralStimuli.LuminanceSquare40p5s160t;
                 case 'luminance_square_5s_100c_50p_160t'
                     obj = SpectralStimuli.LuminanceSquare50p5s160t;
                 case 'isoluminance_square_20s_100c_40p_160t'
@@ -1489,6 +1503,8 @@ classdef SpectralStimuli
                     obj = SpectralStimuli.SconeSquare5s40p130t;
                 case 'siso_square_10s_100c_18p_160t'
                     obj = SpectralStimuli.SconeSquare18p10s160t;
+                case 'siso_square_10s_100c_40p_160t'
+                    obj = SpectralStimuli.SconeSquare40p10s160t;
                 case 'siso_square_10s_100c_50p_160t'
                     obj = SpectralStimuli.SconeSquare50p10s160t;
                 case 'isoluminance_square_5s_100c_40p_130t'

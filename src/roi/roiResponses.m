@@ -53,6 +53,10 @@ function [signals, xpts] = roiResponses(imStack, roiMask, bkgdWindow, varargin)
     
     signals = zeros(numROIs, size(imStack,3));
     for i = 1:numROIs
+        if nnz(roiMask == i) == 0
+            warning('roiResponses: ROI %u not found', i);
+            continue
+        end
         signals(i, :) = roiResponse(imStack, roiMask == i, bkgdWindow, varargin{:});
     end
         

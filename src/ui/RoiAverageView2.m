@@ -98,7 +98,7 @@ classdef RoiAverageView2 < handle
             obj.includedEpochs = true(1, numel(obj.epochIDs));
             obj.currentRoi = 1;
             obj.autoX = true;
-            obj.yTight = true;
+            obj.yTight = false;
 
             obj.createUi();
         end

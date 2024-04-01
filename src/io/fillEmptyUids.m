@@ -1,8 +1,13 @@
-function fillEmptyUids(dataset, prefixLetter)
+function dataset = fillEmptyUids(dataset, prefixLetter)
+% FILLEMPTYUIDS
+%
+% Syntax:
+%   dataset = fillEmptyUids(dataset, prefixLetter)
+% --------------------------------------------------------------------------
 
     arguments
         dataset
-        prefixLetter        (1,1)   string      
+        prefixLetter        (1,1)   string
     end
 
     ABC = getAlphabet();

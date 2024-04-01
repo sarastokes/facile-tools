@@ -1,4 +1,4 @@
-function [T, frameRate] = getLedFrameValues(experimentDir, epochID)
+function [T, frameRate] = getLedFrameValues(experimentDir, epochID, videoPath)
     % GETLEDFRAMEVALUES
     %
     % Syntax:
@@ -23,6 +23,10 @@ function [T, frameRate] = getLedFrameValues(experimentDir, epochID)
     %   11Feb2022 - SSP - Moved out from ao.core.Dataset
     % ---------------------------------------------------------------------
 
+    if nargin < 3
+        videoPath = [];
+    end
+
     refDir = [experimentDir, filesep, 'Ref'];
 
     refFiles = dir(refDir);
@@ -46,13 +50,21 @@ function [T, frameRate] = getLedFrameValues(experimentDir, epochID)
     % The final frames in the stimulus log weren't actually saved
     % Use the video size to determine which frames are relevant
     try
-        videoPath = strrep(epochFile, '.csv', '.avi');
-        if ~exist(videoPath, 'file')
-            videoPath = strrep(epochFile, '.csv', 'O.avi');
+        if isempty(videoPath)
+            videoPath = strrep(epochFile, '.csv', '.avi');
+            if ~exist(videoPath, 'file')
+                videoPath = strrep(epochFile, '.csv', 'O.avi');
+            end
         end
-        v = VideoReader(videoPath);
-        numFrames = v.NumFrames;
-    catch
+        if endsWith(videoPath, '.avi')
+            v = VideoReader(videoPath);
+            numFrames = v.NumFrames;
+        else
+            TS = readTiffStack(videoPath);
+            numFrames = size(TS, 3);
+        end
+    catch ME
+        warning("getLedFrameValues:InvalidFile", "%s: %s", ME.message, videoPath);
         numFrames = height(T);
     end
 

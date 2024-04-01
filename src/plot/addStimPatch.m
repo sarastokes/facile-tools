@@ -28,11 +28,13 @@ function h = addStimPatch(ax, stimWindow, varargin)
     addParameter(ip, 'FaceColor', [0.3 0.3 1], @isnumeric);
     addParameter(ip, 'FaceAlpha', 0.2, @isnumeric);
     addParameter(ip, 'HideFromLegend', true, @islogical);
+    addParameter(ip, 'SendToBack', true, @islogical);
     parse(ip, varargin{:});
 
     hideFromLegend = ip.Results.HideFromLegend;
     S = ip.Results;
     S = rmfield(S, 'HideFromLegend');
+    S = rmfield(S, 'SendToBack');
     
     hold(ax, 'on');
     yLimits = ylim(ax);
@@ -49,10 +51,12 @@ function h = addStimPatch(ax, stimWindow, varargin)
         if hideFromLegend
             h.Annotation.LegendInformation.IconDisplayStyle = 'off';
         end
+        if ip.Results.SendToBack
+            uistack(h, 'bottom');
+        end
     end
     
     ylim(ax, yLimits);
-    
     if nargout > 0
         h = findall(ax, 'Tag', 'StimPatch');
     end

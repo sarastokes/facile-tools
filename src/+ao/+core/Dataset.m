@@ -91,11 +91,12 @@ classdef Dataset < handle
         tformFileName           % Transform file name, if used
 
         % Calculated properties
-        stim
+        stim                    % table
         numROIs             (1,1)   double
-        stimuliUsed
+        roiUIDs                 % table
+        stimuliUsed             string
         transforms              % containers.Map
-        analysisRegion
+        avgImage
 
         % Free properties
         calibrations            % containers.Map
@@ -104,10 +105,10 @@ classdef Dataset < handle
         ledVideoNames
 
         % Development
-        roiUIDs
-        avgImage
+        extraLabel          char
         warningIDs          double
         omittedEpochs
+        analysisRegion
         importThreshold     uint8 = uint8(0)
     end
 
@@ -116,15 +117,15 @@ classdef Dataset < handle
         analyses                % containers.Map
         notes                   % cell
         roiMeans
-        transformRois = false
+        transformRois           logical = false
         originalVideos          % Visible channel raw video names
         registrationReports     % Registration report file names
         registrationDate        % Date of video registration
         registrationID          % Registration number
-        stimWavelength          % nm
-        reflectVideos = false;
-        reflectRois = false;
-        extraHeader             string
+        stimWavelength          double % nm
+        reflectVideos           logical = false;
+        reflectRois             logical = false;
+        extraHeader             string 
     end
 
     properties (SetAccess = private)
@@ -354,6 +355,9 @@ classdef Dataset < handle
                 x = [num2str(double(obj.source)), '_', obj.eyeName, ...
                     char(obj.experimentDate)];
             end
+            if ~isempty(obj.extraLabel)
+                x = [x, '_', obj.extraLabel];
+            end
         end
     end
 
@@ -416,6 +420,12 @@ classdef Dataset < handle
 
         function epoch = idx2epoch(obj, idx)
             epoch = obj.epochIDs(idx);
+        end
+
+        function tf = hasEpochTransform(obj, epochID)
+            % HASEPOCHTRANSFORM
+            tf = ~isempty(obj.transforms) && isKey(obj.transforms, num2str(epochID)) ...
+                    && ~isempty(obj.transforms(num2str(epochID)));
         end
 
         function tf = isStimPresent(obj, stimName)
@@ -534,10 +544,10 @@ classdef Dataset < handle
     methods
         function setImportThreshold(obj, threshold)
             arguments
-                obj 
+                obj
                 threshold       uint8
             end
-            
+
             if threshold == obj.importThreshold
                 return
             end
@@ -545,6 +555,19 @@ classdef Dataset < handle
             obj.importThreshold = threshold;
 
             obj.clearVideoCache();
+        end
+
+        function setTransformTarget(obj, targetName)
+            arguments
+                obj
+                targetName      {mustBeMember(targetName, "rois", "videos")}
+            end
+            
+            if targetName == "rois"
+                obj.transformRois = true;
+            else
+                obj.transformRois = false;
+            end
         end
 
         function loadROIs(obj, rois)
@@ -944,7 +967,7 @@ classdef Dataset < handle
             end
 
             % Threshold if necessary
-            if obj.importThreshold > uint8(0) 
+            if obj.importThreshold > uint8(0)
                 if ~isa(imStack, "uint8")
                     warning('Could not implement threshold, not uint8');
                 else
@@ -954,31 +977,36 @@ classdef Dataset < handle
             end
 
             % Apply a transform, if necessary
-            if ~isempty(obj.transforms) && isKey(obj.transforms, num2str(epochID)) ...
-                    && ~isempty(obj.transforms(num2str(epochID)))
-                disp('Applying transform');
-                tform = obj.transforms(num2str(epochID));
-                if isa(tform, 'affine2d')
-                    try
-                        tform = affine2d_to_3d(obj.transforms(num2str(epochID)));
-                        sameAsInput = affineOutputView(size(imStack), tform,...
-                            'BoundsStyle','SameAsInput');
-                        imStack = imwarp(imStack, tform,...
-                            'OutputView', sameAsInput);
-                    catch
-                        [x, y, t] = size(imStack);
-                        refObj = imref2d([x y]);
-                        for i = 1:t
-                            imStack(:,:,i) = imwarp(imStack(:,:,i), refObj,...
-                                obj.transforms(num2str(epochID)),...
-                                'OutputView', refObj);
+            if obj.hasEpochTransform(epochID)
+                if obj.transformRois
+                    fprintf('\tVideo not transformed, "transformROIs" is enabled\n');
+                else
+                    disp('Applying transform');
+                    tform = obj.transforms(num2str(epochID));
+                    if isa(tform, 'affine2d')
+                        try
+                            tform = affine2d_to_3d(obj.transforms(num2str(epochID)));
+                            sameAsInput = affineOutputView(size(imStack), tform,...
+                                'BoundsStyle','SameAsInput');
+                            imStack = imwarp(imStack, tform,...
+                                'OutputView', sameAsInput);
+                        catch ME
+                            warning('getEpochStack using deprecated catch statement!');
+                            assignin('base', 'ME', ME);
+                            [x, y, t] = size(imStack);
+                            refObj = imref2d([x y]);
+                            for i = 1:t
+                                imStack(:,:,i) = imwarp(imStack(:,:,i), refObj,...
+                                    obj.transforms(num2str(epochID)),...
+                                    'OutputView', refObj);
+                            end
                         end
-                    end
-                elseif isstruct(tform)
-                    for i = 1:size(imStack,3)
-                        imStack(:,:,i) = imwarp(imStack(:,:,i),...
-                            tform.SpatialRefObj, tform.Transformation,...
-                            'OutputView', tform.SpatialRefObj);
+                    elseif isstruct(tform)
+                        for i = 1:size(imStack,3)
+                            imStack(:,:,i) = imwarp(imStack(:,:,i),...
+                                tform.SpatialRefObj, tform.Transformation,...
+                                'OutputView', tform.SpatialRefObj);
+                        end
                     end
                 end
             end
@@ -1047,6 +1075,7 @@ classdef Dataset < handle
             addParameter(ip, 'Decimate', [], @isnumeric);
             addParameter(ip, 'Norm', false, @islogical);
             addParameter(ip, 'Conv', [], @isnumeric);
+            addParameter(ip, 'Detrend', [], @isnumeric);
             addParameter(ip, 'KeepOmitted', false, @islogical);
             parse(ip, varargin{:});
 
@@ -1058,6 +1087,7 @@ classdef Dataset < handle
             bandPassCutoff = ip.Results.BandPass;
             normFlag = ip.Results.Norm;
             decimateValue = ip.Results.Decimate;
+            detrendValue = ip.Results.Detrend;
             keepOmitted = ip.Results.KeepOmitted;
             convTau = ip.Results.Conv;
 
@@ -1068,8 +1098,9 @@ classdef Dataset < handle
             end
 
             if numel(epochID) == 1
+                roiMask = obj.getEpochROIs(epochID);
                 imStack = obj.getEpochStack(epochID);
-                [signals, xpts] = roiResponses(imStack, obj.rois, bkgdWindow,...
+                [signals, xpts] = roiResponses(imStack, roiMask, bkgdWindow,...
                     'FrameRate', obj.frameRate, ip.Unmatched);
             else % Multiple epochs
                 % if any(ismember(epochID, obj.omittedEpochs)) && ~keepOmitted
@@ -1079,8 +1110,9 @@ classdef Dataset < handle
                 iStim = obj.epoch2stim(epochID(1));
                 signals = zeros(obj.numROIs, iStim.frames(), numel(epochID));
                 for i = 1:numel(epochID)
+                    roiMask = obj.getEpochROIs(epochID(i));
                     imStack = obj.getEpochStack(epochID(i));
-                    [A, xpts] = roiResponses(imStack, obj.rois, bkgdWindow,...
+                    [A, xpts] = roiResponses(imStack, roiMask, bkgdWindow,...
                         'FrameRate', obj.frameRate, ip.Unmatched);
                     try
                         signals(:, :, i) = A;
@@ -1096,6 +1128,16 @@ classdef Dataset < handle
                                 epochID(i), abs(offset));
                         end
                     end
+                end
+            end
+
+            if ~isempty(detrendValue)
+                signals = roiPrctFilt(signals, 30, detrendValue, detrendValue);
+
+                if ~isempty(bkgdWindow)
+                    signals = signalBaselineCorrect(signals, bkgdWindow, false);
+                else
+                    signals = signals - mean(signals, 1);
                 end
             end
 
@@ -1199,6 +1241,42 @@ classdef Dataset < handle
             end
             imStack = squeeze(mean(imStack, 4));
         end
+
+        function [pixResponses, xy] = getEpochPixelResponses(obj, epochID, roiID)
+
+            if nargin < 3
+                roiID = 1:obj.numROIs;
+            end
+
+            imStack = obj.getEpochStacks(epochID);
+
+            if isscalar(roiID)
+                [pixResponses, a, b] = getRoiPixels(imStack, obj.rois, roiID);
+                xy = [a, b];
+            else
+                pixResponses = arrayfun(@(x) getRoiPixels(imStack, obj.rois, x), roiID,...
+                    'UniformOutput', false);
+                if nargout > 2
+                    xy = obj.getRoiPixelLocations();
+                end
+            end
+        end
+
+        function xy = getRoiPixelLocations(obj, ID)
+
+            if nargin < 2
+                ID = 1:obj.numROIs;
+            end
+            if ~isscalar(ID)
+                xy = arrayfun(@(x) getRoiPixelLocations(obj, x), ID,...
+                    'UniformOutput', false);
+                return
+            end
+
+            [a, b] = find(obj.rois == ID);
+            xy = [a, b];
+        end
+
 
         function [signals, xpts] = getStimulusResponses(obj, whichStim, varargin)
             % GETSTIMULUSRESPONSES
@@ -1325,14 +1403,12 @@ classdef Dataset < handle
         end
 
         function rois = getEpochROIs(obj, epochID)
-            if ~obj.transformRois
+            if ~obj.transformRois || ~obj.hasEpochTransform
                 rois = obj.rois;
             else
                 refObj = imref2d(size(obj.rois));
-                rois = imwarp(obj.rois, refObj,...
-                    obj.transforms(num2str(epochID)),...
-                    'OutputView', refObj,...
-                    'interp', 'nearest');
+                rois = imwarp(obj.rois, refObj, obj.transforms(num2str(epochID)),...
+                    'OutputView', refObj, 'interp', 'nearest');
             end
         end
     end
@@ -1556,10 +1632,14 @@ classdef Dataset < handle
             refFiles = refFiles(~contains(refFiles, 'params'));
             try
                 filePath = obj.baseDirectory + filesep + "Ref" + filesep + refFiles(1);
-            catch
-                warning('getAttributesFilename:FileNotFound',...
-                       'Attribut file was not found');
-                filePath = [];
+            catch ME
+                if strcmp(ME.identifier, 'MATLAB:badsubscript')
+                    warning('getAttributesFilename:FileNotFound',...
+                       'Attribute file not found for epoch %u', epochID);
+                    filePath = [];
+                else
+                    rethrow(ME);
+                end
             end
         end
 
