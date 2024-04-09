@@ -88,7 +88,7 @@ classdef GaussianMixModel < handle
         function determineBounds(obj)
 
             yBounds = 1.05 * [min(obj.xyData(:,2)), max(obj.xyData(:,2))];
-            xBounds = [-1 1];
+            xBounds = 1.05 * [min(obj.xyData(:,1)), max(obj.xyData(:,1))];
             obj.xyBounds = [xBounds, yBounds];
         end
     end
@@ -136,7 +136,8 @@ classdef GaussianMixModel < handle
             cutoff = sqrt(chi2inv(opts.Threshold, 2));
             fprintf('Cutoff is %.2f SDs\n', cutoff);
 
-            [X, Y] = meshgrid(-1:0.01:1, obj.xyBounds(3):0.1:obj.xyBounds(4));
+            [X, Y] = meshgrid(obj.xyBounds(1):0.05:obj.xyBounds(2), ...
+                obj.xyBounds(3):0.1:obj.xyBounds(4));
             XY = [X(:) Y(:)];
             clustMap = zeros(size(X, 1), size(Y, 2));
 

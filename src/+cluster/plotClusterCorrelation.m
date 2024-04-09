@@ -14,9 +14,10 @@ function [corrCoeffs, fh] = plotClusterCorrelation(signals, clustIdx, clustAvg)
         corrCoeffs(i) = iCorr(1,2);
     end
 
-    fh = figure(); hold on;
+    fh = figure('Name', 'Cluster Correlation'); hold on;
     set(gca, 'FontName', 'CMU Serif' )
-    plotSpread(corrCoeffs, 'distributionIdx', clustIdx, 'distributionColors', pmkmp(max(clustIdx), 'CubicL'));
+    plotSpread(corrCoeffs, 'distributionIdx', clustIdx, ...
+        'distributionColors', pmkmp(max(clustIdx), 'CubicL'));
     xlabel('Cluster ID');
     ylabel(sprintf('Correlation Coefficient (%u +- %.1f)',...
         round(100*mean(corrCoeffs)), 100*std(corrCoeffs)));

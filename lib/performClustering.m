@@ -1,7 +1,7 @@
 function clust = performClustering(feat, varargin)
-    %
-    % History:
-    %   30Nov2021 - SSP - Added AIC output option, verbose output
+%
+% History:
+%   30Nov2021 - SSP - Added AIC output option, verbose output
 
     ip = inputParser();
     ip.CaseSensitive = false;
@@ -59,4 +59,5 @@ function clust = performClustering(feat, varargin)
 
     [~, minBIC] = min(clust.bic); 
     [~, minAIC] = max(clust.aic);
-    fprintf('BIC = %u, AIC = %u\n', minBIC, minAIC);
+    fprintf('BIC = %u, AIC = %u\n',... 
+        minBIC+p.minClust, minAIC+p.minClust);

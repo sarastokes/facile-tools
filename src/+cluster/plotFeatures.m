@@ -37,12 +37,11 @@ function allAvg = plotFeatures(data, clust, xpts, varargin)
 
     if isempty(parentHandle)
         figure();
-        ax = subplot(1,2,1); hold on; grid on;
+        ax = subplot(2,2,[1 3]);
     else
         ax = parentHandle;
-        hold(ax, 'on');
-        grid(ax, 'on');
     end
+    hold(ax, 'on'); grid(ax, 'on');
     allPatches = []; allAvg = [];
     if isempty(plotNum) || plotNum == 1
         runningOffset = 0;
@@ -95,16 +94,32 @@ function allAvg = plotFeatures(data, clust, xpts, varargin)
         reverseChildOrder(gca);
     end
 
-    if isempty(parentHandle)
-        ax = subplot(1,2,2);
-    else
-        ax = parentHandle;
-    end
-    if isempty(plotNum) || plotNum == 2
+    if isempty(plotNum) || plotNum == 2    
+        if isempty(parentHandle)
+            ax = subplot(2,2,2);
+        else
+            ax = parentHandle;
+        end
         N = splitapply(@numel, clust.idx, clust.idx);
         bar(ax, 1:clust.K, N, 'FaceColor', 'flat', 'CData', co);
         ylabel(ax, 'Number of ROIs');
         xlabel(ax, 'Cluster');
+        axis(ax, 'square');
+        grid(ax, 'on');
+        xlim([0 clust.K+1]);
+        xticks(1:clust.K);
+    end
+
+    if isempty(plotNum) || plotNum == 3
+        cQI = cluster.groupQualityIndex(data, clust.idx);
+        if isempty(parentHandle)
+            ax = subplot(2,2,4);
+        else
+            ax = parentHandle;
+        end
+        hold on;
+        bar(ax, 1:clust.K, cQI, 'FaceColor', 'flat', 'CData', co);
+        xlabel(ax, 'Cluster'); ylabel(ax, 'Quality Index');
         axis(ax, 'square');
         grid(ax, 'on');
         xlim([0 clust.K+1]);

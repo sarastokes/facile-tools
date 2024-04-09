@@ -10,7 +10,7 @@ function [fStack, secondStack] = pixelDfStack(imStack, bkgdWindow, varargin)
     % Inputs:
     %   imStack         [x, y, t]
     %       Calcium imaging video
-    %   bkgdWindow      1x2 
+    %   bkgdWindow      1x2
     %       Start and stop frames for calculating baseline fluorescence
     %
     % Optional key/value inputs:
@@ -87,7 +87,7 @@ function [fStack, secondStack] = pixelDfStack(imStack, bkgdWindow, varargin)
         if isempty(bkgdWindow)
             fStack = signalMeanCorrect(fStack);
         else
-            fStack = signalBaselineCorrect(fStack, bkgdWindow); 
+            fStack = signalBaselineCorrect(fStack, bkgdWindow, "median");
         end
     end
 

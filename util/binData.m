@@ -1,4 +1,5 @@
 function d = binData(data, binRate, sampleRate)
+
     binSize = sampleRate / binRate;
     numBins = floor(length(data) / binSize);
 

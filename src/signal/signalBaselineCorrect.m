@@ -1,17 +1,25 @@
-function signals = signalBaselineCorrect(signals, bkgdWindow, medianFlag)
+function signals = signalBaselineCorrect(signals, bkgdWindow, method)
 % SIGNALBASELINECORRECT
 %
 % Description:
-%   Correct baseline offset, good for after high-pass filtering 
-% 
+%   Correct baseline offset by subtracting the mean/median of the background
+%   region. Good after high-pass filtering etc.
+%
 % Syntax:
 %   signals = signalBaselineCorrect(signals, bkgdWindow)
+%   signals = signalBaselineCorrect(signals, bkgdWindow, medianFlag)
+%   [signals, bkgdValue] = signalBaselineCorrect(...)
 %
 % Inputs:
 %   signals         ndarray with time along 2nd dimension
 %   bkgdWindow      [1 x 2] frame start/stop
-%   medianFlag      [1 x 1] logical (default = true)
-%       median or mean of background region
+% Optional inputs:
+%   method          [1 x 1] string ("median" or "mean")
+%       Method for estimating baseline offset (default "mean")
+%
+% Outputs:
+%   signals         baseline corrected signals
+%   bkgdValue       background value subtracted from signals
 %
 % See also:
 %   SIGNALHIGHPASSFILTER
@@ -19,18 +27,20 @@ function signals = signalBaselineCorrect(signals, bkgdWindow, medianFlag)
 % History:
 %   11May2022 - SSP
 %   24Mar2024 - SSP - added medianFlag, better indexing
+%   03Apr2024 - SSP - added output bkgdValue
 % -------------------------------------------------------------------------
 
-    if nargin < 3
-        medianFlag = true;
+    arguments
+        signals
+        bkgdWindow  (1,2)       {mustBeInteger}
+        method      (1,1)       {mustBeMember(method, ["median", "mean"])} = "mean"
     end
 
     idx = window2idx(bkgdWindow);
     bkgdValues = ndindex(signals, 2, idx);
-    if medianFlag
-        bkgd = median(bkgdValues, 2);
-    else
-        bkgd = mean(bkgdValues, 2);
+    if strcmp(method, "median")
+        bkgdValue = median(bkgdValues, 2);
+    elseif strcmp(method, "mean")
+        bkgdValue = mean(bkgdValues, 2);
     end
-    signals = signals - bkgd;
-    return
+    signals = signals - bkgdValue;

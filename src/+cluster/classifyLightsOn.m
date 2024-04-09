@@ -12,7 +12,7 @@ function [GMM, clust1, clust2, axHandles] = classifyLightsOn(dataset, varargin)
 %   [GMM, clust1, clust2, axH] = classifyLightsOn(data, 'NumComponents', 3)
 %
 % Inputs:
-%   dataset             double (N x T) or Dataset object
+%   dataset             double (N x T), Dataset object, cell of Datasets
 % Optional key/value inputs:
 %   stimName            string or ao.Stimuli enum
 %       Use if dataset is a Dataset object and adapting steps are run for
@@ -38,46 +38,53 @@ function [GMM, clust1, clust2, axHandles] = classifyLightsOn(dataset, varargin)
     ip.CaseSensitive = false;
     addParameter(ip, 'StimName', [], @istext);
     addParameter(ip, 'NumComponents', 3, @isnumeric);
+    addParameter(ip, 'CheckComponents', true, @islogical);
+    addParameter(ip, 'Standardize', false, @islogical);
+    addParameter(ip, 'DualCluster', true, @islogical);
+    addParameter(ip, 'UseFirst', true, @islogical);
+    addParameter(ip, 'ScatterHist', false, @islogical);
     parse(ip, varargin{:});
 
-    if isempty(ip.Results.StimName) && ~isnumeric(dataset)
-        stimNames = string(dataset.stim.Stimulus);
-        stimName = stimNames(contains(stimNames, "LightsOn"));
-        if numel(stimName) > 1
-            error('More than one lights on stimulus found, specify which');
+    if iscell(dataset)
+        adaptIdx = []; peakMag = [];
+        for i = 1:numel(dataset)
+            [a, b] = getStats(dataset{i}, ip.Results.StimName, ...
+                ip.Results.UseFirst, ip.Results.Standardize);
+            adaptIdx = cat(1, adaptIdx, a);
+            peakMag = cat(1, peakMag, b);
         end
     else
-        stimName = ip.Results.StimName;
+        [adaptIdx, peakMag] = getStats(dataset, ip.Results.StimName, ...
+            ip.Results.UseFirst, ip.Results.Standardize);
     end
-
-    if ~isnumeric(dataset)
-        signals = dataset.getStimulusResponses(stimName, [250 498], "Smooth", 100, "Average", true);
-    else
-        signals = mean(dataset, 3);
-    end
-
-    [adaptIdx, peakMag] = roiAdaptIndex(signals, [507 100], [350 100], [2 98]);
 
     GMM = cluster.GaussianMixModel([adaptIdx, peakMag], ip.Results.NumComponents);
     [clust1, ~, ~, clustAxis] = GMM.cluster();
 
-    if ~isnumeric(dataset)
+    if ~isnumeric(dataset) && ~iscell(dataset)
         title(clustAxis, dataset.getLabel(), "Interpreter", "none");
     end
     ylim(clustAxis, [floor(clustAxis.YLim(1)), ceil(clustAxis.YLim(2))]);
     xlim([-1 1]); xlabel('Final:Peak Response (dF/F)');
     ylabel('Peak Response (dF/F)');
-    h1 = plot([0 0], clustAxis.YLim, 'k', 'LineWidth', 0.75);
-    h2 = plot(clustAxis.XLim, [0 0], 'k', 'LineWidth', 0.75);
-    uistack([h1, h2], "bottom"); noLegend([h1, h2]);
+    zeroBar(gca, 'xy');
     legend(clustAxis, "Location", "northwest");
     grid on; axis square; tightfig(clustAxis.Parent);
 
     % Check the best number of components with Calinski-Harabasz index
-    GMM.checkComponents();
-    compAxis = gca;
+    if ip.Results.CheckComponents
+        GMM.checkComponents();
+        compAxis = gca;
+        axHandles = [clustAxis, compAxis];
+    else
+        axHandles = clustAxis;
+    end
 
     % Alternative approach (needs fine-tuning)
+    if ~ip.Results.DualCluster
+        clust2 = [];
+        return
+    end
     offFcn = @(mag) mag < 0;
     onFcn = @(mag) mag > 0;
     nrFcn = @(adapt, mag) inrange(mag, -0.1, 0.2);
@@ -93,17 +100,51 @@ function [GMM, clust1, clust2, axHandles] = classifyLightsOn(dataset, varargin)
     if ~isnumeric(dataset)
         title(ax, dataset.getLabel(), "Interpreter", "none");
     end
-    scatter(adaptIdx(clust2==1), peakMag(clust2==1), 9, hex2rgb('00cc4d'), "filled");
-    scatter(adaptIdx(clust2==2), peakMag(clust2==2), 9, hex2rgb('ff4040'), "filled");
+    scatter(adaptIdx(clust2==1), peakMag(clust2==1), 9,...
+        hex2rgb('00cc4d'), "filled");
+    scatter(adaptIdx(clust2==2), peakMag(clust2==2), 9,...
+        hex2rgb('ff4040'), "filled");
+    scatter(adaptIdx(clust2==0), peakMag(clust2==0), 9,...
+        [0.3 0.3 0.3], "filled");
     scatter(adaptIdx(clust2==3), peakMag(clust2==3), 9, "b", "filled");
-    scatter(adaptIdx(clust2==0), peakMag(clust2==0), 9, [0.3 0.3 0.3], "filled");
     ax.YLim = [floor(ax.YLim(1)), ceil(ax.YLim(2))]; xlim([-1 1]);
-    h1 = plot([0 0], ax.YLim, 'k', 'LineWidth', 0.75);
-    h2 = plot(ax.XLim, [0 0], 'k', 'LineWidth', 0.75);
-    uistack([h1, h2], "bottom"); noLegend([h1, h2]);
+    zeroBar(ax, 'xy');
     xlabel('Final:Peak Response (dF/F)');
     ylabel('Peak Response (dF/F)');
     grid on; axis square;
     axis square; figPos(gcf, 0.8,0.8); tightfig(gcf);
 
     axHandles = [clustAxis, compAxis, ax];
+
+end
+
+function [adaptIdx, peakMag] = getStats(dataset, stimName, useFirst, standardize)
+
+    if isempty(stimName) && ~isnumeric(dataset)
+        stimNames = string(dataset.stim.Stimulus);
+        stimName = stimNames(contains(stimNames, "LightsOn"));
+        if numel(stimName) > 1
+            if useFirst
+                stimName = stimName(1);
+            else
+                stimName = stimName(end);
+            end
+            warning('Found multiple lights on, using %s', stimName);
+        end
+    else
+        stimName = ip.Results.StimName;
+    end
+
+    if ~isnumeric(dataset)
+        signals = dataset.getStimulusResponses(stimName, [250 498], ...
+            "Smooth", 100, "Average", true);
+    else
+        signals = mean(dataset, 3);
+    end
+
+    [adaptIdx, peakMag] = roiAdaptIndex(signals, [507 100], [350 100], [2 98]);
+
+    if standardize
+        peakMag = cluster.standardizeFeatures(peakMag);
+    end
+end
