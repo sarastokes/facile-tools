@@ -125,7 +125,7 @@ classdef Dataset < handle
         stimWavelength          double % nm
         reflectVideos           logical = false;
         reflectRois             logical = false;
-        extraHeader             string 
+        extraHeader             string
     end
 
     properties (SetAccess = private)
@@ -455,9 +455,9 @@ classdef Dataset < handle
             %
             % Syntax:
             %   [stim, ID] = epoch2stim(obj, epochID)
-            % -------------------------------------------------------------
-            stimName = obj.stimulusNames(obj.epoch2idx(epochID));
-            stim = ao.Stimuli.init(stimName);
+            % -----------------------------------------------------------
+            idx = arrayfun(@(x) ismember(epochID, x{:}), obj.stim.Epochs);
+            stim = obj.stim.Stimulus(idx);
             if nargout == 2
                 ID = obj.stim{obj.stim.Stimulus == stim, "ID"};
             end
@@ -562,7 +562,7 @@ classdef Dataset < handle
                 obj
                 targetName      {mustBeMember(targetName, "rois", "videos")}
             end
-            
+
             if targetName == "rois"
                 obj.transformRois = true;
             else
@@ -707,7 +707,8 @@ classdef Dataset < handle
             % Optional inputs:
             %   IDs             array
             %       Epoch IDs corresponding to tforms
-            % -------------------------------------------------------------
+            % -----------------------------------------------------------
+            
             if ischar(tforms)
                 fName = tforms;
                 tforms = readRigidTransform(fName);
@@ -1097,7 +1098,7 @@ classdef Dataset < handle
                 bkgdWindow = iStim.bkgd();
             end
 
-            if numel(epochID) == 1
+            if isscalar(epochID)
                 roiMask = obj.getEpochROIs(epochID);
                 imStack = obj.getEpochStack(epochID);
                 [signals, xpts] = roiResponses(imStack, roiMask, bkgdWindow,...
@@ -1108,21 +1109,21 @@ classdef Dataset < handle
                 %     epochID = setdiff(epochID, obj.omittedEpochs);
                 % end
                 iStim = obj.epoch2stim(epochID(1));
-                signals = zeros(obj.numROIs, iStim.frames(), numel(epochID));
+                signals = [];
                 for i = 1:numel(epochID)
                     roiMask = obj.getEpochROIs(epochID(i));
                     imStack = obj.getEpochStack(epochID(i));
                     [A, xpts] = roiResponses(imStack, roiMask, bkgdWindow,...
                         'FrameRate', obj.frameRate, ip.Unmatched);
                     try
-                        signals(:, :, i) = A;
+                        signals = cat(3, signals, A);
                     catch
                         % Epoch ended early or, for some reason, is long
                         offset = size(signals,2) - size(A,2);
                         if offset > 0
                             warning('Epoch %u is %u points too short! Filled with NaN',...
                                 epochID(i), offset);
-                            signals(:, :, i) = [A, NaN(size(A,1), offset)];
+                            signals = cat(3, signals, [A, NaN(size(A,1), offset)]);
                         else
                             error('Epoch %u is %u points too long!',...
                                 epochID(i), abs(offset));
@@ -1135,7 +1136,7 @@ classdef Dataset < handle
                 signals = roiPrctFilt(signals, 30, detrendValue, detrendValue);
 
                 if ~isempty(bkgdWindow)
-                    signals = signalBaselineCorrect(signals, bkgdWindow, false);
+                    signals = signalBaselineCorrect(signals, bkgdWindow, "mean");
                 else
                     signals = signals - mean(signals, 1);
                 end
@@ -1248,7 +1249,9 @@ classdef Dataset < handle
                 roiID = 1:obj.numROIs;
             end
 
+            %if isscalar(epochID)
             imStack = obj.getEpochStacks(epochID);
+            %end
 
             if isscalar(roiID)
                 [pixResponses, a, b] = getRoiPixels(imStack, obj.rois, roiID);

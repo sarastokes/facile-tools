@@ -120,6 +120,7 @@ classdef SpectralStimuli
         % 3 second, full contrast modulations
         LuminanceSquare40p3s150t
         LuminanceSquare50p3s150t
+
         % 5 second, full contrast modulations
         LuminanceSquare5s40p130t
         LuminanceSquare5s50p90t
@@ -136,6 +137,8 @@ classdef SpectralStimuli
         IsoluminanceSquare5s100g50p90t
         IsoluminanceSquare5s200g50p90t
 
+        % 10 second, full contrast modulations
+        LuminanceSquare10s50p160t
 
 %% 120t temporal modulations
     % Sinewaves
@@ -225,6 +228,8 @@ classdef SpectralStimuli
         LuminanceSquare1hz40p120t
         LuminanceSquare5hz40p120t
         LuminanceSquare10hz40p120t
+
+        LuminanceSquare10hz50p120t
 
         % ON sawtooths
         LuminanceOnSawtooth1hz10p110t
@@ -495,6 +500,7 @@ classdef SpectralStimuli
         GrwSeq5p100m200t
         GrwSeq5p175m200t
 
+        BgrSeq50m5s0p160t
         BgrSeq10m5s3p160t
 
         WgrSeq5p175m200t
@@ -1493,6 +1499,8 @@ classdef SpectralStimuli
                     obj = SpectralStimuli.LuminanceSquare40p5s160t;
                 case 'luminance_square_5s_100c_50p_160t'
                     obj = SpectralStimuli.LuminanceSquare50p5s160t;
+                case 'luminance_square_10s_100c_50p_160t'
+                    obj = SpectralStimuli.LuminanceSquare10s50p160t;
                 case 'isoluminance_square_20s_100c_40p_160t'
                     obj = SpectralStimuli.IsoluminanceSquare40p20s160t;
                 case 'siso_square_20s_100c_35p_160t'
@@ -1623,6 +1631,8 @@ classdef SpectralStimuli
                     obj = SpectralStimuli.RgwSeq170m5s15p160t;
                 case 'bgr_seq_5s_10m_3p_160t'
                     obj = SpectralStimuli.BgrSeq10m5s3p160t;
+                case 'bgr_seq_5s_50m_0p_160t'
+                    obj = SpectralStimuli.BgrSeq50m5s0p160t;
 
             %% Cone-iso increments/decrements
                 case 'lcone_increment_20s_80t'

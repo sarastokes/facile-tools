@@ -258,7 +258,8 @@ classdef RoiManagerApp < handle
             if isempty(obj.Figure)
                 obj.Figure = uifigure(...
                     'Name', obj.datasetName,...
-                    'DefaultUicontrolFontSize', 12);
+                    'DefaultUicontrolFontSize', 12,...
+                    'DefaultUicontrolFontName', get(0, 'defaultUicontrolFontName'));
                 obj.Figure.Position(3) = obj.Figure.Position(3)+50;
                 obj.Figure.Position(4) = obj.Figure.Position(4)+100;
                 movegui(obj.Figure, 'center');

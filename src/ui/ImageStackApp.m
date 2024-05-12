@@ -10,22 +10,37 @@ classdef ImageStackApp < handle
         toolbar
         imageBounds = [];
     end
-    
+
     methods
-        
-        function obj = ImageStackApp(imStack, ~)
+
+        function obj = ImageStackApp(imStack, filtFcn, flipStack)
             % IMAGESTACKAPP  View a stack of EM screenshots
+            %
             % Inputs:
-            %       images      ImageStack
-            % Provide a 2nd input to reverse the stack
+            %   images      ImageStack or folder name
+            % Optional inputs
+            %   filtFcn     Function handle to filter image files
+            %       Default: @(x) endsWith(x, [".png", ".tif", ".tiff", ".jpg"])
+            %   flipStack   logical (default = false)
+            %       Reverse the stack order
+            % --------------------------------------------------------------
+
+            imStack = convertCharsToStrings(imStack);
             assert(isa(imStack, 'ImageStack') || isfolder(imStack),...
                 'Input must be ImageStack or filepath to create new ImageStack');
-
-            if ischar(imStack)
-                imStack = ImageStack(imStack);
+            if nargin < 2
+                filtFcn = [];
             end
 
-            if nargin < 2
+            if nargin < 3
+                flipStack = false;
+            end
+
+            if isstring(imStack)
+                imStack = ImageStack(imStack, [], filtFcn);
+            end
+
+            if flipStack
                 obj.currentNode = imStack.tail;
             else
                 obj.currentNode = imStack.head;
@@ -33,7 +48,7 @@ classdef ImageStackApp < handle
 
             obj.createUi();
         end
-        
+
         function createUi(obj)
             obj.handles.fh = figure(...
                 'Name', 'Image Stack View',...
@@ -46,7 +61,7 @@ classdef ImageStackApp < handle
                 'KeyPressFcn', @obj.onKeyPress);
             pos = get(obj.handles.fh, 'Position');
             obj.handles.fh.Position = [pos(1), pos(2)-200, 550, 600];
-            
+
             obj.toolbar.file = uimenu('Parent', obj.handles.fh,...
                 'Label', 'Process image');
             uimenu('Parent', obj.toolbar.file,...
@@ -84,14 +99,14 @@ classdef ImageStackApp < handle
             set(mainLayout, 'Heights', [-12 -1]);
 
             obj.currentNode.show(obj.handles.ax);
-            
+
             set(findall(obj.handles.fh, 'Style', 'push'),...
                 'BackgroundColor', 'w',...
                 'FontSize', 10,...
                 'FontWeight', 'bold');
         end
     end
-    
+
     methods (Access = private)
         function onKeyPress(obj, ~, event)
             switch event.Key
@@ -101,30 +116,30 @@ classdef ImageStackApp < handle
                     obj.previousView();
             end
         end
-        
+
         function onViewSelectedPrevious(obj, ~, ~)
             obj.previousView();
         end
-        
+
         function previousView(obj)
             if isempty(obj.currentNode.previous)
                 return;
             end
-            
+
             obj.currentNode = obj.currentNode.previous;
             obj.showImage();
             set(obj.handles.tx.frame, 'String', obj.currentNode.name);
         end
-        
+
         function onViewSelectedNext(obj, ~, ~)
             obj.nextView();
         end
-        
+
         function nextView(obj)
             if isempty(obj.currentNode.next)
                 return;
             end
-            
+
             obj.currentNode = obj.currentNode.next;
             obj.showImage();
             set(obj.handles.tx.frame, 'String', obj.currentNode.name);
@@ -146,7 +161,7 @@ classdef ImageStackApp < handle
         function onToolbarFullSize(obj, ~, ~)
             obj.imageBounds = [];
         end
-        
+
         function onToolbarExport(obj, ~, ~)
             im = findobj(obj.handles.ax, 'Type', 'Image');
             im = im.CData;

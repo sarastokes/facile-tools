@@ -9,8 +9,12 @@ function R = roiCorrCompare(data1, data2, opts)
 %   R = roiCorrCompare(data1, data2)
 %   R = roiCorrCompare(data1, data2, 'Bkgd', [250 498], 'Window', [500 750])
 %
+% See also:
+%   roiNormPercentile, roiNormAvg, printStat
+% 
 % History:
 %   01Mar2024 - SSP
+%   24Mar2024 - SSP - limit verbose output to data with >1 ROI
 % --------------------------------------------------------------------------
 
     arguments
@@ -53,6 +57,7 @@ function R = roiCorrCompare(data1, data2, opts)
         R(i) = iR(1,2);
     end
 
-    printStat(R);
-
+    if numel(R) > 1
+        printStat(R);
+    end
 

@@ -1,6 +1,10 @@
 function [out, pctMin, pctMax] = roiRangePercentile(signals, pct)
 % ROIRANGEPERCENTILE
 %
+% Description:
+%   Returns the range/trough-to-peak value calculated from the min and max
+%   percentile values (default is 2nd and 98th percentiles)
+%
 % Syntax:
 %   [out, pctMin, pctMax] = roiRangePercentile(signals)
 %   [out, pctMin, pctMax] = roiRangePercentile(signals, pct)
@@ -37,4 +41,3 @@ function [out, pctMin, pctMax] = roiRangePercentile(signals, pct)
         pctMax = squeeze(pctMax);
         pctMin = squeeze(pctMin);
     end
-

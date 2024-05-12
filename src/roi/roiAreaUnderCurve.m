@@ -38,10 +38,11 @@ function aoc = roiAreaUnderCurve(y, aocWindow, sampleRate, rectify)
         aocWindow = [1 size(y, 2)];
     end
     aocRange = window2idx(aocWindow);
+    nPts = numel(aocRange);
 
     if rectify
         y = abs(y);
     end
 
     aoc = squeeze(trapz(y(:, aocRange, :), 2));
-    aoc = aoc / sampleRate;
+    aoc = aoc / (nPts/sampleRate);

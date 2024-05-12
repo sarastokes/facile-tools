@@ -131,6 +131,8 @@ for i = 1:numel(k)
                 IJ.run("Specify...", "width=240 height=406 x=255 y=1 slice=1");
             elseif p.FieldOfView == [496 392]
                 IJ.run("Specify...", "width=242 height=390 x=253 y=1 slice=1");
+            elseif p.FieldOfView == [496 400]
+                IJ.run("Specify...", "width=238 height=398 x=258 y=1");
             end
         case 'right_smallFOV'
             IJ.run("Specify...", "width=120 height=360 x=376 y=0 slice=1");

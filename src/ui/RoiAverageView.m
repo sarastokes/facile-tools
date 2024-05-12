@@ -213,8 +213,10 @@ classdef RoiAverageView < handle
                   
             % Adjust the y-axis
             maxVal = max(max(abs(allSignals), [], 'omitnan'), [], 'omitnan');
-            obj.stimPatch.YData = maxVal * [1 1 -1 -1];
-            ylim(obj.signalAxis, [-maxVal, maxVal]);
+            if maxVal ~= 0
+                obj.stimPatch.YData = maxVal * [1 1 -1 -1];
+                ylim(obj.signalAxis, [-maxVal, maxVal]);
+            end
             
             % Adjust the x-axis
             xlim(obj.signalAxis, [obj.xpts(1), obj.xpts(end)]);

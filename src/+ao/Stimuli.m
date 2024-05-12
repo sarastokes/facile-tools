@@ -14,6 +14,7 @@ classdef Stimuli
 
         % BASELINE --------------------------------------------------------
         Baseline
+        Baseline50p70s
         BaselineLong
         BaselineZeroMean
         BaselineLongZeroMean
@@ -51,6 +52,17 @@ classdef Stimuli
 
         ContrastIncrement20s80t
         ContrastDecrement20s80t
+        ContrastIncrement100c20s70t
+        ContrastDecrement100c20s70t
+        ContrastIncrement75c20s70t
+        ContrastDecrement75c20s70t
+        ContrastIncrement50c20s70t
+        ContrastDecrement50c20s70t
+        ContrastIncrement25c20s70t
+        ContrastDecrement25c20s70t
+        ContrastIncrement10c20s70t
+        ContrastDecrement10c20s70t
+
         ContrastDecrementIncrement20s90t
 
         TemporalSquarewave05
@@ -183,11 +195,45 @@ classdef Stimuli
         HorizontalDecrementIncrementBar30of32
 
         % Iteration Five
+        IntensityBar10s10of32
         IntensityBar10s11of32
         IntensityBar10s12of32
         IntensityBar10s13of32
+        IntensityBar10s15of32
+        IntensityBar10s20of32
+        IntensityBar10s25of32
+        IntensityBar10s30of32
 
-        % Iteration Five, half contrast
+        HorizontalIntensityBar10of32
+        HorizontalIntensityBar11of32
+        HorizontalIntensityBar12of32
+        HorizontalIntensityBar13of32
+        HorizontalIntensityBar14of32
+        HorizontalIntensityBar15of32
+        HorizontalIntensityBar16of32
+        HorizontalIntensityBar17of32
+        HorizontalIntensityBar18of32
+        HorizontalIntensityBar19of32
+        HorizontalIntensityBar20of32
+        HorizontalIntensityBar21of32
+        HorizontalIntensityBar22of32
+        HorizontalIntensityBar23of32
+        HorizontalIntensityBar24of32
+        HorizontalIntensityBar25of32
+        HorizontalIntensityBar26of32
+        HorizontalIntensityBar27of32
+
+        % Failed experiment for horizontal bars
+        HorizontalIntensityBar39of64
+        HorizontalIntensityBar40of64
+
+        % Iteration Five, half contrast and full contrast
+        IntensityBar10of32
+        IntensityBar15of32
+        IntensityBar20of32
+        IntensityBar25of32
+        IntensityBar30of32
+
         IntensityBar10s50c80t1of32
         IntensityBar10s50c80t2of32
         IntensityBar10s50c80t3of32
@@ -288,6 +334,21 @@ classdef Stimuli
         SpacedOutIntensityBars25i7of9
         SpacedOutIntensityBars25i8of9
         SpacedOutIntensityBars25i9of9
+
+        % Iteration 5
+        SpacedOutIntensityBars2pix7of32
+        SpacedOutIntensityBars2pix8of32
+        SpacedOutIntensityBars2pix9of32
+        SpacedOutIntensityBars2pix10of32
+        SpacedOutIntensityBars2pix11of32
+        SpacedOutIntensityBars2pix12of32
+        SpacedOutIntensityBars2pix13of32
+        SpacedOutIntensityBars2pix14of32
+        SpacedOutIntensityBars2pix15of32
+        SpacedOutIntensityBars2pix16of32
+        SpacedOutIntensityBars2pix17of32
+        SpacedOutIntensityBars2pix18of32
+        SpacedOutIntensityBars2pix19of32
 
         % Fast mapping
         SpacedOutBars1of4
@@ -436,6 +497,10 @@ classdef Stimuli
                     stimName = char(obj);
                     if contains(stimName, 'HorizontalDecrementIncrement')
                         n = 1990;
+                    elseif contains(stimName, {'SpacedOutIntensityBars2pix', 'HorizontalIntensityBars'})
+                        n = 1980;
+                    elseif endsWith(stimName, 'c20s70t')
+                        n = 1740;
                     elseif contains(stimName, 'DecrementIncrement')
                         n = 2250;
                     elseif contains(stimName, 'SpacedOutIntensity')
@@ -605,7 +670,7 @@ classdef Stimuli
                         stim(:, 1001:1500) = 1;
                     elseif contains(stimName, {'IntensityBar10s', 'SpacedOutIntensity'})
                         stim = stim - 0.5;
-                        stim(:, 501:1000) = 1;
+                        stim(:, 501:750) = 1;
                     elseif ismember('MovingBar', stimName)
                         stim = dlmread('moving_bar_trace.txt');
                     elseif ismember('Bar', stimName)
@@ -617,6 +682,13 @@ classdef Stimuli
                     elseif ismember('TemporalNoise', stimName)
                         noiseSeed = str2double(erase(char(obj), 'TemporalNoise'));
                         stim = Stimuli.getNoise(noiseSeed, false);
+                    elseif contains(stimName, 'c20s70t')
+                        stimContrast = num2str(extractFlaggedNumber(str, 'c_'));
+                        if contains(stimName, 'decrement')
+                            stim(501:1000) = -stimContrast;
+                        else
+                            stim(501:1000) = stimContrast;
+                        end
                     end
             end
 
@@ -670,6 +742,8 @@ classdef Stimuli
                         bkgd = [150 497];
                     elseif contains(char(obj), 'IntensityIncrement')
                         bkgd = [200 498];
+                    elseif endsWith(char(obj), 'c20s70t')
+                        bkgd = [250 498];
                     else
                         bkgd = [1 250];
                     end
@@ -747,7 +821,9 @@ classdef Stimuli
                             signal = [500 1500];
                         end
                     elseif contains(char(obj), {'Decrement20', 'Increment20'}) && ~contains(char(obj), '20s')
-                        signal = [251 750]
+                        signal = [251 750];
+                    elseif endsWith(char(obj), 'c20s70t')
+                        signal = [501 1000];
                     elseif contains(char(obj), 'IntensityBar')
                         signal = [501 750];
                     elseif contains(char(obj), 'Bar')
@@ -797,6 +873,8 @@ classdef Stimuli
                 case {Stimuli.TemporalNoise11, Stimuli.TemporalNoise16, Stimuli.TemporalNoise20, Stimuli.TemporalNoise35, Stimuli.TemporalNoise42}
                     app = RoiAverageView(epochGroup, epochIDs, obj.bkgd,...
                         obj.signal, titleStr);
+                case {Stimuli.Baseline50p70s}
+                    app = RoiAverageView2(epochGroup, epochIDs, [], [], titleStr);
                 otherwise
                     if contains(char(obj), 'DecrementIncrement')
                         app = RoiAverageView2(epochGroup, epochIDs, obj.bkgd,...
@@ -811,6 +889,8 @@ classdef Stimuli
                         app = RoiAverageView2(epochGroup, epochIDs, obj.bkgd,...
                             obj.signal, titleStr);
                     elseif contains(char(obj), {'TopticaSim', 'IntensityIncrement', 'LightsOn'})
+                        app = RoiAverageView2(epochGroup, epochIDs, obj.bkgd, obj.signal, titleStr);
+                    elseif endsWith(char(obj), 'c20s70t')
                         app = RoiAverageView2(epochGroup, epochIDs, obj.bkgd, obj.signal, titleStr);
                     else
                         warning('Stimulus not yet implemented')
@@ -919,17 +999,19 @@ classdef Stimuli
                     obj = Stimuli.Baseline;
                 case 'temporal_contrast_bkgd_long'
                     obj = Stimuli.BaselineLong;
+                case 'temporal_contrast_bkgd_70s'
+                    obj = Stimuli.Baseline50p70s;
                 case 'zero_mean_bkgd_long'
                     obj = Stimuli.BaselineLongZeroMean;
                 case 'lights_on_toptica'
                     obj = Stimuli.LightsOn;
+
                 case 'zero_mean_increment_1s_80t'
                     obj = Stimuli.IntensityIncrement1s80t;
                 case 'zero_mean_increment_3s_80t'
                     obj = Stimuli.IntensityIncrement3s80t;
                 case 'zero_mean_increment_5s_80t'
                     obj = Stimuli.IntensityIncrement5s80t;
-
                 case {'zero_mean_increment_10s', 'zero_mean_increment_10s_80t'}
                     obj = Stimuli.IntensityIncrement10s80t;
                 case 'zero_mean_increment_20s'
@@ -952,6 +1034,20 @@ classdef Stimuli
                     obj = Stimuli.ContrastIncrement20Quarter;
                 case '20s_contrast_decrement_quarter'
                     obj = Stimuli.ContrastDecrement20Quarter;
+
+                case 'contrast_increment_50c_20s_70t'
+                    obj = Stimuli.ContrastIncrement50c20s70t;
+                case 'contrast_decrement_50c_20s_70t'
+                    obj = Stimuli.ContrastDecrement50c20s70t;
+                case 'contrast_increment_75c_20s_70t'
+                    obj = Stimuli.ContrastIncrement50c20s70t;
+                case 'contrast_decrement_75c_20s_70t'
+                    obj = Stimuli.ContrastDecrement50c20s70t;
+                case 'contrast_increment_100c_20s_70t'
+                    obj = Stimuli.ContrastIncrement100c20s70t;
+                case 'contrast_decrement_100c_20s_70t'
+                    obj = Stimuli.ContrastDecrement100c20s70t;
+
                 case 'temporal_contrast_dec_10s'
                     obj = Stimuli.ContrastDecrement10;
                 case 'temporal_contrast_dec_5s'
@@ -966,8 +1062,6 @@ classdef Stimuli
                     obj = Stimuli.ContrastDecrement20Long;
                 case 'temporal_contrast_inc_20s_long'
                     obj = Stimuli.ContrastIncrement20Long;
-                case '20s_contrast_decrement_half'
-                    obj = Stimuli.ContrastDecrement20Half;
                 case '10s_contrast_decrement_half'
                     obj = Stimuli.ContrastDecrement10Half;
                 case '10s_contrast_decrement'
@@ -1244,6 +1338,32 @@ classdef Stimuli
                     obj = Stimuli.SpacedOutIntensityBars25i8of9;
                 case 'spacedout_int_bars_25i_9_of_9'
                     obj = Stimuli.SpacedOutIntensityBars25i9of9;
+                case 'spaced_out_int_bars_2pix_7_of_32'
+                    obj = Stimuli.SpacedOutIntensityBars2pix7of32;
+                case 'spaced_out_int_bars_2pix_8_of_32'
+                    obj = Stimuli.SpacedOutIntensityBars2pix8of32;
+                case 'spaced_out_int_bars_2pix_9_of_32'
+                    obj = Stimuli.SpacedOutIntensityBars2pix9of32;
+                case 'spaced_out_int_bars_2pix_10_of_32'
+                    obj = Stimuli.SpacedOutIntensityBars2pix10of32;
+                case 'spaced_out_int_bars_2pix_11_of_32'
+                    obj = Stimuli.SpacedOutIntensityBars2pix11of32;
+                case 'spaced_out_int_bars_2pix_12_of_32'
+                    obj = Stimuli.SpacedOutIntensityBars2pix12of32;
+                case 'spaced_out_int_bars_2pix_13_of_32'
+                    obj = Stimuli.SpacedOutIntensityBars2pix13of32;
+                case 'spaced_out_int_bars_2pix_14_of_32'
+                    obj = Stimuli.SpacedOutIntensityBars2pix14of32;
+                case 'spaced_out_int_bars_2pix_15_of_32'
+                    obj = Stimuli.SpacedOutIntensityBars2pix15of32;
+                case 'spaced_out_int_bars_2pix_16_of_32'
+                    obj = Stimuli.SpacedOutIntensityBars2pix16of32;
+                case 'spaced_out_int_bars_2pix_17_of_32'
+                    obj = Stimuli.SpacedOutIntensityBars2pix17of32;
+                case 'spaced_out_int_bars_2pix_18_of_32'
+                    obj = Stimuli.SpacedOutIntensityBars2pix18of32;
+                case 'spaced_out_int_bars_2pix_19_of_32'
+                    obj = Stimuli.SpacedOutIntensityBars2pix19of32;
                 case 'mod_bar_4_of_32'
                     obj = Stimuli.DecrementIncrementBar4of32;
                 case 'mod_bar_5_of_32'
@@ -1298,12 +1418,22 @@ classdef Stimuli
                     obj = Stimuli.DecrementIncrementBar29of32;
                 case 'mod_bar_30_of_32'
                     obj = Stimuli.DecrementIncrementBar30of32;
+                case 'intensity_bar_10_of_32'
+                    obj = Stimuli.IntensityBar10s10of32;
                 case 'bar_intensity_10s_11_of_32'
                     obj = Stimuli.IntensityBar10s11of32;
                 case 'bar_intensity_10s_12_of_32'
                     obj = Stimuli.IntensityBar10s12of32;
                 case 'bar_intensity_10s_13_of_32'
                     obj = Stimuli.IntensityBar10s13of32;
+                case 'intensity_bar_15_of_32'
+                    obj = Stimuli.IntensityBar10s15of32;
+                case 'intensity_bar_20_of_32'
+                    obj = Stimuli.IntensityBar10s20of32;
+                case 'intensity_bar_25_of_32'
+                    obj = Stimuli.IntensityBar10s25of32;
+                case 'intensity_bar_30_of_32'
+                    obj = Stimuli.IntensityBar10s30of32;
                 case 'bar_intensity_10s_50c_1_of_32'
                     obj = Stimuli.IntensityBar10s50c80t1of32;
                 case 'bar_intensity_10s_50c_2_of_32'
@@ -1366,6 +1496,55 @@ classdef Stimuli
                     obj = Stimuli.IntensityBar10s50c80t30of32;
                 case 'bar_intensity_10s_50c_31_of_32'
                     obj = Stimuli.IntensityBar10s50c80t31of32;
+                % 32 series of horizontal intensity bars
+                case 'horizontal_intensity_bar_7_of_32'
+                    obj = Stimuli.HorizontalIntensityBar7of32;
+                case 'horizontal_intensity_bar_8_of_32'
+                    obj = Stimuli.HorizontalIntensityBar8of32;
+                case 'horizontal_intensity_bar_9_of_32'
+                    obj = Stimuli.HorizontalIntensityBar9of32;
+                case 'horizontal_intensity_bar_10_of_32'
+                    obj = Stimuli.HorizontalIntensityBar10of32;
+                case 'horizontal_intensity_bar_11_of_32'
+                    obj = Stimuli.HorizontalIntensityBar11of32;
+                case 'horizontal_intensity_bar_12_of_32'
+                    obj = Stimuli.HorizontalIntensityBar12of32;
+                case 'horizontal_intensity_bar_13_of_32'
+                    obj = Stimuli.HorizontalIntensityBar13of32;
+                case 'horizontal_intensity_bar_14_of_32'
+                    obj = Stimuli.HorizontalIntensityBar14of32;
+                case 'horizontal_intensity_bar_15_of_32'
+                    obj = Stimuli.HorizontalIntensityBar15of32;
+                case 'horizontal_intensity_bar_16_of_32'
+                    obj = Stimuli.HorizontalIntensityBar16of32;
+                case 'horizontal_intensity_bar_17_of_32'
+                    obj = Stimuli.HorizontalIntensityBar17of32;
+                case 'horizontal_intensity_bar_18_of_32'
+                    obj = Stimuli.HorizontalIntensityBar18of32;
+                case 'horizontal_intensity_bar_19_of_32'
+                    obj = Stimuli.HorizontalIntensityBar19of32;
+                case 'horizontal_intensity_bar_20_of_32'
+                    obj = Stimuli.HorizontalIntensityBar20of32;
+                case 'horizontal_intensity_bar_21_of_32'
+                    obj = Stimuli.HorizontalIntensityBar21of32;
+                case 'horizontal_intensity_bar_22_of_32'
+                    obj = Stimuli.HorizontalIntensityBar22of32;
+                case 'horizontal_intensity_bar_23_of_32'
+                    obj = Stimuli.HorizontalIntensityBar23of32;
+                case 'horizontal_intensity_bar_24_of_32'
+                    obj = Stimuli.HorizontalIntensityBar24of32;
+                case 'horizontal_intensity_bar_25_of_32'
+                    obj = Stimuli.HorizontalIntensityBar25of32;
+                case 'horizontal_intensity_bar_26_of_32'
+                    obj = Stimuli.HorizontalIntensityBar26of32;
+                case 'horizontal_intensity_bar_27_of_32'
+                    obj = Stimuli.HorizontalIntensityBar27of32;
+                % 64 series of horizontal intensity bars
+                case 'horizontal_intensity_bar_39_of_64'
+                    obj = Stimuli.HorizontalIntensityBar39of64;
+                case 'horizontal_intensity_bar_40_of_64'
+                    obj = Stimuli.HorizontalIntensityBar40of64;
+                % 32 series of horizontal dec/inc bars
                 case {'horizontal_decinc_bar_8_of_32', 'horizontal_bar_decinc_8_of_32'}
                     obj = Stimuli.HorizontalDecrementIncrementBar8of32;
                 case {'horizontal_decinc_bar_9_of_32', 'horizontal_bar_decinc_9_of_32'}

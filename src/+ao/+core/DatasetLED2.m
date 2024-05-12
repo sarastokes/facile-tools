@@ -105,7 +105,8 @@ classdef DatasetLED2 < ao.core.Dataset
             try
                 imStack = imStack(:,:,1:nFrames);
             catch
-                warning('Epoch %u size did not match nFrames (%u)', epochID, nFrames);
+                warning('Epoch %u size (%u) did not match nFrames (%u)', ...
+                    epochID, size(imStack,3), nFrames);
             end
             
         end

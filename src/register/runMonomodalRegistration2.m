@@ -1,42 +1,42 @@
 function [MOVINGREG, quality] = runMonomodalRegistration2(MOVING, FIXED, varargin)
-    % RUNMONOMODALREGISTRATION2
-    %
-    % Description:
-    %   Monomodal registration with Gaussian blur and normalization
-    %
-    % Syntax:
-    %   MOVINGREG = runMonomodalRegistration2(MOVING, FIXED, varargin)
-    %
-    % Input:
-    %   MOVING                  image to be registered
-    %   FIXED                   reference image
-    % Optional key/value inputs:
-    %   Normalize               whether to apply normalization (false)
-    %   Blur                    whether to apply Gaussian blur (false)
-    %   Plot                    whether to plot results (false)
-    %   RegType                 type of registration ('similarity')
-    %   AlignType               type of center alignment ('geometric')
-    %
-    % Output:
-    %   MOVINGREG               struct
-    %       Contains RegisteredImage, SpatialRefObj (imref2d), and
-    %       Transformation (simtform2d)
-    %
-    % Notes:
-    %   Code based on output of registrationEstimator, with addition of
-    %   SSIM calculation, warning for failed registration, visualization and
-    %   greater parameter flexibility
-    %
-    % Requirements:
-    %   ImageProcessingToolbox
-    %
-    % See also:
-    %   batchMonomodalRegistration, ssim, imregtform, imregconfig, imwarp
-    %
-    % History:
-    %   16Nov2022 - SSP
-    %   15Aug2023 - SSP - Added support for center of mass
-    % ------------------------------------------------------------------------
+% RUNMONOMODALREGISTRATION2
+%
+% Description:
+%   Monomodal registration with Gaussian blur and normalization
+%
+% Syntax:
+%   MOVINGREG = runMonomodalRegistration2(MOVING, FIXED, varargin)
+%
+% Input:
+%   MOVING                  image to be registered
+%   FIXED                   reference image
+% Optional key/value inputs:
+%   Normalize               whether to apply normalization (false)
+%   Blur                    whether to apply Gaussian blur (false)
+%   Plot                    whether to plot results (false)
+%   RegType                 type of registration ('similarity')
+%   AlignType               type of center alignment ('geometric')
+%
+% Output:
+%   MOVINGREG               struct
+%       Contains RegisteredImage, SpatialRefObj (imref2d), and
+%       Transformation (simtform2d)
+%
+% Notes:
+%   Code based on output of registrationEstimator, with addition of
+%   SSIM calculation, warning for failed registration, visualization and
+%   greater parameter flexibility
+%
+% Requirements:
+%   ImageProcessingToolbox
+%
+% See also:
+%   batchMonomodalRegistration, ssim, imregtform, imregconfig, imwarp
+%
+% History:
+%   16Nov2022 - SSP
+%   15Aug2023 - SSP - Added support for center of mass
+% ------------------------------------------------------------------------
 
     ip = inputParser();
     ip.CaseSensitive = false;
