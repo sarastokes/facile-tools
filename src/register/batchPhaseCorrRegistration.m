@@ -1,4 +1,4 @@
-function [REG, quality, IDs] = batchPhaseCorrRegistration(imStack, refID, varargin)
+function [REG, IDs] = batchPhaseCorrRegistration(imStack, refID, varargin)
 
     ip = inputParser();
     ip.CaseSensitive = false;
@@ -22,31 +22,21 @@ function [REG, quality, IDs] = batchPhaseCorrRegistration(imStack, refID, vararg
     FIXED = imStack(:,:, refIdx);
     regStack = imStack; regStack(:,:,refIdx) = [];
 
-    REG = []; quality = [];
+    REG = []; badReg = [];
     for i = 1:size(regStack, 3)
-        [S, Q] = runPhaseCorrelation(squeeze(regStack(:,:,i)), FIXED, tformType, plotFlag);
-        REG = cat(1, REG, S);
-        quality = cat(1, quality, Q);
+        obj = runPhaseCorrelation(squeeze(regStack(:,:,i)), FIXED,...
+            tformType, plotFlag);
+        obj.setID(IDs(i));
+        if obj.SSIM < obj.OldSSIM
+            badReg = cat(1, badReg, i);
+        end
+        REG = cat(1, REG, obj);
     end
 
-    badReg = []; noReg = []; skipReg = [];
-    for i = 1:numel(quality)
-        quality(i).RegFlag = true;
-        if quality(i).Warning
-            badReg = cat(1, badReg, i);
-            % Sometimes registration errors occur when the non-registered
-            % images are already very similar. Flag these for registration
-            % to be skipped.
-            if quality(i).OldSSIM > 0.9
-                quality(i).RegFlag = false;
-                skipReg = cat(1, skipReg, i);
-            end
-        end
-    end
     if ~isempty(badReg)
         fprintf('Bad registration for: '); disp(IDs(badReg));
     end
     if omitSkips && ~isempty(skipReg)
         fprintf('Skipping registration for: '); disp(IDs(skipReg));
-        REG(skipReg) = []; quality(skipReg) = []; IDs(skipReg) = [];
+        REG(skipReg) = []; IDs(skipReg) = [];
     end

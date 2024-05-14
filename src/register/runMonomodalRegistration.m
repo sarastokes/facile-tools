@@ -1,77 +1,144 @@
-function [tform, imReg, refObj0, QI] = runMonomodalRegistration(im, im0)
-    % MONOMODALREGISTRATION
-    %
-    % Syntax:
-    %   T = monomodalRegistration(im, im0)
-    %
-    % Description
-    %   Registers 'im' to 'im0' with monomodal registration configuration,
-    %   rigid transformation, aligned by center of mass and normalized
-    % 
-    % History:
-    %   20211123 - SSP
-    % ---------------------------------------------------------------------
+function [MOVINGREG, quality] = runMonomodalRegistration(MOVING, FIXED, varargin)
+% RUNMONOMODALREGISTRATION
+%
+% Description:
+%   Monomodal registration with Gaussian blur and normalization
+%
+% Syntax:
+%   MOVINGREG = runMonomodalRegistration2(MOVING, FIXED, varargin)
+%
+% Input:
+%   MOVING                  image to be registered
+%   FIXED                   reference image
+% Optional key/value inputs:
+%   Normalize               whether to apply normalization (false)
+%   Blur                    whether to apply Gaussian blur (false)
+%   Plot                    whether to plot results (false)
+%   RegType                 type of registration ('similarity')
+%   AlignType               type of center alignment ('geometric')
+%
+% Output:
+%   MOVINGREG               struct
+%       Contains RegisteredImage, SpatialRefObj (imref2d), and
+%       Transformation (simtform2d)
+%
+% Notes:
+%   Code based on output of registrationEstimator, with addition of
+%   SSIM calculation, warning for failed registration, visualization and
+%   greater parameter flexibility
+%
+% Requirements:
+%   ImageProcessingToolbox
+%
+% See also:
+%   batchMonomodalRegistration, ssim, imregtform, imregconfig, imwarp
+%
+% History:
+%   16Nov2022 - SSP
+%   15Aug2023 - SSP - Added support for center of mass
+%   14May2024 - SSP - Removed im2double conversion which led to failures,
+%                     updated to affinetform2d, added maxStepLength param
+% ------------------------------------------------------------------------
 
-    % Normalize the images
-    finiteIdx = isfinite(im0(:));
-    im0(isnan(im0)) = 0;
-    im0(im0==Inf) = 1;
-    im0(im0==-Inf) = 0;
-    minVal = min(im0(:));
-    maxVal = max(im0(:));
-    if isequal(maxVal, minVal)
-        im0 = 0*im0;
-    else
-        im0(finiteIdx) = (im0(finiteIdx) - minVal) ./ (maxVal - minVal);
-    end
+    ip = inputParser();
+    ip.CaseSensitive = false;
+    addParameter(ip, 'Normalize', false, @islogical);
+    addParameter(ip, 'Blur', false, @islogical);
+    addParameter(ip, 'Plot', false, @islogical);
+    addParameter(ip, 'RegType', 'similarity',...
+        @(x) ismember(lower(x), ["rigid", "similarity", "affine"]));
+    addParameter(ip, 'AlignType', "geometric",...
+        @(x) ismember(lower(x), ["geometric", "center of mass"]));
+    addParameter(ip, 'MaxStepLength', 0.0312, @isnumeric); % 0.0625
+    parse(ip, varargin{:});
 
-    finiteIdx = isfinite(im(:));
-    im(isnan(im)) = 0;
-    im(im==Inf) = 1;
-    im(im==-Inf) = 0;
-    minVal = min(im(:));
-    maxVal = max(im(:));
-    if isequal(maxVal,minVal)
-        im = 0*im;
-    else
-        im(finiteIdx) = (im(finiteIdx) - minVal) ./ (maxVal - minVal);
-    end
+    blurFlag = ip.Results.Blur;
+    normFlag = ip.Results.Normalize;
+    plotFlag = ip.Results.Plot;
+    REG_TYPE = lower(ip.Results.RegType);
+    ALIGN_TYPE = lower(ip.Results.AlignType);
+    maxStepLength = ip.Results.MaxStepLength;
 
-
-    refObj = imref2d(size(im));
-    refObj0 = imref2d(size(im0));
+    % Default spatial referencing objects
+    fixedRefObj = imref2d(size(FIXED));
+    movingRefObj = imref2d(size(MOVING));
 
     % Intensity-based registration
     [optimizer, metric] = imregconfig('monomodal');
     optimizer.GradientMagnitudeTolerance = 1.00000e-04;
     optimizer.MinimumStepLength = 1.00000e-05;
-    optimizer.MaximumStepLength = 6.25000e-02;
+    optimizer.MaximumStepLength = maxStepLength;
     optimizer.MaximumIterations = 100;
     optimizer.RelaxationFactor = 0.500000;
 
     % Align centers
-    [x0, y0] = meshgrid(1:size(im0, 2), 1:size(im0,1));
-    [x, y] = meshgrid(1:size(im,2), 1:size(im, 1));
-    intensitySum0 = sum(im0(:));
-    intensitySum = sum(im(:));  
-    XCOM0 = (refObj0.PixelExtentInWorldX .* (sum(x0(:).*double(im0(:))) ./ intensitySum0)) + refObj0.XWorldLimits(1);
-    YCOM0 = (refObj0.PixelExtentInWorldY .* (sum(y0(:).*double(im0(:))) ./ intensitySum0)) + refObj0.YWorldLimits(1);
-    XCOM = (refObj.PixelExtentInWorldX .* (sum(x(:).*double(im(:))) ./ intensitySum)) + refObj.XWorldLimits(1);
-    YCOM = (refObj.PixelExtentInWorldY .* (sum(y(:).*double(im(:))) ./ intensitySum)) + refObj.YWorldLimits(1);
-    Tx = XCOM0 - XCOM;
-    Ty = YCOM0 - YCOM;
+    if strcmp(ALIGN_TYPE, 'center of mass')
+        [xFixed, yFixed] = meshgrid(1:size(FIXED,2), 1:size(FIXED, 1));
+        [xMoving, yMoving] = meshgrid(1:size(MOVING,2), 1:size(MOVING,1));
+        sumFixedIntensity = sum(FIXED(:));
+        sumMovingIntensity = sum(MOVING(:));
+        fixedCenterXWorld = (fixedRefObj.PixelExtentInWorldX .* ...
+            (sum(xFixed(:).*FIXED(:)) ./ sumFixedIntensity)) + fixedRefObj.XWorldLimits(1);
+        fixedCenterYWorld = (fixedRefObj.PixelExtentInWorldY .* ...
+            (sum(yFixed(:).*FIXED(:)) ./ sumFixedIntensity)) + fixedRefObj.YWorldLimits(1);
+        movingCenterXWorld = (movingRefObj.PixelExtentInWorldX .* ...
+            (sum(xMoving(:).*MOVING(:)) ./ sumMovingIntensity)) + movingRefObj.XWorldLimits(1);
+        movingCenterYWorld = (movingRefObj.PixelExtentInWorldY .* ...
+            (sum(yMoving(:).*MOVING(:)) ./ sumMovingIntensity)) + movingRefObj.YWorldLimits(1);
+    elseif strcmp(ALIGN_TYPE, 'geometric')
+        fixedCenterXWorld = mean(fixedRefObj.XWorldLimits);
+        fixedCenterYWorld = mean(fixedRefObj.YWorldLimits);
+        movingCenterXWorld = mean(movingRefObj.XWorldLimits);
+        movingCenterYWorld = mean(movingRefObj.YWorldLimits);
+    end
+    translationX = fixedCenterXWorld - movingCenterXWorld;
+    translationY = fixedCenterYWorld - movingCenterYWorld;
 
     % Coarse alignment
-    tformInit = affine2d();
-    tformInit.T(3, 1:2) = [Tx, Ty];
+    %initTform = affine2d();
+    %initTform.T(3,1:2) = [translationX, translationY];
+    initTform = affinetform2d();
+    initTform.A(1:2,3) = [translationX ; translationY];
 
-    % Apply transform to normalized images
-    tform = imregtform(mat2gray(im), refObj, mat2gray(im0), refObj0,...
-        'Rigid', optimizer, metric,...
-        'PyramidLevels', 3,...
-        'InitialTransformation',tformInit);
+    fixedInit = FIXED;
+    movingInit = MOVING;
 
-    imReg = imwarp(im, refObj, tform,... 
-        'OutputView', refObj0, 'SmoothEdges', true);
+    % Apply Gaussian blur
+    if blurFlag
+        fixedInit = imgaussfilt(fixedInit, 1);
+        movingInit = imgaussfilt(movingInit, 1);
+    end
 
-    QI = ssim(im0, imReg);
+    % Normalize images
+    if normFlag
+        movingInit = mat2gray(movingInit);
+        fixedInit = mat2gray(fixedInit);
+    end
+
+    % Apply transformation
+    tform = imregtform(movingInit, movingRefObj, fixedInit, fixedRefObj,...
+        REG_TYPE, optimizer, metric,...
+        'PyramidLevels', 3, 'InitialTransformation', initTform);
+    MOVINGREG.Transformation = tform;
+    MOVINGREG.RegisteredImage = imwarp(MOVING, movingRefObj, tform,...
+        'OutputView', fixedRefObj, 'SmoothEdges', true);
+
+    % Store spatial referencing object
+    MOVINGREG.SpatialRefObj = fixedRefObj;
+
+    % Plot, if necessary
+    if plotFlag
+        figure(); imshowpair(FIXED, MOVINGREG.RegisteredImage);
+    end
+
+    % Report out the improvement in SSIM
+    originalSSIM = ssim(FIXED, MOVING);
+    newSSIM = ssim(FIXED, MOVINGREG.RegisteredImage);
+    quality = struct('OldSSIM', originalSSIM, 'NewSSIM', newSSIM);
+    if newSSIM < originalSSIM
+        fprintf('WARNING!!! ');     % Registration failed
+        quality.Warning = true;
+    else
+        quality.Warning = false;
+    end
+    fprintf('SSIM changed from %.3f to %.3f\n', originalSSIM, newSSIM);

@@ -1,11 +1,11 @@
-function [tform, quality, imReg, refObj0] = runPhaseCorrelation(im0, im, tformType, plotFlag)
+function obj = runPhaseCorrelation(im0, im, tformType, plotFlag)
 % RUNPHASECORRELATION
 %
 % Description:
 %   Register with phase correlation
 %
 % Syntax:
-%   [tform, imReg, refObj0, QI] = runPhaseCorrelation(im0, im, tformType)
+%   [tform, quality, imReg] = runPhaseCorrelation(im0, im, tformType)
 %
 % Inputs:
 %   im0         2d image
@@ -16,7 +16,6 @@ function [tform, quality, imReg, refObj0] = runPhaseCorrelation(im0, im, tformTy
 %   tformType   string
 %       The type of transformation to be used for the registration
 %
-%
 % See also:
 %   runMultimodalRegistration, runMonomodalRegistration, imregcorr, ssim
 %
@@ -24,7 +23,6 @@ function [tform, quality, imReg, refObj0] = runPhaseCorrelation(im0, im, tformTy
 %   28Feb2021 - SSP
 %   10May2024 - SSP - streamlined, removed non-rigid registration
 % --------------------------------------------------------------------------
-
 
     if nargin < 3
         tformType = "similarity";
@@ -46,11 +44,8 @@ function [tform, quality, imReg, refObj0] = runPhaseCorrelation(im0, im, tformTy
     oldSSIM = ssim(im, im0);
     newSSIM = ssim(imReg, im0);
 
-    quality = struct('OldSSIM', oldSSIM, 'NewSSIM', newSSIM);
-    if newSSIM < oldSSIM
-        fprintf('WARNING!!! ');     % Registration failed
-        quality.Warning = true;
-    else
-        quality.Warning = false;
-    end
-    fprintf('SSIM changed from %.2f to %.2f\n', oldSSIM, newSSIM);
+    obj = PhaseCorrRegistrationResult(tform, 0);
+    obj.setSSIMs(newSSIM, oldSSIM);
+
+    fprintf('SSIM changed from %.3f to %.3f\n', oldSSIM, newSSIM);
+

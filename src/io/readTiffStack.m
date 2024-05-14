@@ -1,18 +1,18 @@
 function ts = readTiffStack(fileName)
-    % READTIFFSTACK
-    %
-    % Description:
-    %   A slightly slower alternative to TIFFStack
-    %
-    % Syntax:
-    %   ts = readTiffStack(fileName)
-    %
-    % Notes:
-    %   Assumes 8 bit image
-    %
-    % See also:
-    %   TIFFSTACK
-    % ---------------------------------------------------------------------
+% READTIFFSTACK
+%
+% Description:
+%   A slightly slower alternative to TIFFStack
+%
+% Syntax:
+%   ts = readTiffStack(fileName)
+%
+% Notes:
+%   Assumes 8 bit image
+%
+% See also:
+%   TIFFSTACK
+% ---------------------------------------------------------------------
 
     assert(endsWith(fileName, '.tif'), 'Input must be a tif file!');
     if ~exist(fileName, "file")
@@ -20,9 +20,11 @@ function ts = readTiffStack(fileName)
     end
 
     imInfo = imfinfo(fileName);
-    nFrames = size(imfinfo(fileName));
+    nFrames = size(imfinfo(fileName), 1);
     
     ts = zeros(imInfo(1).Height, imInfo(1).Width, 'uint8');
+
+    assignin('base', 'nFrames', nFrames);
 
     for i = 1:nFrames
         ts(:,:,i) = imread(fileName, 'Index', i);

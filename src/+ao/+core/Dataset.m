@@ -135,6 +135,7 @@ classdef Dataset < handle
     properties (Dependent)
         numCached
         numEpochs
+        numTransforms
     end
 
     properties (Hidden, Dependent)
@@ -190,8 +191,7 @@ classdef Dataset < handle
             obj.extraHeader = ip.Results.ExtraHeader;
 
             if ~isempty(ip.Results.RegistrationDate)
-                obj.registrationDate = datetime(ip.Results.RegistrationDate,...
-                    'Format', 'yyyyMMdd');
+                obj.registrationDate = datetime(ip.Results.RegistrationDate, 'Format', 'yyyyMMdd');
             end
             obj.registrationID = ip.Results.RegistrationID;
 
@@ -237,6 +237,14 @@ classdef Dataset < handle
                 end
             catch
                 value = 0;
+            end
+        end
+
+        function value  = get.numTransforms(obj)
+            if isempty(obj.transforms)
+                value = 0;
+            else
+                value = numel(obj.transforms.keys);
             end
         end
 
@@ -708,8 +716,8 @@ classdef Dataset < handle
             %   IDs             array
             %       Epoch IDs corresponding to tforms
             % -----------------------------------------------------------
-            
-            if ischar(tforms)
+
+            if istext(tforms)
                 fName = tforms;
                 tforms = readRigidTransform(fName);
                 obj.tformFileName = fName;
@@ -719,8 +727,32 @@ classdef Dataset < handle
                 else
                     tforms = tforms.Transformation.A;
                 end
+            elseif isa(tforms, 'RegistrationResult')
+                tf = tforms.hasID(obj.epochIDs);
+                if nnz(tf) ~= numel(obj.epochIDs)
+                    fprintf('\t%u of %u epochs have transforms provided\n', ...
+                        nnz(tf), numel(obj.epochIDs));
+                end
+                fprintf('Adding transforms for: ');
+                for i = 1:numel(tforms)
+                    if ismember(tforms(i).ID, obj.epochIDs)
+                        obj.transforms(num2str(tforms(i).ID)) = tforms(i);
+                        fprintf('%u ', tforms(i).ID);
+                    end
+                end
+                fprintf('\n');
+
+                %assert(isequal(IDs, arrayfun(@(x) x.ID, tforms)),...
+                %    'Number of transforms must match number of epoch IDs');
+                %for i = 1:numel(IDs)
+                %    assert(isequal(tforms(i).ID), IDs(i),...
+                %        sprintf('Epoch IDs must match transform IDs (ID=%u vs %u', IDs(i), tforms(i).ID));
+                %    obj.transforms(num2str(tforms(i).ID)) = tforms(i);
+                %end
+                return
             end
 
+            % Default assumption is Affine Transform from FIJI's SIFT plugin
             for i = 1:numel(IDs)
                 obj.transforms(num2str(IDs(i))) = ...
                     affine2d(squeeze(tforms(:,:,i)));
@@ -746,6 +778,11 @@ classdef Dataset < handle
 
             obj.clearTransforms();
 
+            if isa(tforms, "RegistrationResult")
+                obj.addTransforms(tforms);
+                return
+            end
+
             if nargin < 3 || isempty(IDs)
                 IDs = obj.epochIDs(2:end);
             end
@@ -758,7 +795,7 @@ classdef Dataset < handle
                 if isnumeric(tforms)
                     obj.transforms(num2str(IDs(i))) = ...
                         affine2d(squeeze(tforms(:, :, i)));
-                else
+                elseif isstruct(tforms) %|| isa(tforms, "RegistrationResult")
                     obj.transforms(num2str(IDs(i))) = tforms(i);
                 end
             end
@@ -1002,11 +1039,12 @@ classdef Dataset < handle
                                     'OutputView', refObj);
                             end
                         end
-                    elseif isstruct(tform)
+                    elseif isstruct(tform) || isa(tform, "RegistrationResult")
+                        spatialRefObj = imref2d(size(imStack, 1:2));
                         for i = 1:size(imStack,3)
                             imStack(:,:,i) = imwarp(imStack(:,:,i),...
-                                tform.SpatialRefObj, tform.Transformation,...
-                                'OutputView', tform.SpatialRefObj);
+                                spatialRefObj, tform.Transformation,...
+                                'OutputView', spatialRefObj);
                         end
                     end
                 end
