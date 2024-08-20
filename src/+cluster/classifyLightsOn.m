@@ -131,15 +131,18 @@ function [adaptIdx, peakMag] = getStats(dataset, stimName, useFirst, standardize
             end
             warning('Found multiple lights on, using %s', stimName);
         end
-    else
-        stimName = ip.Results.StimName;
     end
 
     if ~isnumeric(dataset)
+        fprintf('Using %s for %s\n', stimName, dataset.getLabel());
         signals = dataset.getStimulusResponses(stimName, [250 498], ...
             "Smooth", 100, "Average", true);
     else
-        signals = mean(dataset, 3);
+        if ndims(dataset) == 3
+            signals = mean(dataset, 3);
+        else
+            signals = dataset;
+        end
     end
 
     [adaptIdx, peakMag] = roiAdaptIndex(signals, [507 100], [350 100], [2 98]);
