@@ -4,11 +4,12 @@
 #   Provided by the Herzenberg Lab at Stanford University.
 #   License: BSD 3 clause
 #
-import sys
 import argparse
 import os
-from mlp import mlp_predict
+import sys
 from pathlib import Path
+
+from mlp import mlp_predict
 
 script = os.path.basename(sys.argv[0])
 nArgs = len(sys.argv)
@@ -47,4 +48,3 @@ csv_predictions = csv_predictions.replace('~', str(Path.home()))
 mlp_predict(csv_in, model, csv_out, csv_predictions)
 sys.exit(0)
 
-#my toekn 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
