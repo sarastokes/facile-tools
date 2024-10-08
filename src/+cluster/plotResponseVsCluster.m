@@ -16,6 +16,7 @@ function fh = plotResponseVsCluster(signals, clustIdx, clustAvg, opts)
 %
 % History:
 %   13Oct2023 - SSP
+%   04Jun2024 - SSP - Added downsampling
 % --------------------------------------------------------------------------
 
     arguments
@@ -27,6 +28,7 @@ function fh = plotResponseVsCluster(signals, clustIdx, clustAvg, opts)
         opts.ups              double                      = []
         opts.Counter    (1,1) double      {mustBeInteger} = 0
         opts.ID
+        opts.Downsample (1,1) double      {mustBeInteger} = 0
     end
 
     if isempty(clustAvg)
@@ -40,7 +42,13 @@ function fh = plotResponseVsCluster(signals, clustIdx, clustAvg, opts)
         xpts = opts.X;
     end
 
-    cmap = pmkmp(max(clustIdx), 'CubicL');
+    if opts.Downsample > 0
+        signals = downsampleMean(signals, opts.Downsample);
+        clustAvg = downsampleMean(clustAvg, opts.Downsample);
+        xpts = downsampleMean(xpts, opts.Downsample);
+    end
+
+    cmap = othercolor('Spectral10', max(clustIdx));
 
     fh = figure();
     counter = opts.Counter;

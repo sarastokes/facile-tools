@@ -189,7 +189,7 @@ classdef RoiAverageView2 < handle
             % Detrend signals, if needed
             h = findobj(obj.figureHandle, 'Tag', 'detrend');
             if h.Value
-                allSignals = roiPrctFilt(allSignals', 30, 500, 500)';
+                allSignals = roiPrctFilt(allSignals', 30, 500, 1000)';
                 if ~isempty(obj.bkgdWindow)
                     allSignals = signalBaselineCorrect(allSignals', obj.bkgdWindow, "mean")';
                 else
@@ -725,12 +725,16 @@ classdef RoiAverageView2 < handle
                     plot(ax, linspace(obj.xpts(1), obj.xpts(end), numel(obj.stim)), obj.stim,...
                         'Color', [0.05 0.05 0.4], 'LineWidth', 1.5);
                 elseif istable(obj.stim)
+                    N = numel(obj.xpts);
+                    if N > height(obj.stim)
+                        N = height(obj.stim);
+                    end
                     hold(ax, 'on');
-                    plot(ax, obj.xpts, obj.stim.R(1:numel(obj.xpts)), ...
+                    plot(ax, obj.xpts(1:N), obj.stim.R(1:N), ...
                         'Color', hex2rgb('ff4040'), 'LineWidth', 1.5);
-                    plot(ax, obj.xpts, obj.stim.G(1:numel(obj.xpts)), ...
+                    plot(ax, obj.xpts(1:N), obj.stim.G(1:N), ...
                         'Color', hex2rgb('00cc4d'), 'LineWidth', 1.5);
-                    plot(ax, obj.xpts, obj.stim.B(1:numel(obj.xpts)), ...
+                    plot(ax, obj.xpts(1:N), obj.stim.B(1:N), ...
                         'Color', hex2rgb('334de6'), 'LineWidth', 1.5);
                 else  % multiple traces, one per epoch
                     if numel(obj.epochIDs) > 1

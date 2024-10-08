@@ -211,13 +211,18 @@ classdef DatasetLED2 < ao.core.Dataset
             % Syntax:
             %   [ups, downs] = obj.getModWindows(stimName, varargin)
             %
+            % Notes:
+            %   If there are multiple epochs, the first is used. 
+            %
             % See also:
             %   GETSQUAREMODULATIONTIMING
             % -------------------------------------------------------------
+
             if ~isnumeric(ID)
                 ID = obj.stim2epochs(ID);
                 ID = ID(1);
             end
+
             [ups, downs] = getSquareModulationTiming(obj.frameTables(ID), varargin{:});
         end
 

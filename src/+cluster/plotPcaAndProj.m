@@ -13,7 +13,8 @@ function plotPcaAndProj(U, ev, proj, opts)
     end
 
     if nnz(opts.cmap) == 0
-        opts.cmap = pmkmp(opts.numPCs, 'CubicL');
+        %opts.cmap = pmkmp(opts.numPCs, 'CubicL');
+        opts.cmap = othercolor('Spectral10', opts.numPCs);
     end
 
     fh = figure(); colororder('sail');

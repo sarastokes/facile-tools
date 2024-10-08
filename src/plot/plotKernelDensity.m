@@ -12,7 +12,7 @@ function [out, h, bw] = plotKernelDensity(data, bw, opts)
     if isempty(bw)
         [yPDF, xPDF, bw] = kde(data);
     else
-        [yPDF, xPDF, bw] = kde(data, bw);
+        [yPDF, xPDF, bw] = kde(data, "Bandwidth", bw);
     end
 
     out = [xPDF(:), yPDF(:)];

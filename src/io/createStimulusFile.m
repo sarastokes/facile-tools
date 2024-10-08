@@ -1,4 +1,4 @@
-function createStimulusFile(stimFile, stimName, sizing, nFrames, mustang, stimVideo, bkgdVideo)
+function createStimulusFile(stimFile, sizing, nFrames, mustang, stimVideo, bkgdVideo)
     % CREATESTIMULUSFILE
     %
     % Syntax:

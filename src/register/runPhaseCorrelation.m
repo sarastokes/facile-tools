@@ -27,6 +27,11 @@ function obj = runPhaseCorrelation(im0, im, tformType, plotFlag)
     if nargin < 3
         tformType = "similarity";
     end
+    if nargin < 3
+        plotFlag = false;
+    end
+    assert(~strcmpi(tformType, "affine"), ...
+        "Affine transform not supported by phase correlation");
 
     refObj0 = imref2d(size(im0));
     refObj = imref2d(size(im));
@@ -47,5 +52,5 @@ function obj = runPhaseCorrelation(im0, im, tformType, plotFlag)
     obj = PhaseCorrRegistrationResult(tform, 0);
     obj.setSSIMs(newSSIM, oldSSIM);
 
-    fprintf('SSIM changed from %.3f to %.3f\n', oldSSIM, newSSIM);
+    fprintf('SSIM: %.3f --> %.3f\n', oldSSIM, newSSIM);
 

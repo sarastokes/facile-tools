@@ -7,6 +7,7 @@ function [h, fans] = populationFanChart(xData, yData, opts)
         opts.Cmap               double                               = []
         opts.Alpha      (1,1)   {mustBeInRange(opts.Alpha, 0, 1)}    = 1
         opts.Median     (1,1)   logical                              = true
+        opts.Downsample (1,1)   {mustBeInteger}                      = 1
         opts.Parent             {mustBeScalarOrEmpty}                = []
     end
 
@@ -18,6 +19,11 @@ function [h, fans] = populationFanChart(xData, yData, opts)
     if ~isempty(opts.Cmap)
         assert(size(opts.Cmap, 1) >= ceil(numel(opts.Values)/2),...
             sprintf('Custom colormap must have at least %u rows', numel(opts.Values)));
+    end
+
+    if opts.Downsample > 1
+        yData = downsampleMean(yData, opts.Downsample);
+        xData = downsampleMean(xData, opts.Downsample);
     end
 
     if opts.Median

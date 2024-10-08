@@ -9,7 +9,7 @@ function [peakCounts, T, normStatPop] = populationTemporalTuning(temporalStat, t
 
     cutoff = ip.Results.Cutoff;
     titleStr = ip.Results.Title;
-    if ~isempty(ip.Results.UIDs);
+    if ~isempty(ip.Results.UIDs)
         T = ip.Results.UIDs;
     else
         T = table(rangeCol(1, size(temporalStat,1)),...

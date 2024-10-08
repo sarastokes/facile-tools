@@ -5,6 +5,7 @@ classdef RoiManagerApp < handle
         dataset
         datasetName                     char
         dsetImage      
+        flipFlag
         rois                            double              
         roiTable
 
@@ -42,7 +43,7 @@ classdef RoiManagerApp < handle
     end
 
     methods
-        function obj = RoiManagerApp(dataset, parentHandle)
+        function obj = RoiManagerApp(dataset, parentHandle, flipFlag)
             if isa(dataset, 'ao.core.Dataset')
                 obj.datasetName = dataset.getLabel();
                 obj.dsetImage = dataset.avgImage;
@@ -66,7 +67,18 @@ classdef RoiManagerApp < handle
             end
             obj.dataset = dataset;
 
-            if nargin == 2
+
+            if nargin < 3
+                obj.flipFlag = false;
+            else
+                obj.flipFlag = flipFlag;
+            end
+            if obj.flipFlag
+                obj.dsetImage = flipud(obj.dsetImage);
+                obj.rois = flipud(obj.rois);
+            end
+
+            if nargin >= 2
                 obj.Figure = parentHandle;
             end
 

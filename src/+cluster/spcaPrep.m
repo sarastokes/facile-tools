@@ -24,7 +24,9 @@ function [avgData, allData, X, QI] = spcaPrep(rawData, opts)
                 "Bounds", opts.Bounds, "X", opts.X, ...
                 "Correct", opts.Correct, "Clip", opts.Clip,... 
                 "Downsample", opts.Downsample);
-        
+            if i>1 && size(iAvg,2) > size(avgData,2)
+                iAvg = iAvg(:,1:size(avgData,2));
+            end
             avgData = cat(1, avgData, iAvg);
             QI = cat(1, QI, iQI);
         end
@@ -38,9 +40,6 @@ function [avgData, allData, X, QI] = spcaPrep(rawData, opts)
         allData = rawData;
     end
     
-    % 
-    % numROIs = size(allData,1);
-    % avgData = zeros(size(allData, [1 2]));
     if opts.Correct
         if ndims(allData) == 3
             avgData = mean(allData, 3, "omitmissing"); 
@@ -50,21 +49,6 @@ function [avgData, allData, X, QI] = spcaPrep(rawData, opts)
         else
             avgData = allData ./ max(abs(allData), [], 2);
         end
-        % for i = 1:numROIs
-        %     roiData = squeeze(allData(i,:,:));
-        %     if ndims(allData) == 3
-        %         avgData(i,:) = mean(roiData, 2, 'omitmissing') ...
-        %             / max(abs(mean(roiData, 2, 'omitmissing')));
-        %     else
-        %         roiData = bsxfun(@minus, roiData, median(roiData, 2, "omitmissing"));
-        %         avgData(i,:) = roiData;
-        %     end
-        %     allData(i,:,:) = roiData;
-        %     if nnz(isnan(avgData(i,:))) > 0
-        %         warning('NaN values for ROI %u', i);
-        %     end
-        %     % TODO: Search and correct for NaNs?
-        % end
     else
         if ndims(allData) == 3
             avgData =  mean(allData, 3);
@@ -74,7 +58,7 @@ function [avgData, allData, X, QI] = spcaPrep(rawData, opts)
     end
 
     if ~isequal(opts.Clip, [1 0])
-        [allData, X] = timeClip(allData, opts.Clip, 2, opts.X);
+        allData = timeClip(allData, opts.Clip, 2, opts.X);
         [avgData, X] = timeClip(avgData, opts.Clip, 2, opts.X);
     else
         allData = rawData; X = opts.X;
@@ -86,7 +70,5 @@ function [avgData, allData, X, QI] = spcaPrep(rawData, opts)
         allData = roiDownsample(allData, opts.Downsample, "mean", "X", X);
         [avgData, X] = roiDownsample(avgData, opts.Downsample, "mean", "X", X);
     end
-
-
 
     QI = qualityIndex(allData);

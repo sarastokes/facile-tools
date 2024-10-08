@@ -80,8 +80,9 @@ for i = 1:numel(k)
     end
 
     if p.UsingLEDs
+        % Pre-2022 LED file naming scheme
         newTitle = ['vis#', int2fixedwidthstr(epochID, 3)];
-    else
+    else % Current 1P AOSLO file naming scheme
         newTitle = ['vis_', int2fixedwidthstr(epochID, 4)];
     end
     if p.Channel == "ref"
@@ -94,7 +95,7 @@ for i = 1:numel(k)
         IJ.run("Flip Vertically", "stack");
     end
 
-    % Subtract background, if needed
+    % Identify background value from specified region, if necessary
     if ~isempty(p.BackgroundRegion)
         curVidName = getTitle(IJ.getImage());
         IJ.run("Specify...", java.lang.String(['width=', num2str(x), ' height=', num2str(y), ' x=', num2str(x0), ' y=', num2str(y0), ' slice=1']));
@@ -103,7 +104,7 @@ for i = 1:numel(k)
         IJ.run("Z Project...", "projection=[Average Intensity]");
 
         IJM.getDatasetAs('vid');
-        bkgdValue = mean(vid, "all");
+        p.BackgroundValue = mean(vid, "all");
         openImg = IJ.getImage();
         openImg.close();
         IJ.selectWindow(java.lang.String(['tmp']));
@@ -114,7 +115,7 @@ for i = 1:numel(k)
     end
 
 
-    % Crop, if needed
+    % Crop to a standardized size, if needed (default "full" doesn't crop)
     switch p.ImagingSide
         case 'left'
             if isequal(p.FieldOfView, [496 400])
@@ -123,15 +124,15 @@ for i = 1:numel(k)
                 IJ.run("Specify...", "width=248 height=358 x=0 y=1 slice=1");
             end
         case 'right'  % 20220308 on
-            if p.FieldOfView == [496 360]
+            if isequal(p.FieldOfView, [496 360])
                 IJ.run("Specify...", "width=242 height=360 x=254 y=0 slice=1");
-            elseif p.FieldOfView == [496 496] % skipping row at top and bottom
+            elseif isequal(p.FieldOfView, [496 496]) % skipping row at top and bottom
                 IJ.run("Specify...", "width=242 height=494 x=254 y=1 slice=1");
-            elseif p.FieldOfView == [496 408]
+            elseif isequal(p.FieldOfView, [496 408])
                 IJ.run("Specify...", "width=240 height=406 x=255 y=1 slice=1");
-            elseif p.FieldOfView == [496 392]
+            elseif isequal(p.FieldOfView, [496 392])
                 IJ.run("Specify...", "width=242 height=390 x=253 y=1 slice=1");
-            elseif p.FieldOfView == [496 400]
+            elseif isequal(p.FieldOfView, [496 400])
                 IJ.run("Specify...", "width=238 height=398 x=258 y=1");
             end
         case 'right_smallFOV'
@@ -140,14 +141,15 @@ for i = 1:numel(k)
             IJ.run("Specify...", "width=496 height=168 x=0 y=240 slice=1");
     end
 
-    % Save the new stack
     IJ.run("Duplicate...", java.lang.String(['title=', newTitle, ' duplicate']));
 
-    if ~isempty(p.BackgroundRegion)
-        IJ.run("Subtract...", java.lang.String(['value=', num2str(bkgdValue), ' stack']));
-        fprintf('Subtracting %.3f...', bkgdValue);
+    % Subtract background value, if necessary
+    if p.BackgroundValue > 0
+        IJ.run("Subtract...", java.lang.String(['value=', num2str(p.BackgroundValue), ' stack']));
+        fprintf('Subtracting %s...', num2str(p.BackgroundValue));
     end
 
+    % Save the new stack
     savePath = fullfile(videoDir, [newTitle, '.tif']);
     IJ.saveAs("Tiff", java.lang.String(savePath));
 

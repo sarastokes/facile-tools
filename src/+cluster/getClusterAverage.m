@@ -8,7 +8,8 @@ function clustAvg = getClusterAverage(data, clust)
 
     nClust = numel(unique(idx));
 
-    clustAvg = [];
+    clustAvg = []; clustSD = [];
     for i = 1:nClust
         clustAvg = cat(1, clustAvg, mean(data(idx == i,:),1));
+        clustSD = cat(1, clustSD, std(data(idx==i,:), [], 1));
     end

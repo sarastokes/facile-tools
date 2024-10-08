@@ -1,20 +1,22 @@
 function [videoNames, p] = processVideoPrep(experimentDir, epochIDs, varargin)
-    % PROCESSVIDEOPREP
-    %
-    % Syntax:
-    %   [videoNames, p] = processVideoPrep(experimentDir, epochIDs,
-    %       varargin);
-    %
-    % Note:
-    %   When running on Mac, all Dropbox/Drive files must be downloaded to
-    %   be recognized in the file listing
-    %
-    % History:
-    %   01Nov2021 - SSP
-    %   05Aug2022 - SSP - Updated for mac
-    %   26Oct2022 - SSP - Extra header
-    %   09Nov2022 - SSP - Added UseFirst option (false = use last)
-    % ---------------------------------------------------------------------
+% PROCESSVIDEOPREP
+%
+% Syntax:
+%   [videoNames, p] = processVideoPrep(experimentDir, epochIDs, varargin);
+%
+% Note:
+%   - When running on Mac, all Dropbox/Drive files must be downloaded to
+%     be recognized in the file listing
+%   - Assumes standard file folder listing (e.g., "Vis" or "Ref" folders)
+%     and assumes the string "vis_" is in each video name within the "Vis"
+%     folder (and same for "Ref"). 
+%
+% History:
+%   01Nov2021 - SSP
+%   05Aug2022 - SSP - Updated for mac
+%   26Oct2022 - SSP - Extra header
+%   09Nov2022 - SSP - Added UseFirst option (false = use last)
+% -------------------------------------------------------------------------
 
     % Ensure experiment folder path ends with a filesep
     experimentDir = convertStringsToChars(experimentDir);
@@ -33,8 +35,9 @@ function [videoNames, p] = processVideoPrep(experimentDir, epochIDs, varargin)
     addParameter(ip, 'Reflect', false, @islogical);
     addParameter(ip, 'UsingLEDs', false, @islogical);
     addParameter(ip, 'UseFirst', true, @islogical);
-    addParameter(ip, 'Channel', 'vis', @(x) ismember(x, ["vis", "ref"]));
+    addParameter(ip, 'Channel', "vis", @(x) ismember(x, ["vis", "ref", "custom"]));
     addParameter(ip, 'BackgroundRegion', [], @(x) isnumeric(x) && numel(x) == 4);
+    addParameter(ip, 'BackgroundValue', 0, @isnumeric);
     parse(ip, varargin{:});
 
     regType = ip.Results.RegistrationType;
@@ -54,34 +57,37 @@ function [videoNames, p] = processVideoPrep(experimentDir, epochIDs, varargin)
         fprintf('%s: ', f{i}); disp(ip.Results.(f{i}));
     end
 
-    % Get all the filenames in channel's folder
+    % Get the filenames in channel's folder (assumes "Vis" and/or "Ref")
     if whichChannel == "vis"
         channelDir = fullfile(experimentDir, 'Vis');
     elseif whichChannel == "ref"
         channelDir = fullfile(experimentDir, 'Ref');
+    elseif whichChannel == "custom"
+        channelDir = fullfile(experimentDir);
     end
 
     if ispc
         f = ls(channelDir);
         f = deblank(string(f));
-    else
+    else  % For Mac
         d = dir(channelDir);
         f = arrayfun(@(x) string(x.name), d, 'UniformOutput', true);
     end
 
-    % Get the video names
+    % Get the video names and track which epochs are not found
     videoNames = containers.Map();
-    % Track which epochs were not found
     epochsNotFound = [];
 
     for i = 1:numel(epochIDs)
-        if usingLEDs
+        if usingLEDs  % This is old LED file naming scheme (pre-2022)
             videoStr = ['fs#', int2fixedwidthstr(epochIDs(i), 3)];
-        else % Standard file naming
+        else % Standard file naming post-2022
             if whichChannel == "vis"
                 videoStr = ['vis_', int2fixedwidthstr(epochIDs(i), 4)];
             elseif whichChannel == "ref"
                 videoStr = ['ref_', int2fixedwidthstr(epochIDs(i), 4)];
+            else
+                videoStr = ['_', int2fixedwidthstr(epochIDs(i), 4)];
             end
         end
 
@@ -89,12 +95,14 @@ function [videoNames, p] = processVideoPrep(experimentDir, epochIDs, varargin)
             videoStr = [extraHeader, videoStr]; %#ok<AGROW>
         end
 
-        % Get the registered video
-        if strcmp(regType, 'none')
+        % Sort through the file names for the correct video
+        if strcmp(regType, 'none')  
+            % Unregistered doesn't contain "strip" or "frame"
             idx = find(contains(f, videoStr) & endsWith(f, '.avi') & ~contains(f, 'strip') & ~contains(f, 'frame'));
-        else
+        else % Look for "strip" or "frame"
             idx = find(contains(f, videoStr) & endsWith(f, '.avi') & contains(f, regType));
         end
+        
         if isempty(idx)
             warning('PROCESSVIDEOPREP: epoch %u - registered video not found', epochIDs(i));
             videoNames(num2str(epochIDs(i))) = [];

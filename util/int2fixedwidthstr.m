@@ -1,21 +1,21 @@
 function txt = int2fixedwidthstr(x, numDigits)
-    % FOURDIGITCHAR
-    %
-    % Syntax:
-    %   txt = int2fixedwidthstr(x, numDigits)
-    %
-    % Input:
-    %   x           Integer
-    %   numDigits   Integer
-    %       Number of digits to convert integer x to (by adding leading 0s)
-    %
-    % Output:
-    %   txt         char
-    %       Integer with preceeding zeros needed to have length = numDigits
-    %
-    % History:
-    %   04Nov2020 - SSP
-    % ---------------------------------------------------------------------
+% INT2FIXEDWIDTHSTR
+%
+% Syntax:
+%   txt = int2fixedwidthstr(x, numDigits)
+%
+% Input:
+%   x           Integer
+%   numDigits   Integer
+%       Number of digits to convert integer x to (by adding leading 0s)
+%
+% Output:
+%   txt         char
+%       Integer with preceeding zeros needed to have length = numDigits
+%
+% History:
+%   04Nov2020 - SSP
+% -------------------------------------------------------------------------
 
     txt = num2str(x);
 

@@ -277,8 +277,10 @@ classdef MultiDataset < handle
             obj.datasetNames = obj.datasetNames(obj.hasStim);
         end
 
-        function checkDirectories(obj)
+        function out = checkDirectories(obj)
+            out = [];
             for i = 1:numel(obj.datasets)
+                out = cat(1, out, string(obj.datasets(i).experimentDir));
                 fprintf('%s = %s\n', obj.datasetNames(i), obj.datasets(i).experimentDir);
             end
         end
@@ -781,6 +783,7 @@ classdef MultiDataset < handle
                         "MC00838_ODR_20220708B";
                         "MC00838_ODR_20220713B";
                         "MC00838_ODR_20220825B";
+                        "MC00838_ODR_20231107B";
                     ];
                 elseif stimulusType == "spatial"
                     dsets = [...

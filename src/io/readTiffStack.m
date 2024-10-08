@@ -21,10 +21,8 @@ function ts = readTiffStack(fileName)
 
     imInfo = imfinfo(fileName);
     nFrames = size(imfinfo(fileName), 1);
-    
-    ts = zeros(imInfo(1).Height, imInfo(1).Width, 'uint8');
 
-    assignin('base', 'nFrames', nFrames);
+    ts = zeros(imInfo(1).Height, imInfo(1).Width, 'uint8');
 
     for i = 1:nFrames
         ts(:,:,i) = imread(fileName, 'Index', i);

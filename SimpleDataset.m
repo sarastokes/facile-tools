@@ -1,17 +1,17 @@
-classdef SimpleDataset < handle 
+classdef SimpleDataset < handle
 
     properties (SetAccess = protected)
         % The video numbers in the dataset
         epochIDs                double      {mustBeInteger}
-        % A name for the experiment 
+        % A name for the experiment
         exptName                char
-        % The experiment data folder (the one containing "Ref", "Vis", etc) 
-        exptFolder              char 
-        
+        % The experiment data folder (the one containing "Ref", "Vis", etc)
+        exptFolder              char
+
         % The label mask for the ROI segmentation
         rois                    double
-        numROIs        (1,1)    double      {mustBeInteger} = 0 
-        % A table of numeric ROI IDs and corresponding UIDs        
+        numROIs        (1,1)    double      {mustBeInteger} = 0
+        % A table of numeric ROI IDs and corresponding UIDs
         roiUIDs                 table
         % The ROI file name (used for reloading ROIs)
         roiFileName             char
@@ -26,7 +26,7 @@ classdef SimpleDataset < handle
         avgImage
         notes                   string
     end
-    
+
     properties (Dependent)
         numCached               double {mustBeInteger}
     end
@@ -34,7 +34,7 @@ classdef SimpleDataset < handle
     properties (Hidden, Dependent)
         videoCache
     end
-    
+
     properties (Hidden, Transient, Access = protected)
         cachedVideos
     end
@@ -44,7 +44,7 @@ classdef SimpleDataset < handle
             obj.setExptName(exptName);
             obj.setExptFolder(exptFolder);
             obj.epochIDs = epochIDs;
-            
+
             % Initialize properties
             obj.transforms = containers.Map();
             obj.videoCache = containers.Map();
@@ -57,15 +57,15 @@ classdef SimpleDataset < handle
             end
             obj.exptFolder = folderName;
         end
-    end 
+    end
 
     % Utility methods
     methods
         function idx = epoch2idx(obj, epochID)
             idx = find(obj.epochIDs == epochID);
-            
+
             if isempty(idx)
-                error('epoch2idx:InvalidEpochID',... 
+                error('epoch2idx:InvalidEpochID',...
                     'The epoch ID %u was not found', epochID);
             end
         end
@@ -73,10 +73,10 @@ classdef SimpleDataset < handle
         function epoch = idx2epoch(obj, idx)
             epoch = obj.epochIDs(idx);
         end
-        
+
         function uid = roi2uid(obj, roiID)
-            % ROI2UID 
-            % 
+            % ROI2UID
+            %
             % Description:
             %   Given a roi ID, returns the UID
             %
@@ -90,8 +90,8 @@ classdef SimpleDataset < handle
         end
 
         function roiID = uid2roi(obj, uid)
-            % UID2ROI 
-            % 
+            % UID2ROI
+            %
             % Description:
             %   Given a UID, return the corresponding ROI ID
             %
@@ -103,7 +103,7 @@ classdef SimpleDataset < handle
     end
 
     % Transform methods
-    methods 
+    methods
         function setExptName(obj, name)
             % SETEXPTNAME
             obj.exptName = name;
@@ -117,12 +117,12 @@ classdef SimpleDataset < handle
             %
             % Syntax:
             %   obj.loadAvgImage(input)
-            % 
+            %
             % Inputs:
             %   input           char/string or 2D numeric
             %       The file path to the image or the image itself
             % -------------------------------------------------------------
-            if istext(input) 
+            if istext(input)
                 if ~contains(input, filesep)
                     input = fullfile(obj.exptFolder, 'Analysis', input);
                 end
@@ -136,8 +136,8 @@ classdef SimpleDataset < handle
             end
         end
     end
-    
-    methods      
+
+    methods
         function addTransforms(obj, tforms, IDs)
             % ADDTRANSFORMS
             %
@@ -154,7 +154,7 @@ classdef SimpleDataset < handle
             %   IDs             array
             %       Epoch IDs corresponding to tforms (default = all)
             % -------------------------------------------------------------
-            
+
             if nargin < 3 || isempty(IDs)
                 IDs = obj.epochIDs;
             end
@@ -169,7 +169,7 @@ classdef SimpleDataset < handle
                 obj.validateFile(tforms);
                 tforms = readRigidTransform(tforms);
             end
-            
+
             for i = 1:numel(IDs)
                 if isnumeric(tforms)
                     obj.transforms(num2str(IDs(i))) = ...
@@ -182,7 +182,7 @@ classdef SimpleDataset < handle
 
         function clearTransforms(obj)
             % CLEARTRANSFORMS
-            % 
+            %
             % Description:
             %   Clear all transforms
             %
@@ -194,7 +194,7 @@ classdef SimpleDataset < handle
     end
 
     % ROI methods
-    methods 
+    methods
         function loadROIs(obj, rois, imSize)
             % LOADROIS
             %
@@ -215,10 +215,10 @@ classdef SimpleDataset < handle
                 end
                 obj.validateFile(rois);
                 if endsWith(rois, 'zip')
-                    [~, obj.rois] = roiImportImageJ(rois,... 
+                    [~, obj.rois] = roiImportImageJ(rois,...
                         [obj.imSize(1), obj.imSize(2)]);
                 elseif endsWith(rois, 'csv')
-                    obj.rois = csvread(rois); %#ok<CSVRD> 
+                    obj.rois = csvread(rois); %#ok<CSVRD>
                 end
                 obj.roiFileName = rois;
             else
@@ -228,7 +228,7 @@ classdef SimpleDataset < handle
             obj.numROIs = numel(unique(obj.rois)) - 1;
             obj.rois = double(obj.rois);
 
-            % If there were existing ROIs, make sure to append to roiUIDs 
+            % If there were existing ROIs, make sure to append to roiUIDs
             % rather than erasing existing table
             if ~isempty(obj.roiUIDs)
                 newROIs = obj.numROIs - height(obj.roiUIDs);
@@ -279,7 +279,7 @@ classdef SimpleDataset < handle
                     'Number of UIDs must equal number of ROIs');
                 assert(isequal(string(roiUIDs.Properties.VariableNames), ["ID", "UID"]),...
                     'roiUID table columns must be named ID and UID');
-                obj.roiUIDs = roiUIDs; 
+                obj.roiUIDs = roiUIDs;
             else
                 error('setRoiUIDs:InvalidInput', 'Must be table or string column');
             end
@@ -288,13 +288,13 @@ classdef SimpleDataset < handle
     end
 
     % Data analysis methods
-    methods      
+    methods
         function imStack = getEpochStack(obj, epochID)
             % GETEPOCHSTACK
-            % 
+            %
             % Description:
             %   Get video for a specific epoch
-            % 
+            %
             % Syntax:
             %   imStack = getEpochStack(obj, epochID)
             %
@@ -306,13 +306,13 @@ classdef SimpleDataset < handle
             %   imStack     uint8 matrix [X Y T]
             %       The epoch's video with first blank frame omitted
             % -------------------------------------------------------------
-            
+
             % First check the video cache
             if isKey(obj.videoCache, num2str(epochID))
                 imStack = obj.videoCache(num2str(epochID));
                 return
             end
-            
+
             % If not in the cache, load the video
             videoName = fullfile(obj.exptFolder, 'Analysis', 'Videos',...
                 sprintf("vis_%s.tif", int2fixedwidthstr(epochID, 4)));
@@ -326,32 +326,31 @@ classdef SimpleDataset < handle
             elseif endsWith(videoName, '.avi')
                 imStack = video2stack(videoName);
             end
-            
+
             % Remove the first blank frame
             imStack(:, :, 1) = [];
-            
+
             % Apply a transform, if necessary
             if ~isempty(obj.transforms) && isKey(obj.transforms, num2str(epochID)) ...
                     && ~isempty(obj.transforms(num2str(epochID)))
                 disp('Applying transform');
                 tform = affine2d_to_3d(obj.transforms(num2str(epochID)));
-                sameAsInput = affineOutputView(size(imStack), tform,... 
+                sameAsInput = affineOutputView(size(imStack), tform,...
                     'BoundsStyle','SameAsInput');
                 imStack = imwarp(imStack, tform, 'OutputView', sameAsInput);
             end
 
             % Add it to the video cache
             obj.videoCache(num2str(epochID)) = imStack;
-            
+
             % Status update: print video name without file path
             videoName = strsplit(videoName, filesep);
             fprintf('Loaded %s - Time elapsed: %.2f\n', videoName{end}, toc);
         end
 
-                
         function [signals, xpts] = getEpochResponses(obj, epochID, varargin)
             % GETEPOCHRESPONSES
-            % 
+            %
             % Description:
             %   Get all ROI responses for specific epoch(s). If the start
             %   and stop frames for a background window are provided, the
@@ -377,7 +376,7 @@ classdef SimpleDataset < handle
             if isempty(obj.rois)
                 error('EpochGroup/getEpochResponses: No rois found!');
             end
-            
+
             ip = inputParser();
             ip.CaseSensitive = false;
             ip.KeepUnmatched = true;
@@ -397,7 +396,7 @@ classdef SimpleDataset < handle
             highPassCutoff = ip.Results.HighPass;
             bandPassCutoff = ip.Results.BandPass;
             normFlag = ip.Results.Norm;
-                        
+
             if numel(epochID) == 1
                 imStack = obj.getEpochStack(epochID);
                 [signals, xpts] = roiResponses(imStack, obj.rois, bkgdWindow,...
@@ -424,11 +423,11 @@ classdef SimpleDataset < handle
                     end
                 end
             end
-            
+
             if ~isempty(smoothFac)
                 if ndims(signals) == 3
                     signals = mysmooth32(signals, smoothFac);
-                elseif ndims(signals) == 2 %#ok<*ISMAT> 
+                elseif ndims(signals) == 2 %#ok<*ISMAT>
                     signals = mysmooth2(signals, smoothFac);
                 end
             end
@@ -442,7 +441,7 @@ classdef SimpleDataset < handle
                 if isempty(bkgdWindow)
                     signals = signalMeanCorrect(signals);
                 else
-                    signals = signalBaselineCorrect(signals, bkgdWindow); 
+                    signals = signalBaselineCorrect(signals, bkgdWindow, "median");
                 end
             end
 
@@ -481,19 +480,19 @@ classdef SimpleDataset < handle
             for i = 1:numel(IDs)
                 baseName = ['_', 'vis_', int2fixedwidthstr(obj.epochIDs(i), 4), '.png'];
                 imStack = obj.getEpochStack(IDs(i));
-                
+
                 imSum = sum(im2double(imStack), 3);
                 imwrite(uint8(255 * imSum/max(imSum(:))),...
                     fullfile(fPath, ['SUM', baseName]), 'png');
                 imwrite(uint8(mean(imStack, 3)),...
                     fullfile(fPath, ['AVG', baseName]), 'png');
-                imwrite(im2uint8(imadjust(std(im2double(imStack), [], 3))),... 
+                imwrite(im2uint8(imadjust(std(im2double(imStack), [], 3))),...
                     fullfile(fPath, ['STD', baseName]), 'png');
             end
         end
     end
 
-    
+
     % Video cache methods
     methods
         function videoCache = get.videoCache(obj)
@@ -502,7 +501,7 @@ classdef SimpleDataset < handle
             end
             videoCache = obj.cachedVideos;
         end
-        
+
         function set.videoCache(obj, x)
             obj.cachedVideos = x;
         end
@@ -524,7 +523,7 @@ classdef SimpleDataset < handle
             %
             % Description:
             %   Clear all cached videos
-            % 
+            %
             % Syntax:
             %   clearVideoCache(obj)
             % -------------------------------------------------------------
@@ -540,4 +539,4 @@ classdef SimpleDataset < handle
             end
         end
     end
-end 
+end

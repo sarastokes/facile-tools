@@ -2,6 +2,7 @@ function clust = performClustering(feat, varargin)
 %
 % History:
 %   30Nov2021 - SSP - Added AIC output option, verbose output
+%   29May2024 - SSP - Added BIC plot
 
     ip = inputParser();
     ip.CaseSensitive = false;
@@ -13,6 +14,7 @@ function clust = performClustering(feat, varargin)
     addParameter(ip, 'regularize', 1e-5, @isnumeric);
     addParameter(ip, 'covType', 'diagonal', @ischar);
     addParameter(ip, 'infoCriteria', 'BIC', @(x) ismember(x, {'AIC', 'BIC'}));
+    addParameter(ip, 'Plot', false, @islogical);
     parse(ip, varargin{:});
     p = ip.Results;
 
@@ -26,7 +28,7 @@ function clust = performClustering(feat, varargin)
     nClust = p.minClust : p.maxClust;
 
     for j = 1:length(nClust)
-        gm = gmdistribution.fit(feat, nClust(j),... 
+        gm = gmdistribution.fit(feat, nClust(j),...
             'Regularize', p.regularize, 'CovType', p.covType,...
             'Options', opt, 'Replicates', p.initReplicates);
         bic(j) = gm.BIC;
@@ -45,7 +47,7 @@ function clust = performClustering(feat, varargin)
     fgm = gmdistribution.fit(feat, nClust(mc), ...
         'Regularize', p.regularize, 'CovType', p.covType, ...
         'Options', opt, 'Replicates', p.finalReplicates);
-    
+
     % Return structure
     clust.model = fgm;
     clust.idx = cluster(fgm, feat);
@@ -57,7 +59,17 @@ function clust = performClustering(feat, varargin)
     clust.K = fgm.NComponents;
     clust.nCells = size(feat, 1);
 
-    [~, minBIC] = min(clust.bic); 
+    [~, minBIC] = min(clust.bic);
     [~, minAIC] = max(clust.aic);
-    fprintf('BIC = %u, AIC = %u\n',... 
-        minBIC+p.minClust, minAIC+p.minClust);
+    if length(nClust) > 1
+        fprintf('BIC = %u, AIC = %u\n',...
+            minBIC+p.minClust, minAIC+p.minClust);
+    end
+
+    if p.Plot
+        figure(); hold on;
+        plot(p.minClust:p.maxClust, clust.bic, '-ob', 'LineWidth', 1);
+        ylabel('Bayesian Information Criterion'); xlabel('Clusters');
+        grid on;
+        figPos(gcf, 0.5, 0.5);
+    end

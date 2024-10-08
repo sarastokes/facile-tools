@@ -3,14 +3,14 @@ function [REG, IDs] = batchPhaseCorrRegistration(imStack, refID, varargin)
     ip = inputParser();
     ip.CaseSensitive = false;
     ip.KeepUnmatched = true;
-    addParameter(ip, 'TformType', 'similarity', @istext);
+    addOptional(ip, 'TformType', 'similarity', @istext);
     addParameter(ip, 'OmitSkips', false, @islogical);
     addParameter(ip, 'IDs', 1:size(imStack,3), @isnumeric);
     addParameter(ip, 'Plot', false, @islogical);
     parse(ip, varargin{:});
 
     omitSkips = ip.Results.OmitSkips;
-    tformType = ip.Results.TformType;
+    tformType = convertCharsToStrings(ip.Results.TformType);
     plotFlag = ip.Results.Plot;
     IDs = ip.Results.IDs;
 

@@ -1,4 +1,4 @@
-function allAvg = plotFeatures(data, clust, xpts, varargin)
+function [allAvg, N, CI, QI] = plotFeatures(data, clust, xpts, varargin)
 
     if nargin < 3
         xpts = (1:size(data,2))/25;
@@ -9,18 +9,29 @@ function allAvg = plotFeatures(data, clust, xpts, varargin)
     ip.CaseSensitive = false;
     addParameter(ip, 'Omit', false(size(clust.idx)), @islogical);
     addParameter(ip, 'ShowSD', false, @islogical);
-    addParameter(ip, 'AreaFill', false, @islogical);
     addParameter(ip, 'Parent', [], @ishandle);
     addParameter(ip, 'PlotNum', [], @isnumeric);
-    addParameter(ip, 'cmap', [], @isnumeric);
-    addParameter(ip, 'AreaLine', [], @isnumeric);
-    addParameter(ip, 'AreaAlpha', 0.35, @isnumeric);
+    addParameter(ip, 'CMap', [], @isnumeric);
+    addParameter(ip, 'Downsample', 0, @isnumeric);
     addParameter(ip, 'Norm', true, @islogical);
     parse(ip, varargin{:});
 
+    % Optional downsampling
+    if ip.Results.Downsample > 0
+        data = downsampleMean(data, ip.Results.Downsample);
+        xpts = downsampleMean(xpts, ip.Results.Downsample);
+    end
+    % Optional normalization
     if ip.Results.Norm
         data = data ./ max(abs(data), [], 2);
     end
+
+    % Quality and consistency metrics
+    QI = cluster.groupQualityIndex(data, clust.idx);
+    CI = cluster.consistencyIndex(data, clust.idx);
+
+    % Number of ROIs per cluster
+    N = splitapply(@numel, clust.idx, clust.idx);
 
     parentHandle = ip.Results.Parent;
     plotNum = ip.Results.PlotNum;
@@ -28,21 +39,21 @@ function allAvg = plotFeatures(data, clust, xpts, varargin)
         error('Specify which plot to draw to parent axis');
     end
 
-
-    if isempty(ip.Results.cmap)
-        co = pmkmp(clust.K, 'CubicL');
+    if isempty(ip.Results.CMap)
+        %co = pmkmp(clust.K, 'CubicL');
+        co = othercolor('Spectral10', clust.K);
     else
-        co = ip.Results.cmap;
+        co = ip.Results.CMap;
     end
 
     if isempty(parentHandle)
         figure();
-        ax = subplot(2,2,[1 3]);
+        ax = subplot(3,2,[1 3 5]);
     else
         ax = parentHandle;
     end
     hold(ax, 'on'); grid(ax, 'on');
-    allPatches = []; allAvg = [];
+    allAvg = [];
     if isempty(plotNum) || plotNum == 1
         runningOffset = 0;
         for i = 1:clust.K
@@ -57,34 +68,13 @@ function allAvg = plotFeatures(data, clust, xpts, varargin)
                     'lineProps', {'LineWidth', 2.5, 'Color', co(i,:)},...
                     'patchSaturation', 0.3);
                 runningOffset = max(yData+clustSD) + 0.2;
-            elseif ip.Results.AreaFill
-                if isempty(ip.Results.AreaLine)
-                    lColor = co(i,:);
-                else
-                    lColor = ip.Results.AreaLine;
-                end
-                if i == 1
-                    area(xpts-min(xpts), yData, ...
-                        'FaceColor', lighten(co(i,:),0.1), ...
-                        'FaceAlpha', ip.Results.AreaAlpha, 'EdgeColor', lColor,...
-                        'LineWidth', 1.5);
-                else
-                    h = shade(xpts-min(xpts), clustAvg);
-                    set(h(1), "LineWidth", 1.5, "Color", lColor, ...
-                        "YData", h(1).YData + runningOffset + abs(min(clustAvg)));
-                    set(h(2:end), "FaceColor", co(i,:), "FaceAlpha", ip.Results.AreaAlpha);
-
-                    if ~isempty(allPatches)
-                        newPatches = setdiff(findall(ax, 'Type', 'patch'), allPatches);
-                        arrayfun(@(x) set(x, 'YData', get(x, 'YData') + runningOffset + abs(min(clustAvg))), newPatches);
-                    end
-                    allPatches = findall(ax, 'Type', 'patch');
-                end
-                runningOffset = max(yData) + 0.2;
             else
                 h = plot(ax, xpts-min(xpts), yData, 'Color', co(i,:), 'LineWidth', 2.5);
                 runningOffset = max(h.YData)+ 0.2;
             end
+            text(xpts(end)+(xpts(2)-xpts(1))*3, yData(end), num2str(N(i)),...
+                "FontName", "Helvetica", "FontSize", 8, "Color", co(i,:));
+            
         end
         axis tight
         xlabel(ax, 'Time (sec)');
@@ -94,16 +84,15 @@ function allAvg = plotFeatures(data, clust, xpts, varargin)
         reverseChildOrder(gca);
     end
 
-    if isempty(plotNum) || plotNum == 2    
+    if isempty(plotNum) || plotNum == 2
         if isempty(parentHandle)
-            ax = subplot(2,2,2);
+            ax = subplot(3,2,2);
         else
             ax = parentHandle;
         end
         N = splitapply(@numel, clust.idx, clust.idx);
         bar(ax, 1:clust.K, N, 'FaceColor', 'flat', 'CData', co);
-        ylabel(ax, 'Number of ROIs');
-        xlabel(ax, 'Cluster');
+        ylabel(ax, 'Number of ROIs'); % xlabel(ax, 'Cluster');
         axis(ax, 'square');
         grid(ax, 'on');
         xlim([0 clust.K+1]);
@@ -111,17 +100,33 @@ function allAvg = plotFeatures(data, clust, xpts, varargin)
     end
 
     if isempty(plotNum) || plotNum == 3
-        cQI = cluster.groupQualityIndex(data, clust.idx);
         if isempty(parentHandle)
-            ax = subplot(2,2,4);
+            ax = subplot(3,2,4);
         else
             ax = parentHandle;
         end
         hold on;
-        bar(ax, 1:clust.K, cQI, 'FaceColor', 'flat', 'CData', co);
+        bar(ax, 1:clust.K, CI, 'FaceColor', 'flat', 'CData', co);
+        ylabel(ax, 'Consistency Index'); % xlabel(ax, 'Cluster');
+        axis(ax, 'square'); grid(ax, 'on');
+        xlim(ax, [0 clust.K+1]); xticks(ax, 1:clust.K);
+        ylim(ax, [0 1]);
+    end
+
+    % Quality index plot
+    if isempty(plotNum) || plotNum == 4
+        if isempty(parentHandle)
+            ax = subplot(3,2,6);
+        else
+            ax = parentHandle;
+        end
+        hold on;
+        bar(ax, 1:clust.K, QI, 'FaceColor', 'flat', 'CData', co);
         xlabel(ax, 'Cluster'); ylabel(ax, 'Quality Index');
         axis(ax, 'square');
         grid(ax, 'on');
-        xlim([0 clust.K+1]);
-        xticks(1:clust.K);
+        xlim(ax, [0 clust.K+1]); xticks(ax, 1:clust.K);
+        ylim(ax, [0 1]);
     end
+
+    drawnow;

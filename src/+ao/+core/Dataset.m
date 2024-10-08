@@ -524,7 +524,13 @@ classdef Dataset < handle
             %
             % Syntax:
             %   uid = obj.roi2uid(roiID)
-            % -------------------------------------------------------------
+            % -----------------------------------------------------------
+            if isempty(obj.roiUIDs)
+                warning('uid2roi:NoUidTable', 'UIDs have not been assigned.');
+                roiID = [];
+                return
+            end
+            
             roiID = find(obj.roiUIDs.UID == uid);
         end
 
@@ -787,7 +793,7 @@ classdef Dataset < handle
                 IDs = obj.epochIDs(2:end);
             end
 
-            if ischar(tforms)
+            if ischar(tforms) || isstring(tforms)
                 tforms = readRigidTransform(tforms);
             end
 
@@ -994,7 +1000,6 @@ classdef Dataset < handle
             elseif endsWith(videoName, '.avi')
                 imStack = video2stack(videoName, 'Side', obj.imagingSide);
             end
-            toc;
 
             % Remove the first blank frame
             imStack(:, :, 1) = [];
@@ -1010,7 +1015,7 @@ classdef Dataset < handle
                     warning('Could not implement threshold, not uint8');
                 else
                     imStack = imStack - obj.importThreshold;
-                    fprintf('Thresholded at %u... \n', obj.importThreshold);
+                    fprintf(' Thresholded at %u... ', obj.importThreshold);
                 end
             end
 
@@ -1019,7 +1024,7 @@ classdef Dataset < handle
                 if obj.transformRois
                     fprintf('\tVideo not transformed, "transformROIs" is enabled\n');
                 else
-                    disp('Applying transform');
+                    fprintf(' Applying transform... ');
                     tform = obj.transforms(num2str(epochID));
                     if isa(tform, 'affine2d')
                         try
@@ -1065,7 +1070,7 @@ classdef Dataset < handle
 
             % Status update: print video name without file path
             videoName = strsplit(videoName, filesep);
-            fprintf('Loaded %s\n', videoName{end});
+            fprintf(' Loaded %s in %.3f seconds\n', videoName{end}, toc);
         end
 
         function [signals, xpts] = getEpochResponses(obj, epochID, varargin)
@@ -1115,6 +1120,7 @@ classdef Dataset < handle
             addParameter(ip, 'Norm', false, @islogical);
             addParameter(ip, 'Conv', [], @isnumeric);
             addParameter(ip, 'Detrend', [], @isnumeric);
+            addParameter(ip, 'Butter', [], @isnumeric);
             addParameter(ip, 'KeepOmitted', false, @islogical);
             parse(ip, varargin{:});
 
@@ -1129,6 +1135,7 @@ classdef Dataset < handle
             detrendValue = ip.Results.Detrend;
             keepOmitted = ip.Results.KeepOmitted;
             convTau = ip.Results.Conv;
+            butterFreq = ip.Results.Butter;
 
 
             if cellfind(ip.UsingDefaults, 'Bkgd')
@@ -1207,6 +1214,10 @@ classdef Dataset < handle
 
             if ~isempty(lowPassCutoff)
                 signals = signalLowPassFilter(signals, lowPassCutoff, obj.frameRate);
+            end
+
+            if ~isempty(butterFreq)
+                signals = signalButterFilter(signals, obj.frameRate, 3, butterFreq);
             end
 
             if normFlag

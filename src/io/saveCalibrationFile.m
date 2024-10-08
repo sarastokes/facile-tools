@@ -49,6 +49,10 @@ function saveCalibrationFile(ledObj, savePath)
     S.Stimuli.Contrasts.Units = 'Norm';
     S.Stimuli.Contrasts.Labels = {'L', 'M', 'S', 'Lum'};
 
+    if ~isempty(ledObj.ndfAttenuations)
+        S.Attenuations.NDFs = ledObj.ndfAttenuations.NDF;
+        S.Attenuations.ScaleFactors = ledObj.ndfAttenuations{:, 2:end};
+    end
 
     S.LUTs = struct();
     S.Spectra = struct();

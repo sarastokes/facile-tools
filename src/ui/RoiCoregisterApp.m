@@ -19,6 +19,7 @@ classdef RoiCoregisterApp < handle
     properties (Hidden, SetAccess = private)
         fixedUI                     % RoiManagerApp
         movingUI                    % RoiManagerApp
+        flip1
 
         listeners                   event.listener
 
@@ -38,9 +39,14 @@ classdef RoiCoregisterApp < handle
     end
 
     methods
-        function obj = RoiCoregisterApp(fixedDataset, movingDataset)
+        function obj = RoiCoregisterApp(fixedDataset, movingDataset, varargin)
             obj.fixedDataset = fixedDataset;
             obj.movingDataset = movingDataset;
+
+            ip = inputParser();
+            addParameter(ip, 'Flip1', false, @islogical);
+            parse(ip, varargin{:});
+            obj.flip1 = ip.Results.Flip1;
 
             obj.createUi();
             obj.getRoiCentroids();
@@ -278,23 +284,23 @@ classdef RoiCoregisterApp < handle
 
         function roiID = findMovingPoints(obj, x, y)
             roiID = 0;
-            if round(x) > size(obj.movingDataset.rois,1) || round(x) < 1
+            if round(x) > size(obj.movingUI.rois, 1) || round(x) < 1
                 return
-            elseif round(y) > size(obj.movingDataset.rois,2) || round(y) < 1
+            elseif round(y) > size(obj.movingUI.rois, 2) || round(y) < 1
                 return
             else
-                roiID = obj.movingDataset.rois(round(x), round(y));
+                roiID = obj.movingUI.rois(round(x), round(y));
             end
         end
 
         function roiID = findFixedPoints(obj, x, y)
             roiID = 0;
-            if round(x) > size(obj.fixedDataset.rois,1) || round(x) < 1
+            if round(x) > size(obj.fixedUI.rois,1) || round(x) < 1
                 return
-            elseif round(y) > size(obj.fixedDataset.rois,2) || round(y) < 1
+            elseif round(y) > size(obj.fixedUI.rois,2) || round(y) < 1
                 return
             else
-                roiID = obj.fixedDataset.rois(round(x), round(y));
+                roiID = obj.fixedUI.rois(round(x), round(y));
             end
         end
 
@@ -434,9 +440,9 @@ classdef RoiCoregisterApp < handle
     % Initialization methods
     methods (Access = private)
         function getRoiCentroids(obj)
-            S = regionprops(obj.fixedDataset.rois, 'Centroid');
+            S = regionprops(obj.fixedUI.rois, 'Centroid');
             obj.fixedXY = cat(1, S.Centroid);
-            S = regionprops(obj.movingDataset.rois, 'Centroid');
+            S = regionprops(obj.movingUI.rois, 'Centroid');
             obj.movingXY = cat(1, S.Centroid);
         end
 
@@ -457,7 +463,7 @@ classdef RoiCoregisterApp < handle
             obj.StatusBox.Layout.Row = 1;
             obj.StatusBox.Layout.Column = [1 2];
 
-            obj.fixedUI = RoiManagerApp(obj.fixedDataset, mainLayout);
+            obj.fixedUI = RoiManagerApp(obj.fixedDataset, mainLayout, obj.flip1);
             obj.fixedUI.setTag('fixed');
             obj.fixedUI.Layout.Layout.Row = 2;
             obj.fixedUI.Layout.Layout.Column = 1;

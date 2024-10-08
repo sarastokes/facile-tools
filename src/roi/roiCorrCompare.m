@@ -7,11 +7,18 @@ function R = roiCorrCompare(data1, data2, opts)
 %
 % Syntax:
 %   R = roiCorrCompare(data1, data2)
-%   R = roiCorrCompare(data1, data2, 'Bkgd', [250 498], 'Window', [500 750])
+%   R = roiCorrCompare(data1, data2, 'Window', [500 750])
+%
+% Optional key-value inputs:
+%   Norm            logical (default = false)
+%       Normalize the responses using roiNormPercentile (2nd percentile)
+%   Window          double (default = [0 0])
+%       Time window of interest for correlation calculation, by default the
+%       entire response is used for the calculation.
 %
 % See also:
 %   roiNormPercentile, roiNormAvg, printStat
-% 
+%
 % History:
 %   01Mar2024 - SSP
 %   24Mar2024 - SSP - limit verbose output to data with >1 ROI
@@ -28,19 +35,17 @@ function R = roiCorrCompare(data1, data2, opts)
     assert(size(data1, 1) == size(data2, 1),...
         'Data must have the same number of rows (ROIs)');
 
-    if ~isequal(opts.Bkgd, [0 0])
-        data1 = roiNormAvg(data1, opts.Bkgd);
-        data2 = roiNormAvg(data2, opts.Bkgd);
-    elseif opts.Norm
+    if opts.Norm
         data1 = roiNormPercentile(data1, 2);
         data2 = roiNormPercentile(data2, 2);
-    else % Ensure repeats get averaged
-        if ndims(data1) == 3
-            data1 = mean(data1, 3);
-        end
-        if ndims(data2) == 3
-            data2 = mean(data2, 3);
-        end
+    end
+
+    % Ensure repeats get averaged
+    if ndims(data1) == 3
+        data1 = mean(data1, 3);
+    end
+    if ndims(data2) == 3
+        data2 = mean(data2, 3);
     end
 
     if ~isequal(opts.Window, [0 0])

@@ -70,26 +70,28 @@ classdef MultiDatasetResponseViewer < handle
                     set(obj.stimCheckBoxes(i), "Enable", "on", "Value", true);
                     set(obj.sweeps(i), "Visible", "on");
                     if obj.normFlag
-                        obj.sweeps(i).YData = mean(signalNormalize(resp(:,idx)', obj.Parent.respProps{1}),1);
+                        obj.sweeps(i).YData = mean(roiNormPercentile(resp(:,idx)', 2), 1);
                     else
                         obj.sweeps(i).YData = squeeze(mean(resp(:, idx), 2));
                     end
-
                 end
             end
 
             obj.avgSweep.Visible = "on";
             if obj.normFlag
                 try
-                    obj.avgSweep.YData = mean(signalNormalize(squeeze(...
-                        obj.Parent.allResponses(obj.currentUID,:, obj.responseIndex))', obj.Parent.respProps{1}), 1);
+                    avgData = mean(roiNormPercentile(squeeze(...
+                        obj.Parent.allResponses(obj.currentUID,:, obj.responseIndex))', 2), 1);
                 catch ME
-                    warning(ME.message);
-                    obj.avgSweep.YData = zeros(size(obj.avgSweep.XData));
+                    avgData = zeros(size(obj.avgSweep.XData));
+                    if ~strcmp(ME.identifier, 'MATLAB:badsubscript') && isscalar(obj.responseIndex)
+                        warning(ME.message);
+                    end
                 end
             else
-                obj.avgSweep.YData = squeeze(mean(obj.Parent.allResponses(obj.currentUID,:,:), 3, 'omitnan'));
+                avgData = squeeze(mean(obj.Parent.allResponses(obj.currentUID,:,obj.responseIndex), 3, 'omitnan'));
             end
+            obj.avgSweep.YData = avgData;
         end
     end
 
@@ -112,7 +114,36 @@ classdef MultiDatasetResponseViewer < handle
 
         function onChecked_Normalize(obj, src, ~)
             obj.normFlag = src.Value;
+            if src.Value
+                ylabel(obj.axisHandle, "Normalized dF/F");
+            else
+                ylabel(obj.axisHandle, "dF/F");
+            end
             obj.updateView();
+        end
+
+        function onMenu_ExportFigure(obj, ~, ~)
+            newAxes = exportFigure(obj.axisHandle);
+            txt = sprintf('%u_%s - %s', obj.Parent.source, ...
+                obj.Parent.location, obj.Parent.uniqueUUIDs(obj.currentUID));
+
+            title(newAxes, txt, "Interpreter", "none");
+            figPos(newAxes.Parent, 0.8, 0.8);
+            tightfig(newAxes.Parent);
+        end
+
+        function onChanged_TargetUID(obj, src, ~)
+            input = convertCharsToStrings(src.Value);
+            input = upper(input);
+
+            idx = find(obj.Parent.uniqueUUIDs == input);
+            if isempty(idx)
+                set(src, 'FontColor', [1 0 0]);
+                return
+            end
+
+            set(src, 'FontColor', [0 0 0], "Value", "");
+            obj.changeUID(idx);
         end
 
         function onKey_Pressed(obj, ~, evt)
@@ -155,13 +186,13 @@ classdef MultiDatasetResponseViewer < handle
             allData = [];
             for i = 1:numel(obj.sweeps)
                 if obj.sweeps(i).Visible == "on"
-                    allData = cat(2, allData, obj.sweeps(i).YData);
+                    allData = cat(1, allData, obj.sweeps(i).YData);
                 end
             end
             if isempty(allData)
                 obj.avgSweep.YData = zeros(size(obj.avgSweep.XData));
             else
-                obj.avgSweep.YData = mean(allData, 2);
+                obj.avgSweep.YData = mean(allData, 1);
             end
         end
     end
@@ -174,6 +205,8 @@ classdef MultiDatasetResponseViewer < handle
             obj.figureHandle.Position(3) = 1.5 * obj.figureHandle.Position(3);
 
             obj.menuHandle = uimenu(obj.figureHandle, "Text", "Custom");
+            uimenu(obj.menuHandle, "Text", "Export Figure",...
+                "MenuSelectedFcn", @obj.onMenu_ExportFigure);
 
             mainLayout = uigridlayout(obj.figureHandle, [1 2]);
             mainLayout.ColumnWidth = {'1x', '2.5x'};
@@ -185,8 +218,8 @@ classdef MultiDatasetResponseViewer < handle
         end
 
         function createUiPanel(obj, parent)
-            mainLayout = uigridlayout(parent, [4, 1]);
-            mainLayout.RowHeight = {'fit', 'fit', 'fit', 'fit'};
+            mainLayout = uigridlayout(parent, [5, 1]);
+            mainLayout.RowHeight = {'fit', 'fit', 'fit', 'fit', 'fit'};
 
             obj.uidLabel = uilabel(mainLayout, 'Text', "",...
                 "HorizontalAlignment", "center",...
@@ -220,6 +253,12 @@ classdef MultiDatasetResponseViewer < handle
                         "Tag", num2str(i), "Enable", "off",...
                         "ValueChangedFcn", @obj.onChecked_Stimulus));
             end
+
+            navLayout = uigridlayout(mainLayout, [1 2]);
+            uilabel(navLayout, "Text", "Go to UID");
+            uieditfield(navLayout,...
+                "ValueChangedFcn", @obj.onChanged_TargetUID);
+
         end
 
         function createAxesPanel(obj, parent)
@@ -228,7 +267,6 @@ classdef MultiDatasetResponseViewer < handle
             xlim(obj.axisHandle, [0, max(obj.Parent.xpts)]);
             xlabel(obj.axisHandle, 'Time (s)');
             ylabel(obj.axisHandle, 'Normalized dF/F');
-            plot([0, max(obj.Parent.xpts)], [0, 0], 'Color', [0.3 0.3 0.3]);
 
             if ~isempty(obj.Parent.ups)
                 xregion(obj.axisHandle, obj.Parent.ups, obj.Parent.INC_PROPS{:});
@@ -238,11 +276,14 @@ classdef MultiDatasetResponseViewer < handle
                 xregion(obj.axisHandle, obj.Parent.downs, obj.Parent.DEC_PROPS{:});
             end
 
+            zeroBar(obj.axisHandle, "y");
+
             for i = 1:obj.Parent.numStimuli
+                boxName = "2" + extractAfter(obj.Parent.StimTable.DsetName(i), obj.Parent.location + "_2") + "_" + obj.Parent.StimTable.Stimulus(i);
                 obj.sweeps = cat(1, obj.sweeps,...
                     line(obj.axisHandle, obj.Parent.xpts, zeros(size(obj.Parent.xpts)),...
                         'Color', obj.colormap(i,:), 'LineWidth', 0.5,...
-                        'Tag', num2str(i), 'Visible', 'off'));
+                        'Tag', num2str(i), 'DisplayName', boxName, 'Visible', 'off'));
             end
             obj.avgSweep = line(obj.axisHandle, obj.Parent.xpts, zeros(size(obj.Parent.xpts)),...
                 'Color', [0.3 0.3 0.3], 'LineWidth', 2, 'Visible', 'off');

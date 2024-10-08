@@ -5,16 +5,18 @@ function [MOVINGREG, quality] = runMonomodalRegistration(MOVING, FIXED, varargin
 %   Monomodal registration with Gaussian blur and normalization
 %
 % Syntax:
-%   MOVINGREG = runMonomodalRegistration2(MOVING, FIXED, varargin)
+%   MOVINGREG = runMonomodalRegistration(MOVING, FIXED)
+%   MOVINGREG = runMonomodalRegistration(MOVING, FIXED, RegType, varargin)
 %
 % Input:
 %   MOVING                  image to be registered
 %   FIXED                   reference image
+% Optional input:
+%   RegType                 type of registration ('similarity')
 % Optional key/value inputs:
 %   Normalize               whether to apply normalization (false)
 %   Blur                    whether to apply Gaussian blur (false)
 %   Plot                    whether to plot results (false)
-%   RegType                 type of registration ('similarity')
 %   AlignType               type of center alignment ('geometric')
 %
 % Output:
@@ -28,7 +30,7 @@ function [MOVINGREG, quality] = runMonomodalRegistration(MOVING, FIXED, varargin
 %   greater parameter flexibility
 %
 % Requirements:
-%   ImageProcessingToolbox
+%   Image Processing Toolbox
 %
 % See also:
 %   batchMonomodalRegistration, ssim, imregtform, imregconfig, imwarp
@@ -42,11 +44,11 @@ function [MOVINGREG, quality] = runMonomodalRegistration(MOVING, FIXED, varargin
 
     ip = inputParser();
     ip.CaseSensitive = false;
+    addOptional(ip, 'RegType', "similarity",...
+        @(x) ismember(lower(x), ["rigid", "similarity", "affine", "translation"]));
     addParameter(ip, 'Normalize', false, @islogical);
     addParameter(ip, 'Blur', false, @islogical);
     addParameter(ip, 'Plot', false, @islogical);
-    addParameter(ip, 'RegType', 'similarity',...
-        @(x) ismember(lower(x), ["rigid", "similarity", "affine"]));
     addParameter(ip, 'AlignType', "geometric",...
         @(x) ismember(lower(x), ["geometric", "center of mass"]));
     addParameter(ip, 'MaxStepLength', 0.0312, @isnumeric); % 0.0625
@@ -78,13 +80,13 @@ function [MOVINGREG, quality] = runMonomodalRegistration(MOVING, FIXED, varargin
         sumFixedIntensity = sum(FIXED(:));
         sumMovingIntensity = sum(MOVING(:));
         fixedCenterXWorld = (fixedRefObj.PixelExtentInWorldX .* ...
-            (sum(xFixed(:).*FIXED(:)) ./ sumFixedIntensity)) + fixedRefObj.XWorldLimits(1);
+            (sum(xFixed(:).* double(FIXED(:))) ./ sumFixedIntensity)) + fixedRefObj.XWorldLimits(1);
         fixedCenterYWorld = (fixedRefObj.PixelExtentInWorldY .* ...
-            (sum(yFixed(:).*FIXED(:)) ./ sumFixedIntensity)) + fixedRefObj.YWorldLimits(1);
+            (sum(yFixed(:).* double(FIXED(:))) ./ sumFixedIntensity)) + fixedRefObj.YWorldLimits(1);
         movingCenterXWorld = (movingRefObj.PixelExtentInWorldX .* ...
-            (sum(xMoving(:).*MOVING(:)) ./ sumMovingIntensity)) + movingRefObj.XWorldLimits(1);
+            (sum(xMoving(:).* double(MOVING(:))) ./ sumMovingIntensity)) + movingRefObj.XWorldLimits(1);
         movingCenterYWorld = (movingRefObj.PixelExtentInWorldY .* ...
-            (sum(yMoving(:).*MOVING(:)) ./ sumMovingIntensity)) + movingRefObj.YWorldLimits(1);
+            (sum(yMoving(:) .* double(MOVING(:))) ./ sumMovingIntensity)) + movingRefObj.YWorldLimits(1);
     elseif strcmp(ALIGN_TYPE, 'geometric')
         fixedCenterXWorld = mean(fixedRefObj.XWorldLimits);
         fixedCenterYWorld = mean(fixedRefObj.YWorldLimits);
@@ -95,8 +97,6 @@ function [MOVINGREG, quality] = runMonomodalRegistration(MOVING, FIXED, varargin
     translationY = fixedCenterYWorld - movingCenterYWorld;
 
     % Coarse alignment
-    %initTform = affine2d();
-    %initTform.T(3,1:2) = [translationX, translationY];
     initTform = affinetform2d();
     initTform.A(1:2,3) = [translationX ; translationY];
 
@@ -136,7 +136,7 @@ function [MOVINGREG, quality] = runMonomodalRegistration(MOVING, FIXED, varargin
     newSSIM = ssim(FIXED, MOVINGREG.RegisteredImage);
     quality = struct('OldSSIM', originalSSIM, 'NewSSIM', newSSIM);
     if newSSIM < originalSSIM
-        fprintf('WARNING!!! ');     % Registration failed
+        cprintf('UnterminatedStrings', 'WARNING!!! '); % Registration failed
         quality.Warning = true;
     else
         quality.Warning = false;
