@@ -17,7 +17,8 @@ classdef GammaRampMeasurement < handle
 %   values                  vector
 %       The light source's inputs for each measurement (e.g., voltage to an
 %       LED or 8-bit value to a projector). These must match the order in
-%       which the measurements were collected.
+%       which the measurements were collected (by default, the first of the
+%       numbers automatically added after "AbsoluteIrradiance__". See Token
 %   beamDiameter            double
 %       Diameter of beam on sensor in mm
 %   calibrationDate         string
@@ -38,17 +39,18 @@ classdef GammaRampMeasurement < handle
 %       above this will be set to zero to minimize impact of noise)
 %
 % Use:
-%   obj = GammaRampMeasurement("420nm", "C:\420nm", 5:-0.1:0, 2,...
-%       "20220422", "Token", "420nm_Abs", "MinWL", 400, "MaxWL", 450);
+%   obj = GammaRampMeasurement("420nm", "C:\420nm", 5:-0.1:0, 2, "20220422",... 
+%       "Token", "420nm_Abs", "MinWL", 400, "MaxWL", 450);
 %   % Plot the normalized spectra, then write to file
-%   obj.plotSpectra(); obj.writeSpectra("C:\Spectra\");
+%   obj.plotSpectra(); obj.writeSpectra("C:\..\MySpectraFolder");
 %   % See the input-output lookup table (optionally upsample values)
 %   obj.plotLUT(0:0.05:5);
 %   % Save the lookup table
-%   obj.writeLUT("C:\LUTs", )
+%   obj.writeLUT("C:\..\MySpectraFolder", )
 %
 % History:
 %   7Apr2024 - SSP - Adapted from Tyler's script
+%   12Dec2024 - SSP - Debugged some table outputs
 % --------------------------------------------------------------------------
 
     properties (SetAccess = private)
@@ -149,41 +151,37 @@ classdef GammaRampMeasurement < handle
         end
 
         function T = getLUT(obj, targetValues)
-            if nargin < 2
-                targetValues = 0:0.01:5;
-            end
-
             if any(~ismember(targetValues, obj.intensities))
+                % Interpolate to the provided target values if needed
                 pwr = obj.interpolate(targetValues);
-            else
+            else % Use the default values provided
                 pwr = obj.powers;
             end
 
-            T = table(obj.intensities, pwr,...
-                "VariableNames", {"Input", "Power"});
+            T = table(targetValues', pwr',...
+                'VariableNames', {'Input', 'Power'});
         end
     end
 
     % File output methods
     methods
-        function writeLUT(obj, savePath, varargin)
+        function writeLUT(obj, savePath, targetValues)
+            % Saves the lookup table in a file matching Qiang's AOSLO
+            % software specifications (e.g., 0.1 V increments)
             arguments
                 obj
                 savePath        (1,1)   string  {mustBeFolder}
-            end
-            arguments (Repeating)
-                varargin
+                targetValues    (1,:)   double  = 0:0.1:5
             end
 
             fName = sprintf('%s_%s_LUT_%sndf.txt',...
-                obj.lightSource, obj.calibrationDate, obj.neutralDensityFilter);
+                obj.lightSource, obj.calibrationDate, num2str(10*obj.neutralDensityFilter));
             fName = fullfile(savePath, fName);
 
-            T = obj.getLUT(varargin{:});
+            T = obj.getLUT(targetValues);
             % Variable names wanted by Qiang's AOSLO code...
             T.Properties.VariableNames = {'VOLTAGE', 'POWER'};
-
-            writetable(T, fName);
+            writetable(T, fName, 'Delimiter', '\t')
             fprintf('Saved LUT as %s\n', fName);
         end
 
@@ -198,13 +196,13 @@ classdef GammaRampMeasurement < handle
             data = obj.getNormalizedSpectra(targetValue);
             if fName == ""
                 fName = sprintf('%s_%s_%sndf_%s.txt',...
-                    obj.lightSource, obj.calibrationDate, obj.neutralDensityFilter);
+                    obj.lightSource, obj.calibrationDate, num2str(10*obj.neutralDensityFilter));
             end
 
             fName = fullfile(savePath, fName);
             T = table(obj.wavelengths, data,...
-                "VariableNames", {"Lambda", "Normalized"});
-            writetable(T, fName);
+                'VariableNames', {'Lambda', 'Normalized'});
+            writetable(T, fName, 'Delimiter', '\t')
             fprintf('Saved normalized spectra as %s\n', fName);
         end
     end
