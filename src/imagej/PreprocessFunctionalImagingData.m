@@ -37,17 +37,8 @@ end
 if p.experimentDir(end) ~= filesep
     p.experimentDir = [p.experimentDir, filesep];
 end
-if ~isfolder(fullfile(p.experimentDir, 'Analysis'))
-    mkdir(fullfile(p.experimentDir, 'Analysis'));
-end
+createAnalysisFolders(p.experimentDir);
 snapshotDir = fullfile(p.experimentDir, 'Analysis', 'Snapshots');
-if ~isfolder(snapshotDir)
-    mkdir(snapshotDir);
-end
-videoDir = fullfile(p.experimentDir, 'Analysis', 'Videos');
-if ~isfolder(videoDir)
-    mkdir(videoDir);
-end
 
 % Connect to imagej (if connection does not already exist)
 run('ConnectToImageJ.m');
@@ -114,31 +105,17 @@ for i = 1:numel(k)
         IJ.selectWindow(java.lang.String([curVidName]));
     end
 
+    if ~isempty(p.XLim)
+        IJ.run("Specify...", java.lang.String(sprintf("width=%d height=%d x=%d y=%d",...
+            p.XLim(2)-p.XLim(1), p.YLim(2)-p.YLim(1), p.XLim())))
+    end
 
     % Crop to a standardized size, if needed (default "full" doesn't crop)
-    switch p.ImagingSide
-        case 'left'
-            if isequal(p.FieldOfView, [496 400])
-                IJ.run("Specify...", "width=238 height=398 x=1 y=1");
-            else
-                IJ.run("Specify...", "width=248 height=358 x=0 y=1 slice=1");
-            end
-        case 'right'  % 20220308 on
-            if isequal(p.FieldOfView, [496 360])
-                IJ.run("Specify...", "width=242 height=360 x=254 y=0 slice=1");
-            elseif isequal(p.FieldOfView, [496 496]) % skipping row at top and bottom
-                IJ.run("Specify...", "width=242 height=494 x=254 y=1 slice=1");
-            elseif isequal(p.FieldOfView, [496 408])
-                IJ.run("Specify...", "width=240 height=406 x=255 y=1 slice=1");
-            elseif isequal(p.FieldOfView, [496 392])
-                IJ.run("Specify...", "width=242 height=390 x=253 y=1 slice=1");
-            elseif isequal(p.FieldOfView, [496 400])
-                IJ.run("Specify...", "width=238 height=398 x=258 y=1");
-            end
-        case 'right_smallFOV'
-            IJ.run("Specify...", "width=120 height=360 x=376 y=0 slice=1");
-        case 'top'
-            IJ.run("Specify...", "width=496 height=168 x=0 y=240 slice=1");
+    if ~isempty(char(p.ImagingSide)) && ~strcmp(p.ImagingSide, 'full') && ~isempty(p.FieldOfView)
+        txt = getLegacyFovCropString(p);
+        if txt ~= ""
+            IJ.run("Specify...", txt);
+        end
     end
 
     IJ.run("Duplicate...", java.lang.String(['title=', newTitle, ' duplicate']));

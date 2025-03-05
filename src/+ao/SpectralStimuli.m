@@ -538,6 +538,8 @@ classdef SpectralStimuli
 
         RgwSeq175m5s20p160t
 
+        BcgmrywSeq50m5s10p130t
+
     %% Toptica simulations
         TopticaSimBaselineAdapt
         TopticaSimStepOn20p100t
@@ -576,6 +578,7 @@ classdef SpectralStimuli
         LightsOff50p100t
 
         LightsOn5p120t
+        LightsOn10p120t
         LightsOn20p120t
         LightsOn40p120t
         LightsOn30p120t
@@ -1144,7 +1147,7 @@ classdef SpectralStimuli
             elseif contains(char(obj), {'LightsOn', 'LightsOff'})
                 app = RoiAverageView2(dataset, epochIDs, obj.bkgd,...
                     obj.getStimWindows(dataset, epochIDs(1), true), titleStr, dataset.getEpochTrace(epochIDs));
-            elseif contains(char(obj), {'RgbSeq', 'RgwSeq', 'GrwSeq', 'RgySeq', 'BgrSeq', 'CmySeq'})
+            elseif contains(char(obj), {'RgbSeq', 'RgwSeq', 'GrwSeq', 'RgySeq', 'BgrSeq', 'CmySeq', 'rywSeq'})
                 app = RoiAverageView2(dataset, epochIDs, obj.bkgd,...
                     obj.getStimWindows(dataset, epochIDs(1), true), ...
                     titleStr, dataset.frameTables(epochIDs(1)));
@@ -1479,6 +1482,8 @@ classdef SpectralStimuli
 
                 case 'luminance_lights_on_5p_120t'
                     obj = SpectralStimuli.LightsOn5p120t;
+                case 'luminance_lights_on_10p_120t'
+                    obj = SpectralStimuli.LightsOn10p120t;
                 case 'luminance_lights_on_20p_120t'
                     obj = SpectralStimuli.LightsOn20p120t;
                 case 'luminance_lights_on_40p_120t'
@@ -1718,6 +1723,8 @@ classdef SpectralStimuli
                     obj = SpectralStimuli.BgrSeq50m5s0p160t;
                 case 'cmy_seq_5s_50m_0p_160t'
                     obj = SpectralStimuli.CmySeq50m5s0p160t;
+                case 'bcgmryw_seq_5s_50m_10p_130t'
+                    obj = SpectralStimuli.BcgmrywSeq50m5s10p130t;
 
                 %% Cone-iso increments/decrements
                 case 'lcone_increment_20s_80t'

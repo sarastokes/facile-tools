@@ -102,7 +102,8 @@ classdef RoiManagerApp < handle
                 disp('Saved to workspace as "roiUIDs"');
             else
                 obj.dataset.setRoiUIDs(obj.Table.Data);
-                disp('Updated roiUIDs - remember to save dataset');
+                cprintf('*Red', 'Updated roiUIDs - remember to save dataset\n');
+                disp(' ');
             end
         end
 

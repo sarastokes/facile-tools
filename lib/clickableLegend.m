@@ -104,10 +104,10 @@ for i = 1:length(plothan)
 end
 function togglevisibility(hObject, obj)
 if get(hObject, 'UserData') % It is on, turn it off
-    set(hObject, 'Color', (get(hObject, 'Color') + 1)/1.5, 'UserData', false);
+    set(hObject, 'Color', [0.5 0.5 0.5], 'UserData', false);
     set(obj,'HitTest','off','Visible','off','handlevisibility','off');
 else
-    set(hObject, 'Color', get(hObject, 'Color')*1.5 - 1, 'UserData', true);
+    set(hObject, 'Color', [0 0 0], 'UserData', true);
     set(obj, 'HitTest','on','visible','on','handlevisibility','on');
 end
 function highlightObject(lTextObj, lMarkerObj, plotObj, plotOptions)

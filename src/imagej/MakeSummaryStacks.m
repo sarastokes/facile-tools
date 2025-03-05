@@ -1,37 +1,34 @@
 % MAKESUMMARYSTACKS
 %
-% Requirements to run are the same as PreprocessFunctionalImagingData.m
+% This script should be called by the function createSummaryStacks!
+%
+% See also:
+%  createSummaryStacks
 %
 % History:
 %   06Dec2021 - SSP
 %   06Aug2022 - SSP - fixed for Mac
+%   08Nov2024 - SSP - compatibility with createSummaryStacks()
 % -------------------------------------------------------------------------
+
+if ~exist("createSummaryStacks", "var")
+    error("No variable named 'summaryStackParams' found! See createSummaryStacks");
+end
 
 run('ConnectToImageJ.m');
 import ij.*;
 
-analysisDir = fullfile(p.experimentDir, 'Analysis');
+analysisDir = fullfile(summaryStackParams.experimentDir, 'Analysis');
 snapshotDir = fullfile(analysisDir, 'Snapshots');
 
-txt = strsplit(p.experimentDir, filesep);
-expNameShort = txt{end-1};
-
-if startsWith(expNameShort, 'MC')
-    expNameShort = expNameShort(3:end);
-end
-
-while startsWith(expNameShort, '0')
-    expNameShort = expNameShort(2:end);
-end
-
 % AVG stack
-for i = 1:numel(epochIDs)
-    ID = int2fixedwidthstr(epochIDs(i), 4);
-    IJ.open(java.lang.String(fullfile(snapshotDir, ['AVG_vis_', ID, '.png'])));
+for i = summaryStackParams.epochIDs
+    fName = fullfile(snapshotDir, sprintf("AVG_vis_%04d.png", i));
+    IJ.open(java.lang.String(fName));
 end
 IJ.run("Images to Stack");
 IJ.selectWindow(java.lang.String('Stack'));
-stackPath = fullfile(analysisDir, [expNameShort, '_AVG.tif']);
+stackPath = fullfile(analysisDir, summaryStackParams.filePrefix + "_AVG.tif");
 IJ.saveAs("Tiff", java.lang.String(stackPath));
 
 IJ.run("Z Project...", "projection=[Sum Slices]");
@@ -49,13 +46,14 @@ openImg.close();
 IJ.run('Close All');
 
 % SUM stack
-for i = 1:numel(epochIDs)
-    ID = int2fixedwidthstr(epochIDs(i), 4);
-    IJ.open(java.lang.String(fullfile(snapshotDir, ['SUM_vis_', ID, '.png'])));
+for i = summaryStackParams.epochIDs
+    fName = fullfile(snapshotDir, sprintf("SUM_vis_%04d.png", i));
+    IJ.open(java.lang.String(fName));
 end
 IJ.run("Images to Stack");
 IJ.selectWindow(java.lang.String('Stack'));
-stackPath = fullfile(analysisDir, [expNameShort, '_SUM.tif']);
+stackPath = fullfile(analysisDir, summaryStackParams.filePrefix + "_SUM.tif");
+
 IJ.saveAs("Tiff", java.lang.String(stackPath));
 
 IJ.run("Z Project...", "projection=[Sum Slices]");
@@ -73,9 +71,9 @@ openImg.close();
 IJ.run('Close All');
 
 % STD stack
-for i = 1:numel(epochIDs)
-    ID = int2fixedwidthstr(epochIDs(i), 4);
-    IJ.open(java.lang.String(fullfile(snapshotDir, ['STD_vis_', ID, '.png'])));
+for i = summaryStackParams.epochIDs
+    fName = fullfile(snapshotDir, sprintf("STD_vis_%04d.png", i));
+    IJ.open(java.lang.String(fName));
 end
 IJ.run("Images to Stack");
 IJ.selectWindow(java.lang.String('Stack'));
@@ -97,5 +95,4 @@ openImg.close();
 IJ.run('Close All');
 
 % Clean up workspace
-clear analysisDir snapshotDir stackPath txt expNameShort
-
+clear analysisDir snapshotDir stackPath txt expNameShort openImg fName i

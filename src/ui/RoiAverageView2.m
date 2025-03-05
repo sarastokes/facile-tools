@@ -20,12 +20,10 @@ classdef RoiAverageView2 < handle
         butterFreq
         stimWindow
         bkgdWindow
-        otherStat
 
-        currentRoi
+        currentRoi = 1
 
         % Plot components
-        stimPatch
         titleStr
         signalAxis
         roiAxis
@@ -33,10 +31,11 @@ classdef RoiAverageView2 < handle
         figureHandle
 
         % Plot settings
+        colors
         plotRange
-        autoX
-        yTight
-        yRectify
+        autoX       = true
+        yTight      = false
+        yRectify    = false
     end
 
     properties (SetAccess = private)
@@ -46,7 +45,6 @@ classdef RoiAverageView2 < handle
     end
 
     properties (Hidden, Dependent = true)
-        useMedian
         shadeError
     end
 
@@ -80,7 +78,7 @@ classdef RoiAverageView2 < handle
             catch
                 obj.signalsZ = [];
             end
-            obj.stimWindow = (1/data.frameRate) * stimWindow;
+            obj.stimWindow = (1 / obj.SAMPLE_RATE) * stimWindow;
             obj.bkgdWindow = bkgdWindow;
 
             % Check for NaNs
@@ -90,19 +88,16 @@ classdef RoiAverageView2 < handle
             end
 
             % Get the quality index from smoothed signals
-            signalsSmoothed = zeros(size(obj.signals));
-            for i = 1:size(obj.signals, 1)
-                for j = 1:size(obj.signals, 3)
-                    signalsSmoothed(i, :, j) = mysmooth(obj.signals(i, :, j), 100);
-                end
-            end
+            signalsSmoothed = mysmooth(obj.signals, 100);
             obj.QI = qualityIndex(signalsSmoothed);
 
             % Initialize
             obj.includedEpochs = true(1, numel(obj.epochIDs));
-            obj.currentRoi = 1;
-            obj.autoX = true; obj.yTight = false; obj.yRectify = false;
-
+            if isscalar(obj.epochIDs)
+                obj.colors = [0, 0, 0.3];
+            else
+                obj.colors = pmkmp(numel(obj.epochIDs), 'CubicL');
+            end
             obj.createUi();
         end
 
@@ -116,11 +111,6 @@ classdef RoiAverageView2 < handle
     end
 
     methods  % Dependent set/get methods
-        function useMedian = get.useMedian(obj)
-            h = findobj(obj.figureHandle, 'Tag', 'UseMedian');
-            useMedian = h.Value;
-        end
-
         function shadeError = get.shadeError(obj)
             h = findobj(obj.figureHandle, 'Tag', 'ShadedError');
             shadeError = h.Value;
@@ -149,7 +139,6 @@ classdef RoiAverageView2 < handle
             set(findByTag(obj.figureHandle, 'QI'),...
                 'String', sprintf('QI = %.2f', obj.QI(obj.currentRoi)),...
                 'ForegroundColor', txtColor);
-
         end
 
         function updateSignalPlot(obj)
@@ -175,9 +164,10 @@ classdef RoiAverageView2 < handle
 
             % Get only the traces currently checked
             allSignals = squeeze(allSignals(obj.currentRoi, :, obj.includedEpochs));
-            if nnz(obj.includedEpochs) == 1
+            if nnz(obj.includedEpochs) ~= 1
                 allSignals = allSignals';
             end
+            nTraces = size(allSignals, 1);
 
             % Fill NaNs (warning appeared earlier on them)
             if nnz(isnan(allSignals)) > 0
@@ -185,15 +175,14 @@ classdef RoiAverageView2 < handle
                 allSignals = fillmissing(allSignals, 'previous', 1);
             end
 
-
             % Detrend signals, if needed
             h = findobj(obj.figureHandle, 'Tag', 'detrend');
             if h.Value
-                allSignals = roiPrctFilt(allSignals', 30, 500, 1000)';
+                allSignals = roiPrctFilt(allSignals, 30, 500, 1000);
                 if ~isempty(obj.bkgdWindow)
-                    allSignals = signalBaselineCorrect(allSignals', obj.bkgdWindow, "mean")';
+                    allSignals = signalBaselineCorrect(allSignals, obj.bkgdWindow, "mean");
                 else
-                    allSignals = allSignals - mean(allSignals,1);
+                    allSignals = allSignals - mean(allSignals, 2);
                 end
             end
 
@@ -201,93 +190,81 @@ classdef RoiAverageView2 < handle
             h = findobj(obj.figureHandle, 'Tag', 'Smooth');
             if ~isempty(h.String) && ~ismember(h.String, {'0', '1'})
                 smoothFac = str2double(h.String);
-                for i = 1:size(allSignals, 2)
-                    allSignals(:, i) = mysmooth(allSignals(:, i), smoothFac);
+                allSignals = mysmooth(allSignals, smoothFac);
+                if nTraces == 1
+                    allSignals = allSignals';
                 end
-            else
-                smoothFac = 1;
             end
 
             % Frequency-based filtering, if needed
             hpFlag = ~isempty(obj.hpCut) && obj.hpCut ~= 0;
             lpFlag = ~isempty(obj.lpCut) && obj.lpCut ~= 0;
             if hpFlag && lpFlag     % Bandpass filter
-                for i = 1:size(allSignals,2)
-                    allSignals(:,i) = bandpass(allSignals(:,i), ...
+                for i = 1:nTraces
+                    allSignals(i,:) = bandpass(allSignals(i,:), ...
                         sort([obj.hpCut, obj.lpCut]), obj.SAMPLE_RATE);
                 end
             elseif hpFlag           % Highpass filter
-                allSignals = signalHighPassFilter(allSignals', obj.hpCut, obj.SAMPLE_RATE);
+                allSignals = signalHighPassFilter(allSignals, obj.hpCut, obj.SAMPLE_RATE);
                 if ~isempty(obj.bkgdWindow)
-                    allSignals = signalBaselineCorrect(allSignals, obj.bkgdWindow, "median")';
+                    allSignals = signalBaselineCorrect(allSignals, obj.bkgdWindow, "median");
                 else
-                    allSignals = allSignals';
-                    allSignals = allSignals - mean(allSignals,1);
+                    allSignals = allSignals - mean(allSignals, 2);
                 end
             elseif lpFlag            % Lowpass filter
-                for i = 1:size(allSignals, 2)
-                    allSignals(:, i) = lowPassFilter(...
-                        allSignals(:, i), obj.lpCut, obj.xpts(2)-obj.xpts(1));
+                for i = 1:nTraces
+                    allSignals(i, :) = lowPassFilter(...
+                        allSignals(i, :), obj.lpCut, obj.xpts(2)-obj.xpts(1));
                 end
             end
             % Butterworth filter
             if ~isempty(obj.butterFreq) && obj.butterFreq ~= 0
-                allSignals = signalButterFilter(allSignals', obj.SAMPLE_RATE, 3, obj.butterFreq)';
+                allSignals = signalButterFilter(allSignals, ...
+                    obj.SAMPLE_RATE, 3, obj.butterFreq);
             end
-
 
             % Derivative, if needed
             if get(findByTag(obj.figureHandle, 'dfdt'), 'Value')
-                for i = 1:size(allSignals, 2)
-                    allSignals(:, i) = gradient(allSignals(:, i));
+                for i = 1:nTraces
+                    allSignals(i, :) = gradient(allSignals(i, :));
                 end
             end
 
             % Normalize, if needed
             if get(findobj(obj.figureHandle, 'Tag', 'Norm'), 'Value')
                 if ~isempty(obj.stimWindow)
-                    for i = 1:size(allSignals,2)
-                        allSignals(:,i) = rescale(allSignals(:,i));
-                        allSignals(:,i) = allSignals(:,i) - mean(allSignals(window2idx(obj.bkgdWindow),i));
+                    for i = 1:nTraces
+                        allSignals(i,:) = rescale(allSignals(i,:));
+                        allSignals(i,:) = allSignals(i,:) - ...
+                            mean(allSignals(i, window2idx(obj.bkgdWindow)));
                     end
                 else
-                    allSignals = roiNormPercentile(allSignals', 2)';
+                    allSignals = roiNormPercentile(allSignals, 2);
                 end
             end
 
-
-            % Bin data
+            % Bin data, if needed
             if ~isempty(obj.numBins) && obj.numBins ~= 0
                 newSignals = [];
-                for i = 1:size(allSignals, 2)
-                    newSignals = cat(1, newSignals, downsampleMean(allSignals(:,i)', obj.numBins));
+                for i = 1:nTraces
+                    newSignals = cat(1, newSignals, downsampleMean(allSignals(i,:), obj.numBins));
                 end
-                allSignals = newSignals';
+                allSignals = newSignals;
                 X = downsampleMean(X, obj.numBins);
-                %[allSignals, X] = roiDownsample(allSignals', obj.numBins, "mean", obj.SAMPLE_RATE);
-                %allSignals = allSignals';
-                %for i = 1:size(allSignals, 2)
-                    %allSignals(:,i) = movmean(allSignals(:,i), obj.numBins);
-                %end
             end
-            
+
             % Plot the individual signals, if necessary
+            nPts = size(allSignals, 2);
             delete(findall(obj.signalAxis, 'Tag', 'SignalLine'));
             if ~obj.shadeError
-                if numel(obj.epochIDs) > 1
-                    co = pmkmp(numel(obj.epochIDs), 'CubicL');
-                    co = co(obj.includedEpochs, :);
-                else
-                    co = [0, 0, 0.3];
+                co = obj.colors(obj.includedEpochs, :);
+
+                % Fix discrepancies between stimulus trace and
+                if numel(X) > nPts
+                    X = X(1:nPts);
                 end
-                % TODO: fix later
-                if numel(X) < size(allSignals, 1)
-                    X = [0 X];
-                elseif numel(X) > size(allSignals, 1)
-                    X = X(1:size(allSignals,1));
-                end
-                for i = 1:size(allSignals, 2)
-                    plot(obj.signalAxis, X, allSignals(1:numel(X), i),...
+                for i = 1:nTraces
+                    plot(obj.signalAxis, X, allSignals(i, 1:numel(X)),...
                         'Color', co(i,:), 'LineWidth', 0.55,...
                         'Tag', 'SignalLine');
                 end
@@ -295,28 +272,28 @@ classdef RoiAverageView2 < handle
 
             % Calc and plot the average/median
             if nnz(obj.includedEpochs) > 1
-                if obj.useMedian
-                    Yavg = median(allSignals, 2);
+                h = findobj(obj.figureHandle, 'Tag', 'UseMedian');
+                if h.Value
+                    Yavg = median(allSignals, 1);
                 else
-                    Yavg = mean(allSignals, 2, 'omitnan');
+                    Yavg = mean(allSignals, 1, 'omitnan');
                 end
-                if obj.shadeError
+                if obj.shadeError % Plot average with shaded error bars
                     axes(obj.signalAxis);
-                    h = shadedErrorBar(X, Yavg, std(allSignals, [], 2));
+                    h = shadedErrorBar(X, Yavg, std(allSignals, [], 1));
                     h.mainLine.Tag = 'SignalLine';
                     h.patch.Tag = 'SignalLine';
                     arrayfun(@(X) set(X, 'Tag', 'SignalLine'), h.edge)
-                else
+                else % Just plot the average
                     plot(obj.signalAxis, X, Yavg(1:numel(X)),...
-                        'Color', [0.1 0.1 0.1], 'LineWidth', 0.9,...
+                        'Color', [0.1 0.1 0.1], 'LineWidth', 1.25,...
                         'Tag', 'SignalLine');
                 end
                 obj.avgSignal = Yavg(1:numel(X));
-                obj.avgX = X;
             else
                 obj.avgSignal = allSignals(1:numel(X));
-                obj.avgX = X;
             end
+            obj.avgX = X;
 
             obj.updateAxis(X, allSignals);
 
@@ -324,41 +301,28 @@ classdef RoiAverageView2 < handle
         end
 
         function updateAxis(obj, X, allSignals)
-
-            % Set the x-axis 
+            % Set the x-axis
             if obj.autoX
                 xLimits = [X(1), X(end)];
-                xFrames = [1 size(allSignals,1)];
+                if xLimits(1) < 1
+                    xLimits(1) = 0;
+                end
+                xFrames = [1 size(allSignals, 2)];
             else
                 xLimits = [...
                     str2double(get(findByTag(obj.figureHandle, 'xLim1'), 'String')),...
                     str2double(get(findByTag(obj.figureHandle, 'xLim2'), 'String'))];
-                %if isempty(obj.numBins) || obj.numBins == 0
-                %    nBins = 1;
-                %else
-                %    nBins = obj.numBins;
-                %end
                 xFrames = [findclosest(X, xLimits(1)), findclosest(X, xLimits(2))];
-                %xFrames = round((obj.Dataset.frameRate/nBins) * xLimits);
             end
             xlim(obj.signalAxis, xLimits);
-            
+
             % Determine response range value of current view for ylim
-            maxVal = max(allSignals(xFrames(1):xFrames(2), obj.includedEpochs), [], "all", 'omitnan');
-            minVal = min(allSignals(xFrames(1):xFrames(2), obj.includedEpochs), [], "all", 'omitnan');
+            [minVal, maxVal] = bounds(allSignals(:,window2idx(xFrames)), "all", "omitnan");
             if minVal > 0
                 minVal = 0;
             end
-            obj.signalAxis.YLim = 1.1*[minVal, maxVal];
+            ylim(obj.signalAxis, 1.1 * [minVal, maxVal]);
             obj.plotRange = obj.signalAxis.YLim;
-            
-            % Adjust the stimulus patches accordingly
-            stimY = [obj.signalAxis.YLim(1) obj.signalAxis.YLim(1),... 
-                     obj.signalAxis.YLim(2) obj.signalAxis.YLim(2)];
-            h = findByTag(obj.signalAxis, 'StimPatch');
-            if ~isempty(h)
-                arrayfun(@(x) set(x, 'YData', stimY), h);
-            end
 
             % Rectify after, so it can be toggled without full update
             if obj.yRectify
@@ -373,11 +337,9 @@ classdef RoiAverageView2 < handle
         end
     end
 
+    % CALLBACK METHODS -------------------------------------------------
     methods (Access = private)
-
         function onKeyPress(obj, ~, evt)
-            % ONKEYPRESS
-
             if ismember('ctrl', evt.Modifier)
                 obj.changeTab(1);
                 return
@@ -394,7 +356,6 @@ classdef RoiAverageView2 < handle
                         obj.currentRoi = 1;
                         return;
                     end
-
                 case 'rightarrow'
                     if ismember('shift', evt.Modifier)
                         obj.currentRoi = obj.currentRoi + 10;
@@ -436,7 +397,6 @@ classdef RoiAverageView2 < handle
         end
 
         function changeTab(obj, dir)
-            % CHANGETAB
             currentTab = obj.getCurrentTabIndex();
             if dir == -1
                 if currentTab == 1
@@ -479,18 +439,15 @@ classdef RoiAverageView2 < handle
         end
 
         function onEdit_ROI(obj, src, ~)
-
             if obj.isUID(src.String)
                 newRoi = find(obj.Dataset.roiUIDs.UID == upper(src.String));
                 if isempty(newRoi)
                     set(src, 'ForegroundColor', 'r', 'FontWeight', 'bold');
                     return
                 end
-                set(src, 'ForegroundColor', 'k', 'FontWeight', 'normal');
             else
                 try
                     newRoi = str2double(src.String);
-                    set(src, 'ForegroundColor', 'k', 'FontWeight', 'normal');
                 catch
                     set(src, 'ForegroundColor', 'r', 'FontWeight', 'bold');
                     return
@@ -498,25 +455,20 @@ classdef RoiAverageView2 < handle
             end
             obj.currentRoi = newRoi;
             obj.changeRoi();
-            set(src, 'String', '');
+            set(src, 'String', '', 'ForegroundColor', 'k', 'FontWeight', 'normal');
         end
 
         function onEdit_BinData(obj, src, ~)
-            if isempty(src.String)
-                obj.numBins = 0;
-                obj.changeRoi();
-                return
-            end
-
-            if obj.checkNumericInput(src)
-                obj.numBins = str2double(src.String); % * (obj.xpts(2)-obj.xpts(1));
+            if ~isempty(src.String) && obj.checkNumericInput(src)
+                obj.numBins = str2double(src.String);
                 fprintf('Binned sample rate is %.3f Hz\n',...
                     obj.Dataset.frameRate / obj.numBins);
-                obj.changeRoi();
             else
                 obj.numBins = 0;
                 src.String = '';
+                fprintf('No binning: sample rate is %.3f Hz\n', obj.SAMPLE_RATE);
             end
+            obj.changeRoi();
         end
 
         function onEdit_ButterCutoff(obj, src, ~)
@@ -527,38 +479,28 @@ classdef RoiAverageView2 < handle
 
             if obj.checkNumericInput(src)
                 obj.butterFreq = str2double(src.String);
-                obj.changeRoi();
             else
                 obj.butterFreq = [];
             end
+            obj.changeRoi();
         end
 
         function onEdit_HPCut(obj, src, ~)
-            if isempty(src.String)
-                obj.hpCut = [];
-                return
-            end
-
-            if obj.checkNumericInput(src)
+            if ~isempty(src.String) && obj.checkNumericInput(src)
                 obj.hpCut = str2double(src.String);
-                obj.changeRoi();
             else
                 obj.hpCut = [];
             end
+            obj.changeRoi();
         end
 
         function onEdit_LPCut(obj, src, ~)
-            if isempty(src.String)
-                obj.lpCut = [];
-                return
-            end
-
-            if obj.checkNumericInput(src)
+            if ~isempty(src.String) && obj.checkNumericInput(src)
                 obj.lpCut = str2double(src.String);
-                obj.changeRoi();
             else
                 obj.lpCut = [];
             end
+            obj.changeRoi();
         end
 
         function onCheck_Epoch(obj, src, ~)
@@ -589,9 +531,6 @@ classdef RoiAverageView2 < handle
         end
 
         function onCheck_AutoAxis(obj, src, ~)
-            % ONCHECK_AUTOAXIS
-            % -------------------------------------------------------------
-
             obj.autoX = src.Value;
 
             if src.Value
@@ -625,7 +564,6 @@ classdef RoiAverageView2 < handle
                 fprintf('Saved as %s\n', [txt, '.png']);
             end
         end
-
     end
 
     methods (Access = private)
@@ -695,7 +633,6 @@ classdef RoiAverageView2 < handle
             signalLayout = uix.VBox('Parent', mainLayout);
             obj.createSignalView(signalLayout);
 
-
             set(mainLayout, 'Widths', [-1, -3]);
         end
 
@@ -703,22 +640,27 @@ classdef RoiAverageView2 < handle
              % Signal display
             obj.signalAxis = axes(uipanel(parentHandle, 'BackgroundColor', 'w'));
             hold(obj.signalAxis, 'on');
+
+            % Add stimulus windows
             if ~isempty(obj.stimWindow)
                 for i = 1:size(obj.stimWindow, 1)
-                    obj.stimPatch = patch(...
-                        'XData', [obj.stimWindow(i,:), fliplr(obj.stimWindow(i,:))], ...
-                        'YData', [1 1 -1 -1], 'Tag', 'StimPatch',...
-                        'Parent', obj.signalAxis, 'FaceColor', [0.3 0.3 1], ...
-                        'FaceAlpha', 0.15, 'EdgeColor', 'none');
+                    xregion(obj.stimWindow(i,1), obj.stimWindow(i,2),...
+                        "FaceColor", [0.3 0.3 1], "FaceAlpha", 0.15,...
+                        "Parent", obj.signalAxis, "Tag", "StimPatch");
                 end
             end
+
+            % Plot formatting
             plot(obj.signalAxis, [obj.xpts(1), obj.xpts(end)], [0 0],...
                 'Color', [0.4, 0.4, 0.4]);
             grid(obj.signalAxis, 'on');
             xlabel(obj.signalAxis, 'Time (sec)');
             ylabel(obj.signalAxis, 'Signal (dF/F)');
+
+            % Actually add the data
             obj.updateSignalPlot();
 
+            % Create stimulus panel (if necessary)
             if ~isempty(obj.stim)
                 ax = axes(uipanel(parentHandle, 'BackgroundColor', 'w'));
                 if isvector(obj.stim)
@@ -821,8 +763,17 @@ classdef RoiAverageView2 < handle
             % Roi display
             roiLayout = uix.VBox('Parent', parentHandle, 'BackgroundColor', 'w');
             obj.roiAxis = axes(uipanel(roiLayout, 'BackgroundColor', 'w'));
-            obj.roiHandle = roiOverlay(obj.Dataset.avgImage, obj.Dataset.rois == obj.currentRoi,...
-                'Colormap', 'bone', 'Parent', obj.roiAxis);
+            % Show image, if absent use labelmask
+            if isempty(obj.Dataset.avgImage)
+                obj.roiHandle = roiOverlay(obj.Dataset.rois > 0,...
+                    obj.Dataset.rois == obj.currentRoi,...
+                    'Colormap', [0.5 0.5 0.5; 1 1 1],...
+                    'Parent', obj.roiAxis);
+            else
+                obj.roiHandle = roiOverlay(obj.Dataset.avgImage,...
+                    obj.Dataset.rois == obj.currentRoi,...
+                    'Colormap', 'bone', 'Parent', obj.roiAxis);
+            end
             uicontrol(roiLayout, 'Style', 'push',...
                 'String', 'Expand ->',...
                 'Callback', @obj.onPushDividerArrow);
@@ -846,7 +797,6 @@ classdef RoiAverageView2 < handle
                 'Tag', 'AutoX',...
                 'Callback', @obj.onCheck_AutoAxis);
             heights = [heights, -1, 40, 20];
-
 
             uix.Empty('Parent', parentHandle, 'BackgroundColor', 'w');
             uicontrol(parentHandle,...
@@ -879,30 +829,25 @@ classdef RoiAverageView2 < handle
 
     methods (Static)
         function tf = isUID(txt)
-            if isstring(txt)
-                txt = char(txt);
-            end
+            txt = convertStringsToChars(txt);
+
             if ~ischar(txt)
                 tf = false;
                 return
-            else
-                txt = char(txt);
             end
 
             if numel(txt) ~= 3
                 tf = false;
                 return
-            else
-                tf = true;
             end
 
             if nnz(isletter(txt)) < 3
                 tf = false;
                 return
-            else
-                tf = true;
             end
-    end
+
+            tf = true;
+        end
 
         function isValid = checkNumericInput(src)
             try

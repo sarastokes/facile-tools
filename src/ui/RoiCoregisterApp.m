@@ -80,7 +80,7 @@ classdef RoiCoregisterApp < handle
             obj.StatusBox.Text = sprintf('Registered with %u ROIs', numel(xM));
         end
 
-        function onMenu_ShowDisplacement(obj)
+        function onMenu_ShowDisplacement(obj, ~, ~)
             if isempty(obj.tform)
                 return
             end
@@ -222,7 +222,7 @@ classdef RoiCoregisterApp < handle
                 end
                 if ismember(alignedUid, obj.movingUI.Table.Data{:,2})
                     flaggedUIDs = [flaggedUIDs; alignedUid]; %#ok<AGROW>
-                    otherRoiID = obj.movingUI.Table.Data{obj.movingUI.Table.Data == alignedUid, 1};
+                    otherRoiID = obj.movingUI.Table.Data{obj.movingUI.Table.Data.UID == alignedUid, 1};
                     refXY = obj.fixedXY(obj.fixedDataset.uid2roi(alignedUid),:);
                     D = fastEuclid2d(refXY, [obj.movingXY(i,:); obj.movingXY(otherRoiID, :)]);
                     if D(1) > D(2)
@@ -232,8 +232,8 @@ classdef RoiCoregisterApp < handle
                         obj.movingUI.Table.Data{i,2} = "";
                     end
                     % TODO: Check which has the smallest distance to UID
-                    warning('Check on UID %s. Chose %u. Distances: %u=%.2f %u=%.2f\n',... 
-                        alignedUid, i, chosenROI, D(1), otherRoiID, D(2));
+                    warning('Check on UID %s, multiple candidate ROIs. Distances: %u=%.2f %u=%.2f\n',... 
+                        alignedUid, chosenROI, D(1), otherRoiID, D(2));
                     if D(1) > 2
                         continue
                     end
@@ -249,10 +249,10 @@ classdef RoiCoregisterApp < handle
                 drawnow;
                 pause(0.1);
             end
-            fprintf('RoiCoregisterApp: %u blank, %u registered\n',...
-                numBlank, numReg);
+            cprintf('-Blue', 'RoiCoregisterApp: %u were blank - %u registered. %u remain blank\n',...
+                numBlank, numReg, numBlank-numReg);
             if ~isempty(flaggedUIDs)
-                fprintf('Flagged UIDs: '); disp(flaggedUIDs);
+                cprintf('-Red', 'Flagged UIDs: '); disp(flaggedUIDs);
             end
         end
     end
@@ -417,6 +417,19 @@ classdef RoiCoregisterApp < handle
             end
         end
 
+        function onMenu_SaveTransformAsReference(obj, ~, ~)
+            if ~isempty(obj.movingDataset.transformToReference)
+                output = questdlg('Overwrite existing reference transform?',...
+                    'Overwrite Warning',...
+                    'Yes', 'No', 'No');
+                if isempty(output) || isequal(output, 'No')
+                    return
+                end
+            end
+
+            obj.movingDataset.transformToReference = obj.tform;
+        end
+
         function onMenu_ColorCoregistered(obj, ~, ~)
             obj.StatusBox.Text = 'Coloring coregistered rois...'; drawnow;
             [movingIDs, fixedIDs] = obj.matchUIDs();
@@ -500,6 +513,9 @@ classdef RoiCoregisterApp < handle
 
             mItem = uimenu(hMenu, 'Text', 'List Coregistered');
             mItem.MenuSelectedFcn = @obj.onMenu_ListCoregistered;
+
+            mItem = uimenu(hMenu, 'Text', 'Save Transform as Reference');
+            mItem.MenuSelectedFcn = @obj.onMenu_SaveTransformAsReference;
 
             % Visualization menu
             hMenu = uimenu(obj.figureHandle, "Text", "Visualization");

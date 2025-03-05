@@ -110,6 +110,7 @@ classdef Dataset < handle
         omittedEpochs
         analysisRegion
         importThreshold     uint8 = uint8(0)
+        transformToReference
     end
 
     % Rarely used/accessed properties, properties under development
@@ -128,7 +129,7 @@ classdef Dataset < handle
         extraHeader             string
     end
 
-    properties (SetAccess = private)
+    properties %(SetAccess = private)
         workingDirectory
     end
 
@@ -406,6 +407,18 @@ classdef Dataset < handle
             obj.calibrations = containers.Map();
         end
 
+        function clearRoiUIDs(obj)
+            % CLEARROIUIDS
+            %
+            % Description:
+            %   Clear all UIDs
+            %
+            % Syntax:
+            %   obj.clearRoiUIDs()
+            % -------------------------------------------------------------
+            obj.roiUIDs.UID = repmat("", [height(obj.roiUIDs), 1]);
+        end
+
         function ID = getStimID(obj, stimName)
             % GETSTIMID
             %
@@ -530,7 +543,7 @@ classdef Dataset < handle
                 roiID = [];
                 return
             end
-            
+
             roiID = find(obj.roiUIDs.UID == uid);
         end
 
@@ -898,6 +911,11 @@ classdef Dataset < handle
                         string(int2fixedwidthstr(obj.epochIDs(i), 4)) + ".tif");
                 end
             end
+        end
+
+        function missingUID = checkUIDs(obj)
+            missingUID = find(obj.roiUIDs.UID == "");
+            fprintf('%u of %u ROIs are missing UIDs\n', numel(missingUID), obj.numROIs);
         end
 
         function checkRegistrationReports(obj)
@@ -1308,7 +1326,7 @@ classdef Dataset < handle
             else
                 pixResponses = arrayfun(@(x) getRoiPixels(imStack, obj.rois, x), roiID,...
                     'UniformOutput', false);
-                if nargout > 2
+                if nargout > 1
                     xy = obj.getRoiPixelLocations();
                 end
             end
