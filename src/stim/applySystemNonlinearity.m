@@ -1,6 +1,6 @@
 function stim = applySystemNonlinearity(stim0, visualize, powerClip)
     % APPLYSYSTEMNONLINEARITY
-    % 
+    %
     % Syntax:
     %   stim = applySystemNonlinearity(stim)
     %
@@ -12,7 +12,7 @@ function stim = applySystemNonlinearity(stim0, visualize, powerClip)
     %       Plot the conversion steps
     %   powerClip   logical (default = false)
     %       Clip powers before flatline
-    % 
+    %
     % Outputs:
     %   stim        [1 x T]
     %       Stimulus coded between 0 and 255
@@ -39,7 +39,7 @@ function stim = applySystemNonlinearity(stim0, visualize, powerClip)
         powers = powers(lowerBound:upperBound);
         grayscale = grayscale(lowerBound:upperBound);
     end
-    
+
     lookup_fit = fit(grayscale, powers, 'cubicinterp');
     lookup_table = lookup_fit(0:255);
 
@@ -65,17 +65,17 @@ function stim = applySystemNonlinearity(stim0, visualize, powerClip)
     if visualize
         figure();
         subplot(311); hold on;
-        plot(stim0, 'LineWidth', 1.25); 
+        plot(stim0, 'LineWidth', 1.25);
         title('Normalized Input');
         ylim([0 1]);
 
         subplot(312); hold on;
-        plot(powerStim, 'LineWidth', 1.25); 
+        plot(powerStim, 'LineWidth', 1.25);
         title('Toptica Output (uW)');
         ylim([min(powers), max(powers)]);
 
         subplot(313); hold on;
-        plot(stim, 'LineWidth', 1.25); 
+        plot(stim, 'LineWidth', 1.25);
         title('Video Output (uint8)');
         ylim([0, 255]);
         figPos(gcf, 0.7, 1);

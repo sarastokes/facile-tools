@@ -19,7 +19,7 @@ function stim = applySystemNonlinearity3d(stim0)
     %   20220601 - SSP - removed unused options
     % ---------------------------------------------------------------------
 
-    dataDir = [fileparts(fileparts(mfilename('fullpath'))), filesep, 'data'];
+    dataDir = [fileparts(fileparts(fileparts(mfilename('fullpath')))), filesep, 'data'];
     load([dataDir, filesep, 'toptica_nonlinearity_2pctPWR.mat'])
     lookup_fit = fit(grayscale, powers, 'cubicinterp');
     lookup_table = lookup_fit(0:255);

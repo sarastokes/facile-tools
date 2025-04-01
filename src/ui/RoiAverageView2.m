@@ -545,6 +545,11 @@ classdef RoiAverageView2 < handle
                 'Enable', flag);
         end
 
+        function onPush_OpenFrequencyView(obj, ~, ~)
+            obj.freqView = FrequencyView(obj);
+            obj.changeRoi();
+        end
+
         function onPush_ExportFigure(obj, src, ~)
             newAxes = exportFigure(obj.signalAxis);
             txt = [obj.titleStr, sprintf(' ROI %u', obj.currentRoi)];
@@ -712,20 +717,24 @@ classdef RoiAverageView2 < handle
             uicontrol(g, 'Style', 'text', 'String', 'Shaded error:');
 
             uicontrol(g, 'Style', 'edit', 'String', '1', 'Tag', 'Smooth', ...
+                'Tooltip', 'mysmooth(data, X)',...
                 'Callback', @obj.onUser_ChangedPlot);
             uicontrol(g, 'Style', 'edit', 'String', '', 'Tag', 'Bin',...
+                'Tooltip', 'downsampleMean(data, X)',...
                 'Callback', @obj.onEdit_BinData);
             uicontrol(g, 'Style', 'edit', 'String', '', 'Tag', 'HPCut',...
                 'Callback', @obj.onEdit_HPCut);
             uicontrol(g, 'Style', 'edit', 'String', '', 'Tag', 'LPCut', ...
                 'Callback', @obj.onEdit_LPCut);
             uicontrol(g, 'Style', 'edit', 'String', '', 'Tag', 'ButterCutoff', ...
+                'Tooltip', 'signalButterFilter(data, sampleRate, 3, X)',...
                 'Callback', @obj.onEdit_ButterCutoff);
             uicontrol(g, 'Style', 'check', 'String', '',...
                 'Tag', 'Norm', 'Callback', @obj.onUser_ChangedPlot);
             uicontrol(g, 'Style', 'check', 'String', '',...
                 'Tag', 'dfdt', 'Callback', @obj.onUser_ChangedPlot);
             uicontrol(g, 'Style', 'check', 'String', '',...
+                'Tooltip', 'roiPrctFilt(data, 30, 500, 1000)',...
                 'Tag', 'detrend', 'Callback', @obj.onUser_ChangedPlot);
             uicontrol(g, 'Style', 'check', 'String', '',...
                 'Tag', 'UseMedian', 'Callback', @obj.onUser_ChangedPlot);
@@ -755,6 +764,12 @@ classdef RoiAverageView2 < handle
                 set(g, 'Heights', -1 * ones(1, numRows), 'Widths', [-1 -1]);
             end
             h = [h, numRows * 25];
+
+            uicontrol(parentHandle, 'Style', 'push',...
+                'String', 'Frequency View',...
+                'Callback', @obj.onPush_OpenFrequencyView);
+            h = [h, -1];
+
 
             set(parentHandle, 'Heights', h);
         end
