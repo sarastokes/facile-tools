@@ -11,8 +11,8 @@
 %   08Nov2024 - SSP - compatibility with createSummaryStacks()
 % -------------------------------------------------------------------------
 
-if ~exist("createSummaryStacks", "var")
-    error("No variable named 'summaryStackParams' found! See createSummaryStacks");
+if ~exist("summaryStackParameters", "var")
+    error("No variable named 'summaryStackParameters' found! See createSummaryStacks");
 end
 
 run('ConnectToImageJ.m');

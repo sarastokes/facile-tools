@@ -96,18 +96,18 @@ classdef DatasetLED2 < ao.core.Dataset
             imStack = getEpochStack@ao.core.Dataset(obj, epochID);
             
             % Get the true frame count
-            iStim = obj.epoch2stim(epochID);
-            if iStim == ao.SpectralStimuli.NoiseBackground
-                return
-            end
-            nFrames = iStim.frames();
+            %iStim = obj.epoch2stim(epochID);
+            %if iStim == ao.SpectralStimuli.NoiseBackground
+            %    return
+            %end
+            %nFrames = iStim.frames();
             % Clip off the extra frames
-            try
-                imStack = imStack(:,:,1:nFrames);
-            catch
-                warning('Epoch %u size (%u) did not match nFrames (%u)', ...
-                    epochID, size(imStack,3), nFrames);
-            end
+            %try
+            %    imStack = imStack(:,:,1:nFrames);
+            %catch
+            %    warning('Epoch %u size (%u) did not match nFrames (%u)', ...
+            %        epochID, size(imStack,3), nFrames);
+            %end
             
         end
         

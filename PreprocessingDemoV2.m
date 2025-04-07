@@ -13,11 +13,9 @@ exptDate = '20230821';
 % compatible with the latest version of Qiang's registration software.
 % This writes the AVI files using a different codec and appends an "O" to
 % the end of the file name to distinguish the videos from the originals.
-convertAvi(fullfile(experimentDir, 'Ref'), [2:24, 26:34, 36]);
-convertAvi(fullfile(experimentDir, 'Vis'), [2:24, 26:34, 36]);
+convertAviDual(experimentDir, [2:24, 26:34, 36]);
 
-% Next register the videos in Qiang's software. Make sure to check torsion
-% control and set subpixel to 1/4 in the settings tab of the toolbar.
+% Register the videos using Qiang's software.
 
 %% Convert to .tif files and create snapshots for segmentation
 % Now we process the registered videos to extract the useful information and
@@ -26,23 +24,45 @@ convertAvi(fullfile(experimentDir, 'Vis'), [2:24, 26:34, 36]);
 
 [videoNames, p] = processVideoPrep( ...
     experimentDir, epochIDs, ...
-    "ImagingSide", 'right', "FieldOfView", [496 496],...
-    "Registration", 'strip', "Reflect", true);
-% FieldOfView is the size of your videos in pixels. Reflect flips the image
-% and should be set to true (the latest update of Qiang's software flips the
-% videos for some reason so we have to flip them back to compare with prior
-% data. Registration is 'strip' or 'frame'. ImagingSide is 'right' or 'left'
-% and specifies which part of the video to keep.
+    "ImagingSide", 'right', "ImageSize", [496 496],...
+    "Registration", 'strip');
+% ImageSize is the size of your videos in pixels. Registration is 'strip' or
+% 'frame'. ImagingSide is 'right' or 'left' and specifies which part of the
+% video to keep. Use 'full' to keep the whole video. See the help for
+% processVideoPrep for more input options.
 
 % You will get warnings if registered videos aren't found for any of the
-% supplied epochIDs
-run('PreprocessFunctionalImagingData.m');
+% supplied epochIDs. If multiple registered videos are found, the last will
+% be used (check processVideoPrep documentation for more). Ensure everything
+% is in place before running the next line of code.
 
+%% Create analysis files
+run('PreprocessFunctionalImagingData.m');
 
 %% MATLAB object
 % Now we create a MATLAB object that contains all the relevant information
 % for the experiment. After this step, all the interaction you do with the
 % experiment data will be through this object.
+
+
+% The processing is different for LED and spatial  stimuli, so there are two
+% subclasses.
+
+% SPATIAL ------------------------------------------------------------------
+MC00851_ODR_20230821A = ao.core.Dataset(...
+    exptDate, 851, epochIDs, 561, experimentDir, ...
+    'ImagingSide', 'right', 'Eye', 'OD', ...
+    'Defocus', 0.35, 'FieldOfView', [3.37 2.70], ...
+    'Pinhole', 25);
+% We have to specify the image size to import the ImageJ ROIs.
+MC00851_ODR_20230821A.imSize = [242 390];
+% Find the .tif files for each epoch's registered videos
+MC00851_ODR_20230821A.getRegisteredVideoNames();
+
+% Save the object.
+save('MC00851_ODR_20230821A', 'MC00851_ODR_20230821A');
+
+% LEDS ---------------------------------------------------------------------
 MC00851_ODR_20230821B = ao.core.DatasetLED2(...
     exptDate, 851, epochIDs, experimentDir, ...
     'ImagingSide', 'right', 'Eye', 'OD', ...
@@ -93,26 +113,34 @@ MC00851_ODR_20230821B.makeStackSnapshots();
 % the contents of Ref and Vis. I usually on keep the Analysis folder
 % contents available on my computer/Dropbox. Ref and Vis can go to the NAS.
 
+% I save again at this point
+save('MC00851_ODR_20230821B', 'MC00851_ODR_20230821B');
+
+%% Summary stacks
 % Make the following in ImageJ:
 % - A stack of the SIFT-registered STD snapshots and of the SUM snapshots.
+%   Save these as .tif files in the Analysis folder
+% - Run bleach correction on the SUM and STD stacks and save as .tif files.
 % - A Z-projection of the SUM stack (SUM projection) and the STD stack
 %   (AVG projection). Running the bleach correction on the stack first can
 %   improve the quality of the projections. These are the images we use for
-%   coregistration and in talks/papers.
+%   coregistration and in talks/papers. I save them as .png files.
+
+% Load the SUM projection of the SUM stack as a reference image. This will
+% be used for coregistration and ROI identification.
+MC00851_ODR_20230821B.setAvgImage(fullfile(experimentDir,...
+    'Analysis', '851_ODR_20230821_SUM_DUP_SUM.png'));
 
 
 %% Segmentation
-% Make a Z-projection of the registered stack in ImageJ and save it as a
-% .png file in the Analysis folder. This will be used when coregistering
-zProjFileName = '851_ODR_20230821_SUM_DUP_SUM.png';
-MC00851_ODR_20230821B.setAvgImage(fullfile(experimentDir,...
-    'Analysis', '851_ODR_20230821_SUM_DUP_SUM.png'));
+% See the "Using ImageJ's RoiManager" for details on how to create the ROIs.
 
 % Once you have some ROIs to import, load them here
 MC00851_ODR_20230821B.loadROIs(fullfile(experimentDir, 'Analysis', ...
     '851_ODR_20230821_RoiSet.zip'));
 % Now the file name is saved in the "roiFileName" property and you can
 % reload it at any point.
+MC00851_ODR_20230821B.reloadRois();
 
 %% File structure
 % You should now have the following in your Analysis folder
@@ -129,3 +157,12 @@ MC00851_ODR_20230821B.loadROIs(fullfile(experimentDir, 'Analysis', ...
 %% Useful functions
 % Click "Go" on any stimulus to open up the ROI viewer UI
 ExperimentHome(MC00851_ODR_20230821B);
+
+% Access ROI traces for specific epochs
+[signals, xpts] = MC00851_ODR_20230821B.getEpochResponses(2, [250 498]);
+plot(xpts, signals);
+
+% Access ROI traces for several epochs and average
+[signals, xpts] = MC00851_ODR_20230821B.getEpochResponses(...
+    [2 3 4], [250 498], "Smooth", 100, "Average", true);
+

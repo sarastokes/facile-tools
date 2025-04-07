@@ -10,7 +10,7 @@
 %
 % Use:
 %   [videoNames, p] = processVideoPrep(experimentDir, epochIDs,...
-%       'ImagingSide', 'right', UsingLEDs', false);
+%       'ImagingSide', 'right', UsingOldLEDs', false);
 %   run('PreprocessFunctionalImagingData.m');
 %
 % See also:
@@ -27,30 +27,20 @@
 
 % Variable validation
 if ~exist('p', 'var')
-    error('No variable named ''p'' found! See help for more info');
+    error('No variable named ''p'' found! See ''help processVideoPrep''');
 end
 if ~exist('videoNames', 'var')
-    error('No variable named ''videoNames'' found! See help for more info');
+    error('No variable named ''videoNames'' found! See ''help processVideoPrep''');
 end
 
-% Identify experiment folder and analysis subfolders (create if absent)
-if p.experimentDir(end) ~= filesep
-    p.experimentDir = [p.experimentDir, filesep];
-end
+% Create Analysis folder and subfolders, if absent
 createAnalysisFolders(p.experimentDir);
 snapshotDir = fullfile(p.experimentDir, 'Analysis', 'Snapshots');
+videoDir = fullfile(p.experimentDir, 'Analysis', 'Videos');
 
 % Connect to imagej (if connection does not already exist)
 run('ConnectToImageJ.m');
 import ij.*;
-
-% Prep background region, if needed
-if ~isempty(p.BackgroundRegion)
-    x0 = p.BackgroundRegion(1);
-    x = p.BackgroundRegion(3);
-    y0 = p.BackgroundRegion(2);
-    y = p.BackgroundRegion(4);
-end
 
 % Loop through the epochs creating a video and snapshots
 k = videoNames.keys;
@@ -70,58 +60,58 @@ for i = 1:numel(k)
         IJ.run("Concatenate...", "all_open open");
     end
 
-    if p.UsingLEDs
+    % Get
+    if ~isfield(p, 'ImageSize') || isempty(p.ImageSize)
+        warning('Extracting FOV from video - could take awhile to import')
+        IJM.getDatasetAs("videoData");
+        p.ImageSize = size(videoData, [1 2]);
+        clear videoData
+    end
+
+    if p.UsingOldLEDs
         % Pre-2022 LED file naming scheme
         newTitle = ['vis#', int2fixedwidthstr(epochID, 3)];
     else % Current 1P AOSLO file naming scheme
         newTitle = ['vis_', int2fixedwidthstr(epochID, 4)];
     end
+
+    % Adjust if processing reflectance instead of fluorescence
     if p.Channel == "ref"
         newTitle = strrep(newTitle, "vis", "ref");
     end
+
     fprintf('Saving as %s... ', newTitle);
 
-    % Reflect, if needed
+    % Reflect, if needed (for newer versions of ImageReg, >2021)
     if p.Reflect
         IJ.run("Flip Vertically", "stack");
     end
 
-    % Identify background value from specified region, if necessary
-    if ~isempty(p.BackgroundRegion)
-        curVidName = getTitle(IJ.getImage());
-        IJ.run("Specify...", java.lang.String(['width=', num2str(x), ' height=', num2str(y), ' x=', num2str(x0), ' y=', num2str(y0), ' slice=1']));
-        IJ.run("Duplicate...", java.lang.String(['title=', 'tmp', ' duplicate']));
-        curBkgdName = getTitle(IJ.getImage());
-        IJ.run("Z Project...", "projection=[Average Intensity]");
-
-        IJM.getDatasetAs('vid');
-        p.BackgroundValue = mean(vid, "all");
-        openImg = IJ.getImage();
-        openImg.close();
-        IJ.selectWindow(java.lang.String(['tmp']));
-        openImg = IJ.getImage();
-        openImg.close();
-
-        IJ.selectWindow(java.lang.String([curVidName]));
+    if ~isfield(p, 'XLim') || isempty(p.XLim)
+        if strcmpi(p.ImagingSide, 'right')
+            p.XLim = [floor(p.ImageSize(1)/2)+1, p.ImageSize(1)];
+        elseif strcmpi(p.ImagingSide, 'left')
+            p.XLim = [0, floor(p.ImageSize(1)/2)];
+        end
+        p.YLim =[0 p.ImageSize(2)];
     end
-
     if ~isempty(p.XLim)
         IJ.run("Specify...", java.lang.String(sprintf("width=%d height=%d x=%d y=%d",...
-            p.XLim(2)-p.XLim(1), p.YLim(2)-p.YLim(1), p.XLim())))
+            p.XLim(2)-p.XLim(1), p.YLim(2)-p.YLim(1), p.XLim(1), p.YLim(1))));
     end
 
     % Crop to a standardized size, if needed (default "full" doesn't crop)
-    if ~isempty(char(p.ImagingSide)) && ~strcmp(p.ImagingSide, 'full') && ~isempty(p.FieldOfView)
-        txt = getLegacyFovCropString(p);
-        if txt ~= ""
-            IJ.run("Specify...", txt);
-        end
-    end
+    % if ~isempty(char(p.ImagingSide)) && ~strcmp(p.ImagingSide, 'full') && ~isempty(p.ImageSize)
+    %     txt = getLegacyFovCropString(p);
+    %     if txt ~= ""
+    %         IJ.run("Specify...", txt);
+    %     end
+    % end
 
     IJ.run("Duplicate...", java.lang.String(['title=', newTitle, ' duplicate']));
 
     % Subtract background value, if necessary
-    if p.BackgroundValue > 0
+    if isfield(p, 'BackgroundValue') && p.BackgroundValue > 0
         IJ.run("Subtract...", java.lang.String(['value=', num2str(p.BackgroundValue), ' stack']));
         fprintf('Subtracting %s...', num2str(p.BackgroundValue));
     end

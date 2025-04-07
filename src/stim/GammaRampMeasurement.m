@@ -39,7 +39,7 @@ classdef GammaRampMeasurement < handle
 %       above this will be set to zero to minimize impact of noise)
 %
 % Use:
-%   obj = GammaRampMeasurement("420nm", "C:\420nm", 5:-0.1:0, 2, "20220422",... 
+%   obj = GammaRampMeasurement("420nm", "C:\420nm", 5:-0.1:0, 2, "20220422",...
 %       "Token", "420nm_Abs", "MinWL", 400, "MaxWL", 450);
 %   % Plot the normalized spectra, then write to file
 %   obj.plotSpectra(); obj.writeSpectra("C:\..\MySpectraFolder");
@@ -59,7 +59,7 @@ classdef GammaRampMeasurement < handle
         Measurements
         calibrationDate
         beamDiameter                (1,1)       double       % mm
-        neutralDensityFilter        (1,1)       double = 0
+        NDF                         (1,1)       double = 0
         importProps                 (1,1)       struct
     end
 
@@ -69,6 +69,7 @@ classdef GammaRampMeasurement < handle
         spectra                                 double
         wavelengths                             double
         powers                                  double
+        maxPower                    (1,1)       double
     end
 
     methods
@@ -81,14 +82,14 @@ classdef GammaRampMeasurement < handle
                 beamDiameter    (1,1)   double      {mustBePositive}
                 calibrationDate (1,1)   string
                 opts.Token      (1,1)   string      = "_AbsoluteIrradiance_"
-                opts.ND         (1,1)   double      {mustBeNonnegative} = 0
+                opts.NDF        (1,1)   double      {mustBeNonnegative} = 0
                 opts.MinWL      (1,1)   double      {mustBeScalarOrEmpty} = []
                 opts.MaxWL      (1,1)   double      {mustBeScalarOrEmpty} = []
             end
 
             obj.lightSource = lightSource;
             obj.values = values;
-            obj.neutralDensityFilter = opts.ND;
+            obj.NDF = opts.NDF;
             obj.beamDiameter = beamDiameter;
             obj.calibrationDate = calibrationDate;
 
@@ -97,6 +98,14 @@ classdef GammaRampMeasurement < handle
                 'MinWL', opts.MinWL, 'MaxWL', opts.MaxWL);
 
             obj.importMeasurements();
+        end
+
+        function setNDF(obj, ndf)
+            if isempty(ndf)
+                ndf = 0;
+            end
+            obj.NDF = ndf;
+            obj.refresh();
         end
 
         function refresh(obj)
@@ -126,6 +135,14 @@ classdef GammaRampMeasurement < handle
             end
         end
 
+        function out = get.maxPower(obj)
+            if isempty(obj.Measurements)
+                out = [];
+                return
+            end
+            out = max(obj.powers);
+        end
+
         function out = get.spectra(obj)
             if isempty(obj.Measurements)
                 out = [];
@@ -144,9 +161,7 @@ classdef GammaRampMeasurement < handle
             end
 
             idx = find(obj.intensities == targetValue);
-
-            noiseSpectra = obj.Measurements(1).getCleanIrradiance();
-            out = obj.Measurements(idx).getCleanIrradiance() - noiseSpectra;
+            out = obj.Measurements(idx).spectra;
             out = out / max(out);
         end
 
@@ -175,7 +190,7 @@ classdef GammaRampMeasurement < handle
             end
 
             fName = sprintf('%s_%s_LUT_%sndf.txt',...
-                obj.lightSource, obj.calibrationDate, num2str(10*obj.neutralDensityFilter));
+                obj.lightSource, obj.calibrationDate, num2str(10*obj.NDF));
             fName = fullfile(savePath, fName);
 
             T = obj.getLUT(targetValues);
@@ -196,7 +211,7 @@ classdef GammaRampMeasurement < handle
             data = obj.getNormalizedSpectra(targetValue);
             if fName == ""
                 fName = sprintf('%s_%s_%sndf_%s.txt',...
-                    obj.lightSource, obj.calibrationDate, num2str(10*obj.neutralDensityFilter));
+                    obj.lightSource, obj.calibrationDate, num2str(10*obj.NDF));
             end
 
             fName = fullfile(savePath, fName);
@@ -215,6 +230,7 @@ classdef GammaRampMeasurement < handle
                 opts.Parent                         = []
                 opts.Area       (1,1)   logical     = true
                 opts.Color                          = [0.5 0.5 1]
+                opts.ShowCutoffs (1,1)  logical     = false
             end
 
             if isempty(opts.Parent)
@@ -235,6 +251,12 @@ classdef GammaRampMeasurement < handle
             else
                 plot(axHandle, obj.wavelengths, obj.spectra,...
                     'Color', opts.Color, 'LineWidth', 1);
+            end
+            if opts.ShowCutoffs
+                plot([obj.importProps.MinWL obj.importProps.MinWL], [0 1],...
+                    'LineStyle', '--', 'LineWidth', 1, 'Color', [1 0.25 0.25]);
+                plot([obj.importProps.MaxWL obj.importProps.MaxWL], [0 1],...
+                    'LineStyle', '--', 'LineWidth', 1, 'Color', [1 0.25 0.25]);
             end
         end
 
@@ -278,17 +300,29 @@ classdef GammaRampMeasurement < handle
         function importMeasurements(obj)
             [data, fileNames] = loadSpectralMeasurementFiles(...
                 obj.importProps.Folder, obj.importProps.Token);
+            if obj.NDF == 0
+                ndfString = [];
+            else
+                ndfString = arrayfun(@(x) sprintf("NE%sA-A.txt", int2fixedwidthstr(10*x, 2)), obj.NDF,...
+                    "UniformOutput", true);
+            end
 
             obj.Measurements = [];
             for i = 1:numel(fileNames)
                 newMeasurement = SpectralMeasurement(data{i}, obj.values(i),...
-                    obj.beamDiameter, obj.importProps.MinWL, obj.importProps.MaxWL);
+                    obj.beamDiameter, obj.importProps.MinWL, obj.importProps.MaxWL,...
+                    ndfString);
                 obj.Measurements = [obj.Measurements, newMeasurement];
             end
             obj.Measurements = obj.Measurements';
 
-            [~, idx] = sort(obj.values);
+            [sortedValues, idx] = sort(obj.values);
             obj.Measurements = obj.Measurements(idx);
+            
+            if sortedValues(1) == 0
+                arrayfun(@(x) setBackground(x, obj.Measurements(1).spectra0), obj.Measurements(2:end));
+            end
+
         end
 
         function out = interpolate(obj, targetValues)

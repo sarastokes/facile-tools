@@ -1,25 +1,29 @@
 function saveCalibrationFile(ledObj, savePath)
-    % SAVECALIBRATIONFILE
-    %
-    % Syntax:
-    %   saveCalibrationFile(ledObj, savePath)
-    %
-    % See also:
-    %   CONEISOLATION, SAVEJSON
-    % 
-    % History:
-    %   10Feb2022 - SSP
-    % ---------------------------------------------------------------------
-        
+% SAVECALIBRATIONFILE
+%
+% Syntax:
+%   saveCalibrationFile(ledObj, savePath)
+%
+% See also:
+%   CONEISOLATION, SAVEJSON
+%
+% History:
+%   10Feb2022 - SSP
+% --------------------------------------------------------------------------
+
     if ~endsWith(savePath, '.json')
         error('savePath must end with .json');
     end
-    
+
     S = struct();
     S.FileCreated = datestr(now);
     S.CalibrationDate = ledObj.CALIBRATION;
-    S.Files.Spectra = ledObj.DEFAULT_LED_FILES;
-    S.Files.LUT = ledObj.DEFAULT_LUT_FILES;
+    if isa(ledObj, 'ConeIsolation')
+        S.Files.Spectra = ledObj.DEFAULT_LED_FILES;
+        S.Files.LUT = ledObj.DEFAULT_LUT_FILES;
+    else
+        warning('Write LED LUT files!');
+    end
     S.NDF = ledObj.NDF;
     S.LedMaxPowers_uW = ledObj.ledPowers;
     S.LedBackground_Norm = ledObj.ledMeans';

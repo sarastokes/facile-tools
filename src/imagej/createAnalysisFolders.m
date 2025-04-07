@@ -8,8 +8,8 @@ function createAnalysisFolders(experimentDir)
         mkdir(fullfile(experimentDir, "Analysis"));
     end
     subFolders = ["Videos", "Snapshots", "Plots"];
-    for i = 1:numel(subfolders)
-        if ~isfolder(experimentDir, "Analysis", subFolders(i))
-            mkdir(experimentDir, "Analysis", subFolders(i));
+    for i = 1:numel(subFolders)
+        if ~isfolder(fullfile(experimentDir, "Analysis", subFolders(i)))
+            mkdir(fullfile(experimentDir, "Analysis", subFolders(i)));
         end
     end

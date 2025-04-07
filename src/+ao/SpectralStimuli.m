@@ -657,6 +657,17 @@ classdef SpectralStimuli
         LuminanceBinaryNoise50d80s20p140t_614
         LuminanceBinaryNoise50d80s20p140t_721
 
+        BinaryNoise180629448
+        BinaryNoise180630086
+        BinaryNoise180630678
+        BinaryNoise180631077
+        BinaryNoise180631447
+        BinaryNoise180631853
+        BinaryNoise180632173
+        BinaryNoise180632502
+        BinaryNoise180632814
+        BinaryNoiseBaseline
+
     %% Tyler's Stimuli
         LConeSinewave015
         MConeSinewave015
@@ -1418,6 +1429,14 @@ classdef SpectralStimuli
                 return
             end
 
+            if contains(str, 'binaryNoise_')
+                seed = extractAfter(str, 'binaryNoise_');
+                stimTxt = sprintf('BinaryNoise%s', seed);
+                try
+                    obj = SpectralStimuli.(stimTxt);
+                    return
+                end
+            end
 
             switch lower(str)
             %% Baseline
@@ -1453,6 +1472,8 @@ classdef SpectralStimuli
                     obj = SpectralStimuli.Background40p130t;
                 case 'baseline_50p_130t'
                     obj = SpectralStimuli.Background50p130t;
+                case 'baseline'
+                    obj = SpectralStimuli.BinaryNoiseBaseline;
                 case {'lmsx_background', 'baseline'}
                     obj = SpectralStimuli.LmsxBackground;
                 case 'luminance_background_80t'

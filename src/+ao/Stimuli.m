@@ -19,7 +19,6 @@ classdef Stimuli
         BaselineZeroMean
         BaselineLongZeroMean
 
-
         % FULL FIELD INTENSITY INCREMENTS ---------------------------------
         IntensityIncrement1s80t
         IntensityIncrement3s80t
@@ -361,6 +360,11 @@ classdef Stimuli
         SpacedOutVerticalBars3of4
         SpacedOutVerticalBars4of4
 
+        % SQUARES ---------------------------------------------------------
+        IntensityIncrement1On4OffSquares4x4
+        IntensityIncrement1On4OffSquares4x4Baseline
+        IntensityIncrement1On4OffSquares6x6
+
         % SEQUENTIALBARS --------------------------------------------------
         SequentialBarDecrement4to12of16
 
@@ -491,6 +495,10 @@ classdef Stimuli
                     n = 2000;
                 case {Stimuli.BaselineLongZeroMean, Stimuli.MovingBarN, Stimuli.MovingBarS, Stimuli.MovingBarW, Stimuli.MovingBarE}
                     n = 3100;
+                case {Stimuli.IntensityIncrement1On4OffSquares4x4, Stimuli.IntensityIncrement1On4OffSquares4x4Baseline}
+                    n = 3000;
+                case {Stimuli.IntensityIncrement1On4OffSquares6x6}
+                    n = 5500;
                 % case {Stimuli.MovingBarCardinal20pix1v180t, Stimuli.MovingBarCardinal20pix3v180t, Stimuli.MovingBarDiagonal20pix1v180t, Stimuli.MovingBarFullCardinal20pix1v180t, MovingBarFullDiagonal20pix1v180t}
                 %     n = 4500;
                 otherwise
@@ -660,7 +668,25 @@ classdef Stimuli
                     for i  = 1:numel(barTimes)
                         stim(barTimes(i):barTimes(i)+numel(barTrace)-1) = barTrace;
                     end
-
+                case {Stimuli.IntensityIncrement1On4OffSquares4x4, Stimuli.IntensityIncrement1On4OffSquares6x6}
+                    preTime = 20; tailTime = 20; % sec
+                    squareTime = 1; postSquareTime = 4;
+                    if contains(char(obj), '4x4')
+                        numSquares = 16;
+                    elseif contains(char(obj), '6x6')
+                        numSquares = 36;
+                    end
+                    totalTime = preTime + tailTime + numSquares * (squareTime + postSquareTime);
+                    stim = zeros(1, totalTime*25);
+                    startFrame = preTime * 25; % start at 20 sec
+                    for i = 1:numSquares
+                        startFrame = startFrame + 1;
+                        stopFrame = startFrame + (squareTime*25);
+                        stim(startFrame:stopFrame) = 1;
+                        startFrame = 25*(squareTime+postSquareTime) + startFrame;
+                    end
+                case {Stimuli.IntensityIncrement1On4OffSquares4x4Baseline}
+                    stim = zeros(1, obj.frames);
                 otherwise
                     if contains(stimName, 'HorizontalDecrementIncrement')
                         stim(:, 251:750) = 0;
