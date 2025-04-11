@@ -21,7 +21,7 @@ function writeRegisteredAvi(dataset, epochID, savePath)
     imStack = dataset.getEpochStacks(epochID);
     nFrames = size(imStack, 3);
 
-    v = VideoWriter(savePath + filesep + sprintf("vis_%04d.avi", epochID), "Grayscale AVI");
+    v = VideoWriter(fullfile(savePath, sprintf("vis_%04d.avi", epochID)), "Grayscale AVI");
     v.FrameRate = 25;
     open(v);
     % Write each frame

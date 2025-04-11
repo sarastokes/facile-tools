@@ -23,7 +23,7 @@ function convertAviDual(folderName, epochIDs)
         if iNewRef == ""
             continue
         end
-        
+
 
         % Import the old videos
         vRefIn = VideoReader(fullfile(folderName, "Ref", iRefFile));
@@ -67,8 +67,8 @@ function convertAviDual(folderName, epochIDs)
 end
 
 function fileNames = getTargetFiles(folderName)
-
-    allFiles = deblank(string(ls(folderName)));
+    allFiles = getFolderFiles(folderName);
+    % Get just the AVI files
     aviFiles = allFiles(endsWith(allFiles, ".avi"));
     % Remove registered videos
     aviFiles = aviFiles(~contains(aviFiles, ["frame", "strip"]));

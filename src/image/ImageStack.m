@@ -42,7 +42,7 @@ classdef ImageStack < handle
             end
 
             if isempty(nodes) && ~isempty(imPath)
-                nodes = deblank(string(ls(imPath)));
+                nodes = getFolderFiles(imPath);
                 if ~isempty(filtFcn)
                     idx = filtFcn(nodes);
                     nodes = nodes(idx);

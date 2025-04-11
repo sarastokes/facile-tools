@@ -107,7 +107,6 @@ classdef Dataset < handle
         % Development
         extraLabel          char
         warningIDs          double
-        omittedEpochs
         analysisRegion
         importThreshold     uint8 = uint8(0)
         transformToReference
@@ -129,7 +128,7 @@ classdef Dataset < handle
         extraHeader             string
     end
 
-    properties %(SetAccess = private)
+    properties (Hidden, SetAccess = private)
         workingDirectory
     end
 
@@ -511,7 +510,6 @@ classdef Dataset < handle
                 error('AO.CORE.DATASET/STIM2EPOCHS: unrecognized input');
             end
             epochs = epochs{:};
-            % epochs = setdiff(epochs, obj.omittedEpochs);
         end
 
         function uid = roi2uid(obj, roiID)
@@ -608,13 +606,12 @@ classdef Dataset < handle
 
             % If no input, guess the roi file name
             if nargin < 2 || isempty(rois)
-                rois = normPath([obj.experimentDir, '\Analysis\',...
-                    obj.getLabel(), '_RoiSet.zip']);
+                rois = fullfile(obj.experimentDir, 'Analysis',...
+                    obj.getLabel(), '_RoiSet.zip');
             end
 
             rois = convertStringsToChars(rois);
             if istext(rois)
-                rois = normPath(rois);
                 if ~isfile(rois)
                     error('loadROIs: File not found: %s', rois);
                 end
@@ -760,14 +757,6 @@ classdef Dataset < handle
                     end
                 end
                 fprintf('\n');
-
-                %assert(isequal(IDs, arrayfun(@(x) x.ID, tforms)),...
-                %    'Number of transforms must match number of epoch IDs');
-                %for i = 1:numel(IDs)
-                %    assert(isequal(tforms(i).ID), IDs(i),...
-                %        sprintf('Epoch IDs must match transform IDs (ID=%u vs %u', IDs(i), tforms(i).ID));
-                %    obj.transforms(num2str(tforms(i).ID)) = tforms(i);
-                %end
                 return
             end
 
@@ -895,20 +884,20 @@ classdef Dataset < handle
                         sprintf('_%s_frame_ref000_%s.mat', registrationDate, analysisID));
                     ind = strfind(txt, "Vis");
                     txt = char(txt);
-                    obj.registeredVideos(i) = [obj.baseDirectory, txt(ind-1:end)];
+                    obj.registeredVideos(i) = fullfile(obj.baseDirectory, txt(ind-1:end));
                     if ~isFile(obj.registeredVideos(i))
                         txt = replace(txt, "O.avi",...
                             sprintf('_%s_frame_ref000_%s.mat', registrationDate, analysisID));
                         ind = strfind(txt, "Vis");
                         txt = char(txt);
-                        obj.registeredVideos(i) = [obj.baseDirectory, txt(ind-1:end)];
+                        obj.registeredVideos(i) = fullfile(obj.baseDirectory, txt(ind-1:end));
                     end
                 end
             else
                 for i = 1:numel(obj.originalVideos)
-                    obj.registeredVideos(i) = normPath(obj.baseDirectory +...
-                        "Analysis" + filesep + "Videos" + filesep + "vis_" +...
-                        string(int2fixedwidthstr(obj.epochIDs(i), 4)) + ".tif");
+                    obj.registeredVideos(i) = fullfile(...
+                        obj.baseDirectory, "Analysis", "Videos",...
+                        "vis_" + string(int2fixedwidthstr(obj.epochIDs(i), 4)) + ".tif");
                 end
             end
         end
@@ -929,8 +918,7 @@ classdef Dataset < handle
             % -------------------------------------------------------------
             obj.registrationReports = repmat("", size(obj.originalVideos));
 
-            refFiles = ls([obj.baseDirectory, 'Ref']);
-            refFiles = string(deblank(refFiles));
+            refFiles = getFolderFiles(obj.baseDirectory, 'Ref');
             refFiles = refFiles(contains(refFiles, 'motion') & endsWith(refFiles, 'csv'));
 
             for i = 1:numel(obj.epochIDs)
@@ -953,9 +941,10 @@ classdef Dataset < handle
             obj.droppedFrames = cell(numel(obj.epochIDs), 1);
             for i = 1:numel(obj.epochIDs)
                 obj.droppedFrames{i} = getDroppedFrames(...
-                    obj.baseDirectory, obj.registrationReports(i));
+                    fullfile(obj.baseDirectory, obj.registrationReports(i)));
                 if ~isempty(obj.droppedFrames{i})
-                    warning('Epoch %u dropped %u frames', obj.epochIDs(i), numel(obj.droppedFrames{i}));
+                    warning('Epoch %u dropped %u frames',...
+                        obj.epochIDs(i), numel(obj.droppedFrames{i}));
                 end
             end
         end
@@ -976,15 +965,6 @@ classdef Dataset < handle
             %   imStack     uint8 matrix [X Y T]
             % -------------------------------------------------------------
 
-            % if ismember(epochID, obj.omittedEpochs)
-            %     warning('Epoch %s is part of omitted epochs', ...
-            %         value2string(epochID(ismember(epochID, obj.omittedEpochs))));
-            %     if numel(epochID) == 1
-            %         imStack = [];
-            %         return
-            %     end
-            % end
-
             % First check the video cache
             if isKey(obj.videoCache, num2str(epochID))
                 imStack = obj.videoCache(num2str(epochID));
@@ -1002,11 +982,11 @@ classdef Dataset < handle
                     'Epoch %u has been marked to generate a warning, likely bad registration', epochID);
             end
 
-            if ~isempty(obj.workingDirectory)
-                videoName = normPath(strrep(char(obj.registeredVideos(idx)),...
-                    obj.baseDirectory, obj.workingDirectory));
+            if ~isempty(obj.experimentDir)
+                videoName = strrep(char(obj.registeredVideos(idx)),...
+                    obj.baseDirectory, obj.experimentDir);
             else
-                videoName = normPath(char(obj.registeredVideos(idx)));
+                videoName = char(obj.registeredVideos(idx));
             end
             disp(videoName)
             tic;
@@ -1139,7 +1119,6 @@ classdef Dataset < handle
             addParameter(ip, 'Conv', [], @isnumeric);
             addParameter(ip, 'Detrend', [], @isnumeric);
             addParameter(ip, 'Butter', [], @isnumeric);
-            addParameter(ip, 'KeepOmitted', false, @islogical);
             parse(ip, varargin{:});
 
             bkgdWindow = ip.Results.Bkgd;
@@ -1151,7 +1130,6 @@ classdef Dataset < handle
             normFlag = ip.Results.Norm;
             decimateValue = ip.Results.Decimate;
             detrendValue = ip.Results.Detrend;
-            keepOmitted = ip.Results.KeepOmitted;
             convTau = ip.Results.Conv;
             butterFreq = ip.Results.Butter;
 
@@ -1167,11 +1145,6 @@ classdef Dataset < handle
                 [signals, xpts] = roiResponses(imStack, roiMask, bkgdWindow,...
                     'FrameRate', obj.frameRate, ip.Unmatched);
             else % Multiple epochs
-                % if any(ismember(epochID, obj.omittedEpochs)) && ~keepOmitted
-                %     warning('Skipping epoch %u', obj.omittedEpochs);
-                %     epochID = setdiff(epochID, obj.omittedEpochs);
-                % end
-                iStim = obj.epoch2stim(epochID(1));
                 signals = [];
                 for i = 1:numel(epochID)
                     roiMask = obj.getEpochROIs(epochID(i));
@@ -1375,22 +1348,14 @@ classdef Dataset < handle
             ip.KeepUnmatched = true;
             addOptional(ip, 'Bkgd', [], @isnumeric);
             addParameter(ip, 'Average', false, @islogical);
-            addParameter(ip, 'KeepOmitted', false, @islogical);
             % addParameter(ip, 'Smooth', [], @isnumeric);
             parse(ip, varargin{:});
 
             avgFlag = ip.Results.Average;
             bkgdWindow = ip.Results.Bkgd;
-            keepOmitted = ip.Results.KeepOmitted;
 
             epochs = obj.stim2epochs(whichStim);
             iStim = obj.epoch2stim(epochs(1));
-
-            % if any(ismember(epochs, obj.omittedEpochs)) && ~keepOmitted
-            %     warning('Omitting epoch %s', ...
-            %         value2string(epochs(ismember(epochs, obj.omittedEpochs))));
-            %     epochs = setdiff(epochs, obj.omittedEpochs);
-            % end
 
             % If background window not specified, get stimulus default
             if cellfind(ip.UsingDefaults, 'Bkgd')
@@ -1418,7 +1383,7 @@ classdef Dataset < handle
             signals = squeeze(signals);
         end
 
-        function avgStack = getStimulusAverage(obj, stimulusID)
+        function avgStack = getStimulusAverage(obj, whichStim)
             % GETSTIMULUSAVERAGE
             %
             % Description:
@@ -1427,16 +1392,14 @@ classdef Dataset < handle
             % Syntax:
             %   avgStack = getStimulusAverage(obj, stimulusID);
             % -------------------------------------------------------------
-            idx = find(obj.stimulusNames == obj.stimuliUsed(stimulusID));
+
+            idx = obj.stim2epochs(whichStim);
 
             fprintf('Loading %u videos for %s...\n',...
-                numel(idx), obj.stimuliUsed(stimulusID));
+                numel(idx), char(whichStim));
             avgStack = [];
             for i = 1:numel(idx)
-                % if ismember(idx(i), obj.omittedEpochs)
-                %     continue
-                % end
-                avgStack = cat(4, avgStack, obj.getEpochStack(obj.epochIDs(idx(i))));
+                avgStack = cat(4, avgStack, obj.getEpochStack(idx(i)));
             end
             avgStack = squeeze(mean(avgStack, 4));
 
@@ -1490,7 +1453,7 @@ classdef Dataset < handle
                 IDs = obj.epochIDs;
             end
 
-            fPath = normPath([obj.experimentDir, filesep, 'Analysis', filesep, 'Snapshots', filesep]);
+            fPath = fullfile(obj.experimentDir, 'Analysis', 'Snapshots');
             progressbar();
 
             for i = 1:numel(IDs)
@@ -1499,7 +1462,7 @@ classdef Dataset < handle
                 imStackD = im2double(imStack);
                 progressbar(i / numel(IDs));
                 imwrite(im2uint8(prctile(imStackD, 0.9, 3)),...
-                    [fPath, 'PCT', baseName], 'png');
+                    fullfile(fPath, ['PCT', baseName]), 'png');
             end
             progressbar(1);
         end
@@ -1522,7 +1485,7 @@ classdef Dataset < handle
                 IDs = obj.epochIDs;
             end
 
-            fPath = normPath([char(obj.experimentDir), filesep, 'Analysis', filesep, 'Snapshots', filesep]);
+            fPath = fullfile(char(obj.experimentDir), 'Analysis', 'Snapshots');
             progressbar();
             for i = 1:numel(IDs)
                 baseName = ['_', obj.getShortName(IDs(i)), '.png'];
@@ -1533,13 +1496,13 @@ classdef Dataset < handle
 
                 imSum = sum(imStackD, 3);
                 imwrite(uint8(255 * imSum/max(imSum(:))),...
-                    [fPath, 'SUM', baseName], 'png');
+                    fullfile(fPath, ['SUM', baseName]), 'png');
                 imwrite(uint8(mean(imStack, 3)),...
-                    [fPath, 'AVG', baseName], 'png');
+                    fullfile(fPath, ['AVG', baseName]), 'png');
                 imwrite(uint8(max(imStack, [], 3)),...
-                    [fPath, 'MAX', baseName], 'png');
+                    fullfile(fPath, ['MAX', baseName]), 'png');
                 imwrite(im2uint8(imadjust(std(imStackD, [], 3))),...
-                    [fPath, 'STD', baseName], 'png');
+                    fullfile(fPath, ['STD', baseName]), 'png');
                 progressbar(i / numel(IDs));
             end
             progressbar(1);
@@ -1605,15 +1568,8 @@ classdef Dataset < handle
                 iStim = obj.epoch2stim(obj.epochIDs(i));
                 stimNames(i) = string(iStim);
                 iResp = roiDFF(obj.getEpochStack(obj.epochIDs(i)), obj.rois, []);
-                %if iStim.isBaseline()
-                %    isBaseline(i) = true;
-                %    avgF(i, :) = mean(iResp, 2);
-                %    stdF(i, :) = std(iResp, [], 2);
-                %else
-                %    bkgdRange = window2idx(iStim.bkgd());
-                    avgF(i, :) = mean(iResp(:, bkgdRange), 2);
-                    stdF(i, :) = std(iResp(:, bkgdRange), [], 2);
-                %end
+                avgF(i, :) = mean(iResp(:, bkgdRange), 2);
+                stdF(i, :) = std(iResp(:, bkgdRange), [], 2);
             end
 
             T = table(obj.epochIDs', stimNames,...
@@ -1648,7 +1604,7 @@ classdef Dataset < handle
             endStop = ip.Results.EndStop;
 
             IDs = obj.stim2epochs(stimName);
-            if numel(IDs) == 1
+            if isscalar(IDs)
                 QI = NaN(obj.numROIs, 1);
                 return
             end
@@ -1679,6 +1635,24 @@ classdef Dataset < handle
         end
     end
 
+    methods
+        function checkFilesep(obj)
+            % Make sure file separators in stored file names match the OS
+
+            if ispc
+                other = '/';
+            else
+                other = '\';
+            end
+
+            obj.registeredVideos = strrep(obj.registeredVideos, other, filesep);
+            obj.baseDirectory = strrep(obj.baseDirectory, other, filesep);
+            obj.workingDirectory = strrep(obj.workingDirectory, other, filesep);
+            obj.roiFileName = strrep(obj.roiFileName, other, filesep);
+            obj.tformFileName = strrep(obj.tformFileName, other, filesep);
+        end
+    end
+
     methods (Access = protected)
         function y = getShortName(obj, epochID) %#ok<INUSL>
             % GETSHORTNAME
@@ -1695,13 +1669,12 @@ classdef Dataset < handle
             % Description:
             %   Get the name of the file with epoch attributes
             % -------------------------------------------------------------
-            refFiles = ls(obj.baseDirectory + filesep + "Ref");
-            refFiles = deblank(string(refFiles));
+            refFiles = getFolderFiles(fullfile(obj.baseDirectory, "Ref"));
             refFiles = refFiles(contains(refFiles, '.txt'));
             refFiles = refFiles(contains(refFiles, ['ref_', int2fixedwidthstr(epochID,4)]));
             refFiles = refFiles(~contains(refFiles, 'params'));
             try
-                filePath = obj.baseDirectory + filesep + "Ref" + filesep + refFiles(1);
+                filePath = fullfile(obj.baseDirectory, "Ref", refFiles(1));
             catch ME
                 if strcmp(ME.identifier, 'MATLAB:badsubscript')
                     warning('getAttributesFilename:FileNotFound',...

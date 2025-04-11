@@ -1,6 +1,6 @@
 function checkFrameCounts(folderName, epochIDs)
 % CONVERTAVI
-% 
+%
 % Description:
 %   Converts Primate 1P system videos into a format readable by Qiang's
 %   ImageReg software. Videos that have already been registered or
@@ -20,15 +20,15 @@ function checkFrameCounts(folderName, epochIDs)
 %   % Convert videos 1-10 in the "Ref" folder
 %   convertAvi('C:/Users/yourname/MC00838_20221122/Ref', 1:10)
 
-%   Sara Patterson, 2022 (facile-tools) 
+%   Sara Patterson, 2022 (facile-tools)
 % -------------------------------------------------------------------------
 
     arguments
-        folderName      string      {mustBeFolder(folderName)}    
-        epochIDs        double      {mustBeInteger(epochIDs)} 
+        folderName      string      {mustBeFolder(folderName)}
+        epochIDs        double      {mustBeInteger(epochIDs)}
     end
 
-    allFiles = deblank(string(ls(folderName)));
+    allFiles = getFolderFiles(folderName);
     aviFiles = allFiles(endsWith(allFiles, ".avi"));
     % Remove registered videos
     rawFiles = aviFiles(~contains(aviFiles, ["frame", "strip"]));
@@ -43,9 +43,9 @@ function checkFrameCounts(folderName, epochIDs)
         iFile = rawFiles(contains(rawFiles, sprintf("%04.0f", epochIDs(i))));
         iFile = iFile(1);
         visFile = strrep(iFile, 'ref', 'vis');
-        
+
         if isfile(fullfile(visFolderName, visFile))
-            vIn1 = VideoReader(fullfile(folderName, iFile)); %#ok<*TNMLP> 
+            vIn1 = VideoReader(fullfile(folderName, iFile)); %#ok<*TNMLP>
             vIn2 = VideoReader(fullfile(visFolderName, visFile));
             fprintf('%s - ref=%u, vis=%u\n', epochIDs(i),...
                 vIn1.NumFrames, vIn2.NumFrames);

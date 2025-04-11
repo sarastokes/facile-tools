@@ -67,10 +67,8 @@ function [videoNames, p] = processVideoPrep(experimentDir, epochIDs, varargin)
 
     ip = inputParser();
     ip.CaseSensitive = false;
-    addParameter(ip, 'ImagingSide', 'full',...
-        @(x) ismember(x, {'left', 'right', 'right_smallFOV', 'full', 'top'}));
-    addParameter(ip, 'RegistrationType', 'frame',...
-        @(x) ismember(x, {'frame', 'strip', 'none'}));
+    addParameter(ip, 'ImagingSide', 'full');
+    addParameter(ip, 'RegistrationType', 'frame');
     addParameter(ip, 'ImageSize', [496, 360], @isnumeric);
     addParameter(ip, 'BackgroundValue', 0, @isnumeric);
     addParameter(ip, 'Reflect', false, @islogical);
@@ -104,13 +102,7 @@ function [videoNames, p] = processVideoPrep(experimentDir, epochIDs, varargin)
         channelDir = fullfile(experimentDir, p.Channel);
     end
 
-    if ispc
-        f = ls(channelDir);
-        f = deblank(string(f));
-    else  % For Mac
-        d = dir(channelDir);
-        f = arrayfun(@(x) string(x.name), d, 'UniformOutput', true);
-    end
+    f = getFolderFiles(channelDir);
 
     % Get the video names and track which epochs are not found
     videoNames = containers.Map();

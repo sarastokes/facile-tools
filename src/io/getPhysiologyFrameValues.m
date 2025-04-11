@@ -22,20 +22,17 @@ function [T, frameRate] = getPhysiologyFrameValues(experimentDir, epochID)
     % History:
     %   11Feb2022 - SSP
     % ---------------------------------------------------------------------
-    
-    refDir = [experimentDir, filesep, 'Ref'];
 
-    refFiles = ls(refDir);
-    refFiles = deblank(string(refFiles));
-
+    refDir = fullfile(experimentDir, 'Ref');
+    refFiles = getFolderFiles(refDir);
     refFiles = refFiles(~contains(refFiles, 'motion') ...
         & contains(refFiles, 'ref') & endsWith(refFiles, 'csv'));
     ind = find(contains(refFiles, ['ref_', int2fixedwidthstr(epochID, 4)]));
-   
+
     if isempty(ind)
         error('Could not find %u in %s', epochID, refDir);
     end
-    epochFile = [refDir, filesep, char(refFiles(ind))];
+    epochFile = fullfile(refDir, char(refFiles(ind)));
 
     warning('off', 'MATLAB:table:ModifiedAndSavedVarnames');
     T = readtable(epochFile);
@@ -47,7 +44,7 @@ function [T, frameRate] = getPhysiologyFrameValues(experimentDir, epochID)
     % Add column for epoch-specific timing
     x = T.TimeStamp - T.TimeStamp(1) + T.TimeInterval(1);
     T.Timing = x / 1000;
-    
+
     % The final frames in the stimulus log weren't actually saved
     % Use the video size to determine which frames are relevant
     videoPath = strrep(epochFile, '.csv', '.avi');

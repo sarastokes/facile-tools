@@ -3,14 +3,14 @@ classdef Anatomy < handle
     properties (SetAccess = private)
         baseDirectory
         epochIDs
-        source 
+        source
         experimentDate
-        
+
         registrationDate
 
         imageNames
         refImageNames
-        
+
         droppedFrames
         translation
     end
@@ -27,7 +27,7 @@ classdef Anatomy < handle
             addParameter(ip, 'CheckDroppedFrames', true, @islogical);
             parse(ip, varargin{:});
             obj.registrationDate = ip.Results.RegistrationDate;
-            
+
             obj.experimentDate = datetime(expDate, 'Format', 'yyyyMMdd');
             if ~isa(source, 'ao.NHP')
                 obj.source = ao.NHP.init(source);
@@ -77,11 +77,11 @@ classdef Anatomy < handle
             else
                 imName = char(obj.imageNames(idx));
             end
-            
+
             if ip.Results.Frame
                 imName = strrep(imName, 'strip', 'frame');
             end
-            
+
             im = imread(imName);
             if ~ip.Results.Raw && ~isempty(obj.translation) && ismember(ID, obj.translation(:, 1))
                 idx = find(obj.translation(:, 1) == ID);
@@ -119,7 +119,7 @@ classdef Anatomy < handle
             addParameter(ip, 'Raw', false, @islogical);
             addParameter(ip, 'Log', false, @islogical);
             parse(ip, varargin{:});
-            
+
             videoName = [obj.baseDirectory, 'Analysis\Videos\',...
                 'vis_', int2fixedwidthstr(epochID, 4), '.tif'];
             disp(videoName)
@@ -131,8 +131,8 @@ classdef Anatomy < handle
             allDropped = obj.droppedFrames{obj.epoch2idx(epochID)};
             imStack(:, :, [1; allDropped]) = [];
             if ~isempty(allDropped)
-                fprintf('%s - dropped %u of %u frames\n',... 
-                    int2fixedwidthstr(epochID, 4), numel(allDropped),... 
+                fprintf('%s - dropped %u of %u frames\n',...
+                    int2fixedwidthstr(epochID, 4), numel(allDropped),...
                     size(imStack, 3) + numel(allDropped) + 1);
             end
 
@@ -154,7 +154,7 @@ classdef Anatomy < handle
         end
     end
 
-    methods 
+    methods
         function idx = epoch2idx(obj, epochID)
             idx = find(obj.epochIDs == epochID);
         end
@@ -171,39 +171,36 @@ classdef Anatomy < handle
             visDir = [obj.baseDirectory, 'Vis', filesep];
             refDir = [obj.baseDirectory, 'Ref', filesep];
 
-            fVis = ls(visDir);
-            fVis = deblank(string(fVis));
-            
-            fRef = ls(refDir);
-            fRef = deblank(string(fRef));
+            fVis = getFolderFiles(visDir);
+            fRef = getFolderFiles(refDir);
 
             nhp = char(obj.source);
             baseStr = [nhp(end-2:end), '_', char(obj.experimentDate), '_Vis_'];
 
             obj.imageNames = repmat("", [numel(obj.epochIDs), 1]);
             obj.refImageNames = repmat("", [numel(obj.epochIDs), 1]);
-            
+
             for i = 1:numel(obj.epochIDs)
                 % 1) Get the fluorescence image
-                videoStr = [baseStr, int2fixedwidthstr(obj.epochIDs(i), 4)];    
-                idx = find(startsWith(fVis, videoStr) & endsWith(fVis, '.tif')... 
+                videoStr = [baseStr, int2fixedwidthstr(obj.epochIDs(i), 4)];
+                idx = find(startsWith(fVis, videoStr) & endsWith(fVis, '.tif')...
                     & contains(fVis, 'strip') & ~contains(fVis, 'log'));
                 if isempty(idx)  % Just for 2Mar2020 - remove after fixing
-                    idx = find(startsWith(fVis, lower(videoStr)) & endsWith(fVis, '.tif')... 
+                    idx = find(startsWith(fVis, lower(videoStr)) & endsWith(fVis, '.tif')...
                         & contains(fVis, 'strip') & ~contains(fVis, 'log'));
                 end
-                
+
                 % Check for registrationDate, if provided
                 if ~isempty(obj.registrationDate)
                     idx = intersect(idx, find(contains(fVis, obj.registrationDate)));
                     if isempty(idx)
-                        error('epoch %u - no registered VIS images for %s',... 
+                        error('epoch %u - no registered VIS images for %s',...
                             obj.epochIDs(i), obj.registrationDate);
                     end
                 end
-                
+
                 if numel(idx) > 1
-                    warning('epoch %u - found %u registered VIS images, using the first',... 
+                    warning('epoch %u - found %u registered VIS images, using the first',...
                         obj.epochIDs(i), numel(idx));
                     idx = idx(1);
                 end
@@ -211,19 +208,19 @@ classdef Anatomy < handle
 
                 % 2) Get the reflectance image
                 videoStr = strrep(videoStr, 'Vis', 'ref');
-                idx = find(startsWith(fRef, videoStr) & endsWith(fRef, '.tif')... 
+                idx = find(startsWith(fRef, videoStr) & endsWith(fRef, '.tif')...
                     & contains(fRef, 'strip'));
                 % Check for registrationDate, if provided
                 if ~isempty(obj.registrationDate)
                     idx = intersect(idx, find(contains(fVis, obj.registrationDate)));
                     if isempty(idx)
-                        error('epoch %u - no registered REF images for %s',... 
+                        error('epoch %u - no registered REF images for %s',...
                             obj.epochIDs(i), obj.registrationDate);
                     end
                 end
                 % Check for duplicates
                 if numel(idx) > 1
-                    warning('epoch %u - found %u registered REF images, using the first',... 
+                    warning('epoch %u - found %u registered REF images, using the first',...
                         obj.epochIDs(i), numel(idx));
                     idx = idx(1);
                 end
@@ -235,10 +232,10 @@ classdef Anatomy < handle
             % CHECKDROPPEDFRAMES
             for i = 1:numel(obj.epochIDs)
                 obj.droppedFrames{i} = getDroppedFrames(...
-                    obj.baseDirectory, obj.epochIDs(i),... 
+                    obj.baseDirectory, obj.epochIDs(i),...
                     [num2str(double(obj.source)), '_', char(obj.experimentDate)]);
             end
         end
     end
 
-end 
+end

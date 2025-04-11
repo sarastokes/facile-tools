@@ -9,10 +9,8 @@ function droppedFrames = getDroppedFrames(baseDir, videoID, baseStr)
     % ---------------------------------------------------------------------
 
     if nargin == 3
-        refDir = [baseDir, '\Ref\'];
-
-        f = ls(refDir);
-        f = deblank(string(f));
+        refDir = fullfile(baseDir, 'Ref');
+        f = getFolderFiles(refDir);
 
         fileStr = [baseStr, '_ref_'];
 
@@ -30,10 +28,10 @@ function droppedFrames = getDroppedFrames(baseDir, videoID, baseStr)
 
         registrationReportFile = [refDir, char(f(idx))];
     elseif nargin == 2
-        registrationReportFile = [baseDir, '\Ref\', char(videoID)];
+        registrationReportFile = fullfile(baseDir, 'Ref', char(videoID));
     end
-    
-    
+
+
     T = readtable(char(registrationReportFile),...
         'ReadVariableNames', false, 'TextType', 'string');
     if size(T, 2) <= 5
@@ -57,7 +55,7 @@ function droppedFrames = getDroppedFrames(baseDir, videoID, baseStr)
         error([num2str(videoID), ' - check motion correction table size!']);
     end
 
-    
+
 
 
 

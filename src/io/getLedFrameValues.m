@@ -28,7 +28,7 @@ function [T, frameRate] = getLedFrameValues(experimentDir, epochID, videoPath)
         videoPath = [];
     end
 
-    refDir = [experimentDir, filesep, 'Ref'];
+    refDir = fullfile(experimentDir, "Ref");;
 
     refFiles = dir(refDir);
     ind = find(arrayfun(@(x) contains(x.name, 'csv') & contains(x.name, 'ref')...
@@ -37,7 +37,7 @@ function [T, frameRate] = getLedFrameValues(experimentDir, epochID, videoPath)
     if isempty(ind)
         error('Could not find %u in %s', epochID, refDir);
     end
-    epochFile = [refDir, filesep, refFiles(ind).name];
+    epochFile = fullfile(refDir, refFiles(ind).name);
 
     warning('off', 'MATLAB:table:ModifiedAndSavedVarnames');
     T = readtable(epochFile);

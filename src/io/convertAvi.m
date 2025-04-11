@@ -1,6 +1,6 @@
 function convertAvi(folderName, epochIDs)
 % CONVERTAVI
-% 
+%
 % Description:
 %   Converts Primate 1P system videos into a format readable by Qiang's
 %   ImageReg software. Videos that have already been registered or
@@ -20,15 +20,15 @@ function convertAvi(folderName, epochIDs)
 %   % Convert videos 1-10 in the "Ref" folder
 %   convertAvi('C:/Users/yourname/MC00838_20221122/Ref', 1:10)
 
-%   Sara Patterson, 2023 (facile-tools) 
+%   Sara Patterson, 2023 (facile-tools)
 % -------------------------------------------------------------------------
 
     arguments
-        folderName      string      {mustBeFolder(folderName)}    
-        epochIDs        double      {mustBeInteger(epochIDs)} 
+        folderName      string      {mustBeFolder(folderName)}
+        epochIDs        double      {mustBeInteger(epochIDs)}
     end
 
-    allFiles = deblank(string(ls(folderName)));
+    allFiles = getFolderFiles(folderName);
     aviFiles = allFiles(endsWith(allFiles, ".avi"));
     % Remove registered videos
     aviFiles = aviFiles(~contains(aviFiles, ["frame", "strip"]));
@@ -36,9 +36,9 @@ function convertAvi(folderName, epochIDs)
     rawFiles = aviFiles(~endsWith(aviFiles, "O.avi"));
 
     for i = 1:numel(epochIDs)
-        
-        if ~isempty(find(contains(aviFiles, sprintf("%04.0fO.avi", epochIDs(i))))) %#ok<EFIND> 
-            warning('File already converted for ID %u, skipping...',... 
+
+        if ~isempty(find(contains(aviFiles, sprintf("%04.0fO.avi", epochIDs(i))))) %#ok<EFIND>
+            warning('File already converted for ID %u, skipping...',...
                 epochIDs(i))
             continue
         end
@@ -48,14 +48,14 @@ function convertAvi(folderName, epochIDs)
 
         % Catch unexpected results
         if isempty(iFile)
-            warning('No file found for ID %u (%s), skipping...',... 
+            warning('No file found for ID %u (%s), skipping...',...
                 epochIDs(i), sprintf("%04.0f", epochIDs(i)));
             continue
         elseif numel(iFile) > 1
             % Was the match within the monkey ID or date?
             iFile = iFile(contains(iFile, sprintf("_%04.0f", epochIDs(i))));
             if numel(iFile) > 1
-                warning('Found %u files for ID %u, skipping...',... 
+                warning('Found %u files for ID %u, skipping...',...
                     numel(iFile), epochIDs(i));
                 continue
             end
@@ -63,9 +63,9 @@ function convertAvi(folderName, epochIDs)
 
         % Append a O to the end of the new video
         newFile = strrep(iFile, ".avi", "O.avi");
-        
+
         % Import the old video
-        vIn = VideoReader(fullfile(folderName, iFile)); %#ok<*TNMLP> 
+        vIn = VideoReader(fullfile(folderName, iFile)); %#ok<*TNMLP>
         frames = vIn.NumFrames;
         fps = vIn.FrameRate;
 
@@ -80,7 +80,7 @@ function convertAvi(folderName, epochIDs)
         end
 
         close(vOut);
-        
+
         fprintf('%04.0f - %s\n', epochIDs(i), iFile);
     end
 end

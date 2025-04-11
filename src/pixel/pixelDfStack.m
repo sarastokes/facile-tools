@@ -1,41 +1,41 @@
 function [fStack, secondStack] = pixelDfStack(imStack, bkgdWindow, varargin)
-    % PIXELDFSTACK
-    %
-    % Description:
-    %   Convert fluorescence video pixels to dF
-    %
-    % Syntax:
-    %   fStack = pixelDfStack(imStack, bkgdWindow, varargin)
-    %
-    % Inputs:
-    %   imStack         [x, y, t]
-    %       Calcium imaging video
-    %   bkgdWindow      1x2
-    %       Start and stop frames for calculating baseline fluorescence
-    %
-    % Optional key/value inputs:
-    %   downsampFac         integer
-    %       How much to downsample the video (default = no downsampling)
-    %   smoothFac           integer
-    %       How much to smooth the data in time (default = no smoothing)
-    %   highPass            double
-    %       Cutoff frequency for high pass filtering (default = none)
-    %   gaussFac            integer
-    %       How much to spatially smooth the data with imgaussfilt
-    %   normFlag            logical
-    %       Whether to normalize and center the output for visualization
-    %   secondStack         double
-    %       Second video to process similarly (good for matching stim)
-    %
-    % See also:
-    %   DOWNSAMPLEMEAN, MYSMOOTH2, IMGAUSSFILT
-    %
-    % History:
-    %   05May2022 - SSP
-    %   12Jun2022 - SSP - Added second stack option
-    %   21Jun2022 - SSP - Added normalization option
-    %   10Nov2023 - SSP - Added high pass filter and frame rate options
-    % ---------------------------------------------------------------------
+% PIXELDFSTACK
+%
+% Description:
+%   Convert fluorescence video pixels to dF
+%
+% Syntax:
+%   fStack = pixelDfStack(imStack, bkgdWindow, varargin)
+%
+% Inputs:
+%   imStack         [x, y, t]
+%       Calcium imaging video
+%   bkgdWindow      1x2 integer
+%       Start and stop frames for calculating baseline fluorescence
+%
+% Optional key/value inputs:
+%   DownsampFac         integer
+%       How much to downsample the video (default = no downsampling)
+%   SmoothFac           integer
+%       How much to smooth the data in time (default = no smoothing)
+%   HighPass            double
+%       Cutoff frequency for high pass filtering (default = none)
+%   GaussFac            integer
+%       How much to spatially smooth the data with imgaussfilt
+%   Norm                logical
+%       Whether to normalize and center the output for visualization
+%   SecondStack         double
+%       Second video to process similarly (good for matching stim)
+%
+% See also:
+%   DOWNSAMPLEMEAN, MYSMOOTH2, IMGAUSSFILT
+%
+% History:
+%   05May2022 - SSP
+%   12Jun2022 - SSP - Added second stack option
+%   21Jun2022 - SSP - Added normalization option
+%   10Nov2023 - SSP - Added high pass filter and frame rate options
+% ---------------------------------------------------------------------
 
     ip = inputParser();
     ip.CaseSensitive = false;

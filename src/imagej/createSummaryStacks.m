@@ -9,7 +9,7 @@ function createSummaryStacks(experimentDir, epochIDs, filePrefix, saveFlag)
 %   filePrefix          string
 %       Prefix for the summary stack files (e.g., 838_ODR_20241108)
 % Optional inputs:
-%   saveFlag            logical (default = true)
+%   saveFlag            logical (default = false)
 %       Whether to save the summary stacks
 %
 % See also:
@@ -20,7 +20,7 @@ function createSummaryStacks(experimentDir, epochIDs, filePrefix, saveFlag)
         experimentDir       string {mustBeFolder}
         epochIDs            double {mustBeInteger}
         filePrefix          string
-        saveFlag            logical = true
+        saveFlag            logical = false
     end
 
     epochIDs = sort(epochIDs);
@@ -31,7 +31,7 @@ function createSummaryStacks(experimentDir, epochIDs, filePrefix, saveFlag)
         "saveFlag", saveFlag);
 
     assignin('base', 'summaryStackParameters', summaryStackParameters);
-    evalin('base', 'makeSummaryStacks(summaryStackParameters)');
+    evalin('base', 'run(''MakeSummaryStacks.m'')');
 
 % MAKESUMMARYSTACKS2
 %

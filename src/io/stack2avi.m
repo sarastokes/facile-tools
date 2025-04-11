@@ -11,7 +11,7 @@ function stack2avi(imStack, videoName)
         videoName = [videoName, '.avi'];
     end
 
-    v = VideoWriter(videoName, 'Grayscale AVI'); %#ok<TNMLP> 
+    v = VideoWriter(videoName, 'Grayscale AVI');
     v.FrameRate = 25;
     open(v);
 
