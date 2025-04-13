@@ -1,7 +1,7 @@
 function fileNames = getFolderFiles(folderName)
 
     arguments
-        folderName    (1,1)  {mustBeFolder}
+        folderName      {mustBeFolder}
     end
 
 

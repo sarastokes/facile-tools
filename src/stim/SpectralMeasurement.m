@@ -21,6 +21,7 @@ classdef SpectralMeasurement < handle & matlab.mixin.Heterogeneous
         power           % uW
         beamArea        % cm2
         spectra         % uW/nm/cm2
+        peakWavelength  % nm
     end
 
     methods
@@ -78,6 +79,7 @@ classdef SpectralMeasurement < handle & matlab.mixin.Heterogeneous
         end
     end
 
+    % Dependent set/get methods
     methods
         function out = get.power(obj)
             % Multiply by spectral resolution, then integrate
@@ -99,6 +101,11 @@ classdef SpectralMeasurement < handle & matlab.mixin.Heterogeneous
             end
         end
 
+        function out = get.peakWavelength(obj)
+            [~, idx] = max(obj.spectra);
+            out = obj.wavelengths(idx);
+        end
+
         function out = get.beamArea(obj)
             % Beam area (cm2) from beam diameter (mm)
             beamRadius = obj.beamDiameter / 2;          % cm
@@ -107,7 +114,6 @@ classdef SpectralMeasurement < handle & matlab.mixin.Heterogeneous
     end
 
     methods
-
         function out = getCleanIrradiance(obj)
             % Returns spectra with background subtracted and cutoff applied
             % but no NDF attenuation.
@@ -137,7 +143,6 @@ classdef SpectralMeasurement < handle & matlab.mixin.Heterogeneous
     end
 
     methods (Access = private)
-
         function getResolution(obj)
             obj.resolution = zeros(size(obj.wavelengths));
 

@@ -95,18 +95,15 @@ for i = 1:numel(k)
         end
         p.YLim =[0 p.ImageSize(2)];
     end
+
+    if ~isfield(p, 'YLim') || isempty(p.YLim)
+        p.YLim = [0 p.ImageSize(2)];
+    end
+
     if ~isempty(p.XLim)
         IJ.run("Specify...", java.lang.String(sprintf("width=%d height=%d x=%d y=%d",...
             p.XLim(2)-p.XLim(1), p.YLim(2)-p.YLim(1), p.XLim(1), p.YLim(1))));
     end
-
-    % Crop to a standardized size, if needed (default "full" doesn't crop)
-    % if ~isempty(char(p.ImagingSide)) && ~strcmp(p.ImagingSide, 'full') && ~isempty(p.ImageSize)
-    %     txt = getLegacyFovCropString(p);
-    %     if txt ~= ""
-    %         IJ.run("Specify...", txt);
-    %     end
-    % end
 
     IJ.run("Duplicate...", java.lang.String(['title=', newTitle, ' duplicate']));
 

@@ -364,6 +364,8 @@ classdef Stimuli
         IntensityIncrement1On4OffSquares4x4
         IntensityIncrement1On4OffSquares4x4Baseline
         IntensityIncrement1On4OffSquares6x6
+        IntensityIncrement3On3OffSquares4x4
+        IntensityIncrement3On3OffSquares4x4Baseline
 
         % SEQUENTIALBARS --------------------------------------------------
         SequentialBarDecrement4to12of16
@@ -573,6 +575,30 @@ classdef Stimuli
             stim = 0.5 * ones(1, obj.frames());
 
             stimName = char(obj);
+
+            if contains(stimName, 'Squares')
+                preTime = 20; tailTime = 20; % sec
+                squareTime = extractFlaggedNumber(stimName, 'On');
+                postSquareTime = extractFlaggedNumber(stimName, 'Off');
+                
+                if contains(stimName, '4x4')
+                    numSquares = 16;
+                elseif contains(stimName, '6x6')
+                    numSquares = 36;
+                end
+                totalTime = preTime + tailTime + numSquares * (squareTime + postSquareTime);
+                stim = zeros(1, totalTime*25);
+                if ~contains(stimName, "Baseline")
+                    startFrame = preTime * 25; % start at 20 sec
+                    for i = 1:numSquares
+                        startFrame = startFrame + 1;
+                        stopFrame = startFrame + (squareTime*25);
+                        stim(startFrame:stopFrame) = 1;
+                        startFrame = 25*(squareTime+postSquareTime) + startFrame;
+                    end
+                end
+            end
+            
             switch obj
                 case Stimuli.IntensityIncrement1s80t
                     stim = zeros(1, obj.frames());
@@ -668,25 +694,6 @@ classdef Stimuli
                     for i  = 1:numel(barTimes)
                         stim(barTimes(i):barTimes(i)+numel(barTrace)-1) = barTrace;
                     end
-                case {Stimuli.IntensityIncrement1On4OffSquares4x4, Stimuli.IntensityIncrement1On4OffSquares6x6}
-                    preTime = 20; tailTime = 20; % sec
-                    squareTime = 1; postSquareTime = 4;
-                    if contains(char(obj), '4x4')
-                        numSquares = 16;
-                    elseif contains(char(obj), '6x6')
-                        numSquares = 36;
-                    end
-                    totalTime = preTime + tailTime + numSquares * (squareTime + postSquareTime);
-                    stim = zeros(1, totalTime*25);
-                    startFrame = preTime * 25; % start at 20 sec
-                    for i = 1:numSquares
-                        startFrame = startFrame + 1;
-                        stopFrame = startFrame + (squareTime*25);
-                        stim(startFrame:stopFrame) = 1;
-                        startFrame = 25*(squareTime+postSquareTime) + startFrame;
-                    end
-                case {Stimuli.IntensityIncrement1On4OffSquares4x4Baseline}
-                    stim = zeros(1, obj.frames);
                 otherwise
                     if contains(stimName, 'HorizontalDecrementIncrement')
                         stim(:, 251:750) = 0;
@@ -739,9 +746,12 @@ classdef Stimuli
                 truncate = true;
             end
 
+            if contains(char(obj), 'Baseline')
+                bkgd = [];
+                return
+            end
+
             switch obj
-                case {Stimuli.Baseline, Stimuli.BaselineLong, Stimuli.BaselineLongZeroMean, Stimuli.BaselineZeroMean}
-                    bkgd = [];
                 case {Stimuli.Chirp, Stimuli.LuminanceChirp}
                     bkgd = [1 190];
                 case {Stimuli.ContrastDecrement20Long, Stimuli.ContrastIncrement20Long, Stimuli.IntensityIncrement20s80t, Stimuli.IntensityIncrement10s80t, Stimuli.LightsOn}
@@ -860,10 +870,12 @@ classdef Stimuli
                         signal = [3250, 3750];
                     elseif contains(char(obj), 'TemporalNoise') || contains(char(obj), 'TemporalBinaryNoise')
                         signal = [251 1375];
+                    else
+                        signal = [];
                     end
             end
 
-            if truncate
+            if truncate && ~isempty(signal)
                 signal = signal - 1;
             end
         end
@@ -876,6 +888,9 @@ classdef Stimuli
             epochIDs = epochIDs{1};
 
             titleStr = [char(epochGroup.experimentDate), ' ', char(obj)];
+
+            app = RoiAverageView2(epochGroup, epochIDs, obj.bkgd, obj.signal, titleStr, obj.trace());
+            return
 
             switch obj
                 case {Stimuli.ContrastDecrement20, Stimuli.ContrastIncrement20, Stimuli.ContrastDecrement10Half, Stimuli.ContrastDecrement20Half, Stimuli.ContrastDecrement20Long, Stimuli.ContrastIncrement20Long, Stimuli.ContrastIncrement20s80t, Stimuli.ContrastDecrement20s80t, Stimuli.ContrastDecrement10, Stimuli.ContrastDecrement5, Stimuli.ContrastDecrement3}
@@ -914,6 +929,9 @@ classdef Stimuli
                     elseif contains(char(obj), 'Cone')
                         app = RoiAverageView2(epochGroup, epochIDs, obj.bkgd,...
                             obj.signal, titleStr);
+                    elseif contains(char(obj), 'Square')
+                        app = RoiAverageView2(epochGroup, epochIDs, obj.bkgd,...
+                            obj.signal, titleStr, obj.trace());
                     elseif contains(char(obj), {'TopticaSim', 'IntensityIncrement', 'LightsOn'})
                         app = RoiAverageView2(epochGroup, epochIDs, obj.bkgd, obj.signal, titleStr);
                     elseif endsWith(char(obj), 'c20s70t')
@@ -1034,7 +1052,7 @@ classdef Stimuli
 
                 case 'zero_mean_increment_1s_80t'
                     obj = Stimuli.IntensityIncrement1s80t;
-                case 'zero_mean_increment_3s_80t'
+                case {'zero_mean_increment_3s_80t', 'fullfield_intensity_increment_3s'}
                     obj = Stimuli.IntensityIncrement3s80t;
                 case 'zero_mean_increment_5s_80t'
                     obj = Stimuli.IntensityIncrement5s80t;
@@ -1124,6 +1142,12 @@ classdef Stimuli
                     obj = Stimuli.TemporalBinaryNoise35;
                 case 'temporal_binary_noise_42'
                     obj = Stimuli.TemporalBinaryNoise42;
+            % Squares
+                case 'square_4x4_3secon_3secoff_quad'
+                    obj = Stimuli.IntensityIncrement3On3OffSquares4x4;
+                case 'square_4x4_3secon_3secoff_quad_baseline'
+                    obj = Stimuli.IntensityIncrement3On3OffSquares4x4Baseline;
+            % Bars
                 case 'sequential_bar_dec_4_to_12_of_16'
                     obj = Stimuli.SequentialBarDecrement4to12of16;
                 case 'bar_decrement_1_of_16'

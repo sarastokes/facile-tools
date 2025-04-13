@@ -64,10 +64,12 @@ classdef RoiAverageView2 < handle
             if nargin < 5
                 titleStr = char(data.experimentDate);
             end
-            obj.titleStr = titleStr;
-            if nargin > 5
-                obj.stim = stim;
+            if nargin < 6
+                stim = [];
             end
+
+            obj.titleStr = titleStr;
+            obj.stim = stim;
 
             [obj.signals, obj.xpts] = data.getEpochResponses(epochIDs, bkgdWindow);
             if isempty(bkgdWindow) %&& ~isnan(bkgdWindow)

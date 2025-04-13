@@ -20,7 +20,7 @@ function ts = readTiffStack(fileName)
     end
 
     imInfo = imfinfo(fileName);
-    nFrames = size(imfinfo(fileName), 1);
+    nFrames = size(imInfo, 1);
 
     ts = zeros(imInfo(1).Height, imInfo(1).Width, 'uint8');
 

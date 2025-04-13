@@ -60,6 +60,7 @@ classdef GammaRampMeasurement < handle
         calibrationDate
         beamDiameter                (1,1)       double       % mm
         NDF                         (1,1)       double = 0
+        omittedValues                           double = []
         importProps                 (1,1)       struct
     end
 
@@ -70,6 +71,7 @@ classdef GammaRampMeasurement < handle
         wavelengths                             double
         powers                                  double
         maxPower                    (1,1)       double
+        peakWavelength
     end
 
     methods
@@ -85,6 +87,7 @@ classdef GammaRampMeasurement < handle
                 opts.NDF        (1,1)   double      {mustBeNonnegative} = 0
                 opts.MinWL      (1,1)   double      {mustBeScalarOrEmpty} = []
                 opts.MaxWL      (1,1)   double      {mustBeScalarOrEmpty} = []
+                opts.OmittedValues                  = []
             end
 
             obj.lightSource = lightSource;
@@ -92,12 +95,23 @@ classdef GammaRampMeasurement < handle
             obj.NDF = opts.NDF;
             obj.beamDiameter = beamDiameter;
             obj.calibrationDate = calibrationDate;
+            obj.setOmittedValues(opts.OmittedValues);
 
             obj.importProps = struct(...
                 'Folder', filePath, 'Token', opts.Token,...
                 'MinWL', opts.MinWL, 'MaxWL', opts.MaxWL);
 
             obj.importMeasurements();
+        end
+
+        function setOmittedValues(obj, badValues)
+            if isempty(badValues)
+                obj.omittedValues = [];
+                return
+            end
+
+            mustBeMember(badValues, obj.values);
+            obj.omittedValues = sort(badValues);
         end
 
         function setNDF(obj, ndf)
@@ -151,10 +165,15 @@ classdef GammaRampMeasurement < handle
 
             out = obj.getNormalizedSpectra();
         end
+
+        function out = get.peakWavelength(obj)
+            out = obj.Measurements(end).peakWavelength();
+        end
     end
 
     % Core methods
     methods
+
         function out = getNormalizedSpectra(obj, targetValue)
             if nargin < 2
                 targetValue = max(obj.intensities);
@@ -165,7 +184,11 @@ classdef GammaRampMeasurement < handle
             out = out / max(out);
         end
 
-        function T = getLUT(obj, targetValues)
+        function T = getLUT(obj, targetValues, fitType)
+            if nargin < 3
+                fitType = 'none';
+            end
+
             if any(~ismember(targetValues, obj.intensities))
                 % Interpolate to the provided target values if needed
                 pwr = obj.interpolate(targetValues);
@@ -173,27 +196,31 @@ classdef GammaRampMeasurement < handle
                 pwr = obj.powers;
             end
 
-            T = table(targetValues', pwr',...
+            [~, idx] = sort(targetValues);
+
+            T = table(targetValues(idx)', pwr(idx)',...
                 'VariableNames', {'Input', 'Power'});
+            T = obj.fitLut(T, fitType, targetValues);
         end
     end
 
     % File output methods
     methods
-        function writeLUT(obj, savePath, targetValues)
+        function writeLUT(obj, savePath, targetValues, fitType)
             % Saves the lookup table in a file matching Qiang's AOSLO
             % software specifications (e.g., 0.1 V increments)
             arguments
                 obj
                 savePath        (1,1)   string  {mustBeFolder}
                 targetValues    (1,:)   double  = 0:0.1:5
+                fitType                         = 'none'
             end
 
             fName = sprintf('%s_%s_LUT_%sndf.txt',...
                 obj.lightSource, obj.calibrationDate, num2str(10*obj.NDF));
             fName = fullfile(savePath, fName);
 
-            T = obj.getLUT(targetValues);
+            T = obj.getLUT(targetValues, fitType);
             % Variable names wanted by Qiang's AOSLO code...
             T.Properties.VariableNames = {'VOLTAGE', 'POWER'};
             writetable(T, fName, 'Delimiter', '\t')
@@ -210,7 +237,7 @@ classdef GammaRampMeasurement < handle
 
             data = obj.getNormalizedSpectra(targetValue);
             if fName == ""
-                fName = sprintf('%s_%s_%sndf_%s.txt',...
+                fName = sprintf('%s_%s_%sndf.txt',...
                     obj.lightSource, obj.calibrationDate, num2str(10*obj.NDF));
             end
 
@@ -260,22 +287,38 @@ classdef GammaRampMeasurement < handle
             end
         end
 
-        function plotLUT(obj, targetValues)
+        function plotLUT(obj, targetValues, opts)
             arguments
                 obj
-                targetValues        (1,:)   double = obj.intensities
+                targetValues        (1,:)   double  = obj.intensities
+                opts.Parent                         = []
+                opts.Color                         = [0 0 1]
+                opts.FitType                      = 'none'
             end
 
-            if any(~ismember(targetValues, obj.intensities))
-                pwr = obj.interpolate(targetValues);
-            else
-                pwr = obj.powers;
+            lut = obj.getLUT(targetValues, opts.FitType);
+
+            if isempty(opts.Parent)
+                opts.Parent = axes('Parent', figure('Name', sprintf('%s LUT', obj.lightSource)));
             end
-            figure('Name', sprintf('%s LUT', obj.lightSource));
-            ax = gca;
-            hold(ax, 'on');
-            plot(targetValues, pwr, '-ob', 'MarkerFaceColor', [0.5 0.5 1]);
+
+            hold(opts.Parent, 'on');
+            plot(lut.Input, lut.Power, '-o',...
+                'MarkerEdgecolor', opts.Color,...
+                'MarkerFaceColor', lighten(opts.Color, 0.5));
             xlabel('Voltage (V)'); ylabel('Power (uW)');
+        end
+
+        function plotBoth(obj, targetValues)
+            if nargin < 2
+                targetValues = obj.intensities;
+            end
+
+            figure();
+            subplot(2, 1, 1); hold on;
+            obj.plotSpectra("Parent", gca);
+            subplot(2, 1, 2);
+            obj.plotLUT(targetValues, "Parent", gca);
         end
 
         function compareNormalizedSpectra(obj, plotValues)
@@ -318,7 +361,7 @@ classdef GammaRampMeasurement < handle
 
             [sortedValues, idx] = sort(obj.values);
             obj.Measurements = obj.Measurements(idx);
-            
+
             if sortedValues(1) == 0
                 arrayfun(@(x) setBackground(x, obj.Measurements(1).spectra0), obj.Measurements(2:end));
             end
@@ -330,7 +373,41 @@ classdef GammaRampMeasurement < handle
                 error('Values out of range');
             end
 
-            out = interp1(obj.intensities, obj.powers, targetValues);
+            validIntensities = obj.intensities(~ismember(obj.intensities, obj.omittedValues));
+            validPowers = obj.powers(~ismember(obj.intensities, obj.omittedValues));
+
+            out = interp1(validIntensities, validPowers, targetValues);
+        end
+    end
+
+    methods (Static, Access = private)
+        function lutFit = fitLut(lut, fitType, targetValues)
+
+            targetValues = targetValues(:);
+
+            switch fitType
+                case 'poly8'
+                    [fitFcn, gof] = fit(lut.Input, lut.Power,...
+                        fittype('poly8'), 'Normalize', 'on');
+                case 'linear'
+                    ft = fittype('a*x+b', 'Independent', 'x', 'Dependent', 'y');
+                    opts = fitoptions('Method', 'NonlinearLeastSquares',...
+                        'StartPoint', [max(lut.Power)/max(lut.Input) 0]);
+
+                    [fitFcn, gof] = fit(lut.Input, lut.Power, ft, opts);
+                case 'none'
+                    lutFit = lut;
+                    return
+            end
+
+            lutFit = table(targetValues, fitFcn(targetValues),...
+                'VariableNames', {'Input', 'Power'});
+            lutFit = sortrows(lutFit, "Input");
+            lutFit.Power(1) = lut.Power(1);
+            lutFit.Power(end) = lut.Power(end);
+            lutFit.Power(lutFit.Power < 0) = 0;
+
+            fprintf('Fit %s r2 = %.3f\n', fitType, gof.rsquare);
         end
     end
 end

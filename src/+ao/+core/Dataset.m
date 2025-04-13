@@ -107,9 +107,7 @@ classdef Dataset < handle
         % Development
         extraLabel          char
         warningIDs          double
-        analysisRegion
         importThreshold     uint8 = uint8(0)
-        transformToReference
     end
 
     % Rarely used/accessed properties, properties under development
@@ -118,6 +116,8 @@ classdef Dataset < handle
         notes                   % cell
         roiMeans
         transformRois           logical = false
+        analysisRegion
+        transformToReference
         originalVideos          % Visible channel raw video names
         registrationReports     % Registration report file names
         registrationDate        % Date of video registration
@@ -133,6 +133,7 @@ classdef Dataset < handle
     end
 
     properties (Dependent)
+        experimentDir
         numCached
         numEpochs
         numTransforms
@@ -141,7 +142,6 @@ classdef Dataset < handle
     properties (Hidden, Dependent)
         videoCache
         baseImageSize
-        experimentDir
     end
 
     properties (Hidden, Transient, Access = protected)
@@ -1648,8 +1648,15 @@ classdef Dataset < handle
             obj.registeredVideos = strrep(obj.registeredVideos, other, filesep);
             obj.baseDirectory = strrep(obj.baseDirectory, other, filesep);
             obj.workingDirectory = strrep(obj.workingDirectory, other, filesep);
-            obj.roiFileName = strrep(obj.roiFileName, other, filesep);
-            obj.tformFileName = strrep(obj.tformFileName, other, filesep);
+            if ~isempty(obj.roiFileName)
+                obj.roiFileName = strrep(obj.roiFileName, other, filesep);
+            end
+            if ~isempty(obj.tformFileName)
+                obj.tformFileName = strrep(obj.tformFileName, other, filesep);
+            end
+            if ~isempty(obj.ledVideoNames)
+                obj.ledVideoNames = strrep(obj.ledVideoNames, other, filesep);
+            end
         end
     end
 

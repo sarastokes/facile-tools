@@ -33,6 +33,10 @@ function [videoNames, p] = processVideoPrep(experimentDir, epochIDs, varargin)
 %       Whether data was generated using the old LED setup (default = false)
 %   ExtraToken          string
 %       Additional token to use when searching for files (default = [])
+%   XLim             numeric    [2x1]
+%       X limits for cropping the video (default = [])
+%   YLim             numeric    [2x1]
+%       Y limits for cropping the video (default = [])
 %
 % Example:
 %   [videoNames, p] = preprocessVideoPrep(...
@@ -57,6 +61,7 @@ function [videoNames, p] = processVideoPrep(experimentDir, epochIDs, varargin)
 %   26Oct2022 - SSP - Extra token option for Tyler's data
 %   09Nov2022 - SSP - Added UseFirst option (false = use last)
 %   13Dec2024 - SSP - Simplified FOV specification
+%   12Apr2025 - SSP - Added X and Y limit specification for cropping
 % -------------------------------------------------------------------------
 
     % Ensure experiment folder path ends with a filesep
@@ -72,10 +77,12 @@ function [videoNames, p] = processVideoPrep(experimentDir, epochIDs, varargin)
     addParameter(ip, 'ImageSize', [496, 360], @isnumeric);
     addParameter(ip, 'BackgroundValue', 0, @isnumeric);
     addParameter(ip, 'Reflect', false, @islogical);
-    addParameter(ip, 'UseFirst', true, @islogical);
+    addParameter(ip, 'UseFirst', false, @islogical);
     addParameter(ip, 'Channel', 'vis', @ischar);
     addParameter(ip, 'UsingOldLEDs', false, @islogical);
     addParameter(ip, 'ExtraToken', [], @ischar);
+    addParameter(ip, 'XLim', [], @isnumeric);
+    addParameter(ip, 'YLim', [], @isnumeric);
     parse(ip, varargin{:});
 
     regType = ip.Results.RegistrationType;
