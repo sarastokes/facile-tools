@@ -923,9 +923,9 @@ classdef Dataset < handle
 
             for i = 1:numel(obj.epochIDs)
                 if ~isempty(obj.extraHeader)
-                    ind = find(contains(refFiles, ['ref_', int2fixedwidthstr(obj.epochIDs(i), 4)]));
+                    ind = find(contains(refFiles, ['ref_', int2fixedwidthstr(obj.epochIDs(i), 4)], 'IgnoreCase', true));
                 else
-                    ind = find(contains(refFiles, [obj.extraHeader, '_ref_', int2fixedwidthstr(obj.epochIDs(i), 4)]));
+                    ind = find(contains(refFiles, [obj.extraHeader, '_ref_', int2fixedwidthstr(obj.epochIDs(i), 4)], 'IgnoreCase', true));
                 end
                 if isempty(ind)
                     warning('Epoch %u - no registration file found!', obj.epochIDs(i));
@@ -1678,7 +1678,7 @@ classdef Dataset < handle
             % -------------------------------------------------------------
             refFiles = getFolderFiles(fullfile(obj.baseDirectory, "Ref"));
             refFiles = refFiles(contains(refFiles, '.txt'));
-            refFiles = refFiles(contains(refFiles, ['ref_', int2fixedwidthstr(epochID,4)]));
+            refFiles = refFiles(contains(refFiles, ['ref_', int2fixedwidthstr(epochID,4)], 'IgnoreCase', true));
             refFiles = refFiles(~contains(refFiles, 'params'));
             try
                 filePath = fullfile(obj.baseDirectory, "Ref", refFiles(1));

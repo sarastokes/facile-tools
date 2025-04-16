@@ -17,7 +17,6 @@ classdef DatasetLED2 < ao.core.Dataset
 
             obj.frameTables = containers.Map();
             obj.ledTables = containers.Map();
-            obj.stimWindows = zeros(numel(obj.epochIDs), 2);
 
             obj.loadFrameTraces();
             obj.loadLedTraces();
