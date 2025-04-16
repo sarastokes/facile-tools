@@ -131,14 +131,14 @@ function [videoNames, p] = processVideoPrep(experimentDir, epochIDs, varargin)
         % Sort through the file names for the correct video
         if strcmpi(regType, 'none')
             % Unregistered doesn't contain "strip" or "frame"
-            idx = find(contains(f, videoStr) & endsWith(f, '.avi') & ~contains(f, 'strip') & ~contains(f, 'frame'));
+            idx = find(contains(f, videoStr, 'IgnoreCase', true) & endsWith(f, '.avi') & ~contains(f, 'strip') & ~contains(f, 'frame'));
         else % Look for "strip" or "frame"
-            idx = find(contains(f, videoStr) & endsWith(f, '.avi') & contains(f, regType));
+            idx = find(contains(f, videoStr, 'IgnoreCase', true) & endsWith(f, '.avi') & contains(f, regType));
         end
 
         % Filter by an extra token, if needed
         if ~isempty(extraToken)
-            idx = find(contains(f, extraToken));
+            idx = find(contains(f, extraToken), 'IgnoreCase', true);
         end
 
         % Warn user if no video was found
