@@ -988,6 +988,9 @@ classdef Dataset < handle
             else
                 videoName = char(obj.registeredVideos(idx));
             end
+            if ismac
+                videoName = strrep(videoName, '/', filesep);
+            end
             disp(videoName)
             tic;
             if endsWith(videoName, '.mat')
