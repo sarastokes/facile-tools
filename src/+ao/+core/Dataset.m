@@ -663,6 +663,10 @@ classdef Dataset < handle
                 else
                     roiFile = obj.roiFileName;
                 end
+
+                if ismac
+                    roiFile = strrep(roiFile, '\', '/');
+                end
                 obj.loadROIs(char(roiFile));
             else
                 warning('No roiFileName found, rois not reloaded!');
