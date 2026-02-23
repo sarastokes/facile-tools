@@ -989,7 +989,7 @@ classdef Dataset < handle
                 videoName = char(obj.registeredVideos(idx));
             end
             if ismac
-                videoName = strrep(videoName, '\', filesep);
+                videoName = strrep(videoName, '\', '/');
             end
             disp(videoName)
             tic;
