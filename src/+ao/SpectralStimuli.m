@@ -117,6 +117,7 @@ classdef SpectralStimuli
         SconeSquare5p10s160t
         SconeSquare10p10s160t
         SconeSquare18p10s160t
+        SconeSquare20p10s160t
         SconeSquare30p10s160t
         SconeSquare40p10s160t
         SconeSquare50p10s160t
@@ -204,6 +205,7 @@ classdef SpectralStimuli
 
         SConeSquare1hz20p120t
         SConeSquare10hz10p120t
+        SConeSquare10hz20p120t
         SConeSquare10hz30p120t
 
         LuminanceSquare10hz10c10p120t
@@ -539,6 +541,7 @@ classdef SpectralStimuli
         RgwSeq175m5s20p160t
 
         BcgmrywSeq50m5s10p130t
+        BcgmrySeq75m5s20p120t
 
     %% Toptica simulations
         TopticaSimBaselineAdapt
@@ -1137,10 +1140,6 @@ classdef SpectralStimuli
             elseif contains(char(obj), 'Chirp') && ~contains(char(obj), 'FullChirp')
                 app = RoiAverageView2(dataset, epochIDs, obj.bkgd,...
                     obj.signal, titleStr, dataset.getEpochTrace(epochIDs(1)));
-            % elseif contains(char(obj), 'LuminanceSquare') & ~contains(char(obj), 'hz')
-            %     [ups, downs] = dataset.getStimWindows(dataset.epoch2stim(epochIDs(1)));
-            %     app = RoiAverageView2(dataset, epochIDs, obj.bkgd,...
-            %         cat(3, ups, downs), titleStr, dataset.getEpochTrace(epochIDs(1),4));
             elseif contains(char(obj), {'SconeSquare', 'IntensityIncrement', 'LuminanceSquare','BlueIncrement'}) && ~contains(char(obj), 'Squarewave')
                 disp('yay scones')
                 app = RoiAverageView2(dataset, epochIDs, obj.bkgd,...
@@ -1167,7 +1166,6 @@ classdef SpectralStimuli
                     obj.getStimWindows(dataset, epochIDs(1), true), ...
                     titleStr, dataset.getEpochTrace(epochIDs(1),4));
             else
-                warning('Using generic interface!');
                 app = RoiAverageView2(dataset, epochIDs, obj.bkgd,...
                     obj.signal, titleStr, dataset.getEpochTrace(epochIDs(1),4));
             end
@@ -1474,7 +1472,7 @@ classdef SpectralStimuli
                     obj = SpectralStimuli.Background50p130t;
                 case 'baseline'
                     obj = SpectralStimuli.BinaryNoiseBaseline;
-                case {'lmsx_background', 'baseline'}
+                case 'lmsx_background'
                     obj = SpectralStimuli.LmsxBackground;
                 case 'luminance_background_80t'
                     obj = SpectralStimuli.LuminanceBaseline;
@@ -1601,6 +1599,8 @@ classdef SpectralStimuli
                     obj = SpectralStimuli.SconeSquare5s40p130t;
                 case 'siso_square_10s_100c_18p_160t'
                     obj = SpectralStimuli.SconeSquare18p10s160t;
+                case 'siso_square_10s_100c_20p_160t'
+                    obj = SpectralStimuli.SconeSquare20p10s160t;
                 case 'siso_square_10s_100c_30p_160t'
                     obj = SpectralStimuli.SconeSquare30p10s160t;
                 case 'siso_square_10s_100c_40p_160t'
@@ -1744,6 +1744,8 @@ classdef SpectralStimuli
                     obj = SpectralStimuli.BgrSeq50m5s0p160t;
                 case 'cmy_seq_5s_50m_0p_160t'
                     obj = SpectralStimuli.CmySeq50m5s0p160t;
+                case 'bcgmry_seq_5s_75m_20p_120t'
+                    obj = SpectralStimuli.BcgmrySeq75m5s20p120t;
                 case 'bcgmryw_seq_5s_50m_10p_130t'
                     obj = SpectralStimuli.BcgmrywSeq50m5s10p130t;
 
