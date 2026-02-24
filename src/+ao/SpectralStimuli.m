@@ -1,5 +1,4 @@
 classdef SpectralStimuli
-%% WARNING: Do not open in MATLAB's editor - it will crash
 % This terrible organization system was the original motivation for AOData
 
     properties (Constant, Hidden)
@@ -1156,8 +1155,9 @@ classdef SpectralStimuli
                         [], titleStr);
             elseif contains(char(obj), {'LightsOn', 'LightsOff'})
                 app = RoiAverageView2(dataset, epochIDs, obj.bkgd,...
-                    obj.getStimWindows(dataset, epochIDs(1), true), titleStr, dataset.getEpochTrace(epochIDs));
-            elseif contains(char(obj), {'RgbSeq', 'RgwSeq', 'GrwSeq', 'RgySeq', 'BgrSeq', 'CmySeq', 'rywSeq'})
+                    obj.getStimWindows(dataset, epochIDs(1), true), ...
+                    titleStr, dataset.getEpochTrace(epochIDs));
+            elseif contains(char(obj), {'RgbSeq', 'RgwSeq', 'GrwSeq', 'RgySeq', 'BgrSeq', 'CmySeq', 'rywSeq', 'BcgmrySeq'})
                 app = RoiAverageView2(dataset, epochIDs, obj.bkgd,...
                     obj.getStimWindows(dataset, epochIDs(1), true), ...
                     titleStr, dataset.frameTables(epochIDs(1)));
