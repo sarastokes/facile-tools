@@ -101,7 +101,7 @@ function [videoNames, p] = processVideoPrep(experimentDir, epochIDs, varargin)
     end
 
     % Get the filenames in channel's folder (assumes "Vis" and/or "Ref")
-    if strcmpi(p.Channel, 'vis')
+    if strcmpi(p.Channel, 'vis') || strcmpi(p.Channel, 'CH2')
         channelDir = fullfile(experimentDir, 'Vis');
     elseif strcmpi(p.Channel, 'ref')
         channelDir = fullfile(experimentDir, 'Ref');
@@ -123,6 +123,8 @@ function [videoNames, p] = processVideoPrep(experimentDir, epochIDs, varargin)
                 videoStr = ['vis_', int2fixedwidthstr(epochIDs(i), 4)];
             elseif strcmpi(p.Channel, 'ref')
                 videoStr = ['ref_', int2fixedwidthstr(epochIDs(i), 4)];
+            elseif strcmpi(p.Channel, 'CH2')
+                videoStr = ['CH2_', int2fixedwidthstr(epochIDs(i), 4)];
             else
                 videoStr = ['_', int2fixedwidthstr(epochIDs(i), 4)];
             end

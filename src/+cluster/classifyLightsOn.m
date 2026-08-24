@@ -1,4 +1,4 @@
-function [GMM, clust1, clust2, axHandles] = classifyLightsOn(dataset, varargin)
+function [GMM, clust1, clust2, axHandles, signals] = classifyLightsOn(dataset, varargin)
 % CLASSIFYLIGHTSON
 %
 % Description:
@@ -46,15 +46,16 @@ function [GMM, clust1, clust2, axHandles] = classifyLightsOn(dataset, varargin)
     parse(ip, varargin{:});
 
     if iscell(dataset)
-        adaptIdx = []; peakMag = [];
+        adaptIdx = []; peakMag = []; signals = [];
         for i = 1:numel(dataset)
-            [a, b] = getStats(dataset{i}, ip.Results.StimName, ...
+            [a, b, c] = getStats(dataset{i}, ip.Results.StimName, ...
                 ip.Results.UseFirst, ip.Results.Standardize);
             adaptIdx = cat(1, adaptIdx, a);
             peakMag = cat(1, peakMag, b);
+            signals = cat(3, signals, c);
         end
     else
-        [adaptIdx, peakMag] = getStats(dataset, ip.Results.StimName, ...
+        [adaptIdx, peakMag, signals] = getStats(dataset, ip.Results.StimName, ...
             ip.Results.UseFirst, ip.Results.Standardize);
     end
 
@@ -118,7 +119,7 @@ function [GMM, clust1, clust2, axHandles] = classifyLightsOn(dataset, varargin)
 
 end
 
-function [adaptIdx, peakMag] = getStats(dataset, stimName, useFirst, standardize)
+function [adaptIdx, peakMag, signals] = getStats(dataset, stimName, useFirst, standardize)
 
     if isempty(stimName) && ~isnumeric(dataset)
         stimNames = string(dataset.stim.Stimulus);

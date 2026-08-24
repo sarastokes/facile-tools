@@ -37,6 +37,10 @@ function aoc = roiAreaUnderCurve(y, aocWindow, sampleRate, rectify)
     if isequal(aocWindow, [0 0])
         aocWindow = [1 size(y, 2)];
     end
+    % Sometimes it is easier to specify in frames from the end
+    if aocWindow(2) < aocWindow(1)
+        aocWindow(2) = size(y, 2) - aocWindow(2);
+    end
     aocRange = window2idx(aocWindow);
     nPts = numel(aocRange);
 

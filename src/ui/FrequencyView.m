@@ -37,8 +37,8 @@ classdef FrequencyView < handle
             set(obj.axHandle, 'XScale', 'log');
 
             obj.freqLine = area([0 0], [0 0], 'LineWidth', 1,...
-                'EdgeColor', mycolors('peacock'), 'FaceAlpha', 0.3,...
-                'FaceColor', mycolors('peacock'));
+                'EdgeColor', rgb('blue green'), 'FaceAlpha', 0.3,...
+                'FaceColor', rgb('blue green'));
             xlim(obj.axHandle, [0.01 12.5]);
             xlabel(obj.axHandle, 'Frequency (Hz)');
             xticks([0.01 0.1 1 10]);
