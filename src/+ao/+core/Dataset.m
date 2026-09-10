@@ -1362,6 +1362,10 @@ classdef Dataset < handle
             bkgdWindow = ip.Results.Bkgd;
 
             epochs = obj.stim2epochs(whichStim);
+            if isempty(epochs)
+                error('getStimulusResponses:StimulusNotFound',...
+                    'No stimulus found in %s named %s', obj.getLabel(), whichStim);
+            end
             iStim = obj.epoch2stim(epochs(1));
 
             % If background window not specified, get stimulus default
