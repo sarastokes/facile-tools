@@ -464,6 +464,8 @@ classdef RoiCoregisterApp < handle
                 'DefaultUicontrolFontSize', 12,...
                 'DefaultUicontrolFontName', get(0, 'DefaultUicontrolFontName'),...
                 'KeyPressFcn', @obj.onKeyPress);
+            dcm = datacursormode(obj.figureHandle);
+            dcm.Enable = "off";
 
             obj.figureHandle.Position(3) = obj.figureHandle.Position(3) * 1.65;
             obj.figureHandle.Position(4) = obj.figureHandle.Position(4) + 100;
